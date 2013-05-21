@@ -1,0 +1,267 @@
+
+This directory contains the RTP MIDI network library from sfront 0.89.
+All files in this directory are under the BSD license (without the
+advertising clause).  Send comments and questions to
+lazzaro@cs.berkeley.edu.  This library is version 1.04 -- see end of
+this file for change history.
+
+The primary purpose of this release is to act as an (incomplete)
+reference implementation for RTP MIDI, a standards-track working group
+item of the Audio/Video Transport (AVT) group of the Internet
+Engineering Task Force (IETF).  See:
+
+http://www.cs.berkeley.edu/~lazzaro/sa/pubs/txt/current-rtp-midi.txt
+http://www.cs.berkeley.edu/~lazzaro/sa/pubs/txt/current-guide.txt
+
+for the current documents associated with RTP MIDI.  In addition,
+these RFCs and IDs describe the IETF technologies used by the library:
+
+RTP:
+
+http://www.ietf.org/rfc/rfc3550.txt
+http://www.ietf.org/rfc/rfc3551.txt
+
+SDP:
+
+http://www.ietf.org/internet-drafts/draft-ietf-mmusic-sdp-new-15.txt
+
+  If the URL above does not work, look on:
+  http://www.ietf.org/html.charters/mmusic-charter.html
+  for the current version.
+
+SIP:
+
+http://www.ietf.org/rfc/rfc3261.txt
+http://www.ietf.org/rfc/rfc3263.txt
+http://www.ietf.org/rfc/rfc3264.txt
+
+This release does not contain test code for exercising the library.
+However, the library does include a Makefile which compiles a simple
+"hello world" program that links in the library, to show how to
+compile the code.  Type "make" to compile the library.  Execute
+./hello to print "hello world".  Compilation is known to work on Mac
+OS X version 10.3.2 and Linux 2.4.18.
+
+To understand the basic working of the library, start by examining the
+functions below -- these are the main calling points sfront uses, and
+are sufficient to understand what the library is trying to do.
+
+In net_rtplib.c:
+
+int nsys_setup(void) 
+
+   This function initializes the networking library.  It tries to
+   make contact with the UCB SIP server, so if you're behind a 
+   firewall that blocks UDP from ports the library uses, the
+   SIP server will never be found. 
+
+In net_sfront.c:
+
+void nsys_midisend(unsigned char cmd, unsigned char ndata,
+                  unsigned char vdata, unsigned short extchan)
+
+   Send a new MIDI command in an RTP MIDI packet to the
+   other members of the session.  If cmd is set to CSYS_MIDI_NOOP,
+   an RTP MIDI packet with an empty MIDI Command Section is
+   sent.  If cmd is set to CSYS_MIDI_MVOLUME, the SysEx
+   Universal Command for Master Volume is sent:
+
+   Master Volume:     F0 7F 7F 04 01 vv vv F7
+
+   with ndata and vdata encoding the 14-bit volume level. If
+   cmd is set to CSYS_MIDI_RESET, one of:
+
+   General MIDI On:   F0 7E 7F 09 01 F7
+   General MIDI Off:  F0 7E 7F 09 02 F7
+
+   is sent, with ndata coding "01" or "02".  A third cmd
+   value, CSYS_MIDI_MANUEX, codes an example Yamaha SysEx command.
+
+int nsys_newdata(void)
+
+   This function is designed to be called at regular intervals.
+   In sfront, it is called at the "krate", which is usually set
+   to 1-5 milliseconds.  This function checks for UDP packets
+   coming in on the active network ports, sees if the packets
+   are RTP, RTCP or SIP, and takes the appropriate action. 
+   The function returns NSYS_DONE if no new MIDI commands have
+   been received over RTP.  If the function returns NSYS_MIDIEVENTS,
+   new MIDI has arrived, and nsys_midievent() MUST be called to
+   retrieve them (see below).
+
+int nsys_midievent(unsigned char * cmd, unsigned char * ndata,
+                    unsigned char * vdata, unsigned short * extchan)
+
+   This function returns a single new MIDI event. The command 
+   byte(s) are returned in the argument pointers.  Keep calling
+   this function until it returns NSYS_DONE.  The cmd pointer
+   uses the same opcodes for SysEx as nsys_midisend():
+
+     #define CSYS_MIDI_MANUEX   0x7Du
+     #define CSYS_MIDI_MVOLUME  0x7Eu
+     #define CSYS_MIDI_GMRESET  0x7Fu
+
+Note that the library does not implement RTP, SDP, and SIP 
+exactly correct in every way -- notable deviations include:
+
+  [1]  Each RTP packet ends with an MD5 hash for security,
+       to prevent rogue packets.  This code predated SRTP,
+       which is the standardized way to do RTP security:
+
+       http://www.ietf.org/internet-drafts/draft-ietf-avt-srtp-09.txt
+
+       If the URL above does not work, look on:
+
+       http://www.ietf.org/html.charters/avt-charter.html
+
+       for the "Secure Real-Time Protocol".
+
+  [2]  The library predates the IETF midcom effort, which
+       focuses on NAT traversal.  To handle NATs, the 
+       library shares a single port for RTP/SIP and a single
+       port for RTCP/SIP, and does separate invitations for
+       the RTP and RTCP streams (RTCP is the backchannel
+       Real Time Control Protocol, described in RFC 3550).
+       This port-sharing/dual-invitation scheme is totally
+       nonstandard -- see the SIP RFCs for the correct way
+       to use SIP, and see 
+
+       http://www.ietf.org/html.charters/midcom-charter.html
+
+       for more modern NAT traversal techniques.
+
+  [3]  The sending period for RTCP packets is supposed to
+       scale with the number of receivers.  The library does
+       not do this, and instead uses a fixed period. See RFC 3550.
+
+Also note that the library does not implement the RTP MIDI payload
+format exactly correct in every way -- notable deviations include:
+
+  -- Reset All Controllers recovery journal behaviors are not
+     fully implemented: a functions are empty, with comments that
+     note what should be done (nsys_netout_journal_clear_active() and 
+     nsys_netin_journal_clear_active()).
+
+  -- The "list" semantics of the Chapter X SysEx journal is not
+     implemented (the "recency" semantics are implemented).
+
+  -- The receiver ignores most RTP MIDI SDP parameters, and instead
+     uses the implicit knowledge of what the sender has sent.  A real
+     implementation would parse the SDP itself to see the senders intent.
+
+  -- The U-W-Z bits in Chapter M are ignored.
+
+Although the library is complete, if you try to use these calls
+as is you will find that it crashes.  This is because sfront
+adds a few definitions before including these library files
+into the sa.c file.  To understand these additions, look 
+at the "void makenetworkdriver(void)" definition in control.c,
+reproduced below:
+
+/****************************************************************/
+/*             generates C code for network driver              */
+/****************************************************************/
+
+void makenetworkdriver(void)
+
+{
+  fprintf(outfile,"#define NSYS_NETSTART %i\n", netstart);
+  fprintf(outfile,"#define NSYS_MSETS %i\n\n", netmsets);
+  fprintf(outfile,"#define NSYS_SM_FEC_NONE %i\n", FEC_NONE);
+  fprintf(outfile,"#define NSYS_SM_FEC_NOGUARD %i\n", FEC_NOGUARD);
+  fprintf(outfile,"#define NSYS_SM_FEC_MINIMAL %i\n", FEC_MINIMAL);
+  fprintf(outfile,"#define NSYS_SM_FEC_STANDARD %i\n", FEC_STANDARD);
+  fprintf(outfile,"#define NSYS_SM_FEC_EXTRA %i\n", FEC_EXTRA);
+  fprintf(outfile,"#define NSYS_SIP_IP \"%s\"\n", sip_ip);
+  fprintf(outfile,"#define NSYS_SIP_RTP_PORT %hu\n", sip_port);
+  fprintf(outfile,"#define NSYS_SIP_RTCP_PORT %hu\n", sip_port + 1);
+  fprintf(outfile,"#define NSYS_MSESSION_INTERVAL %i\n\n", msession_interval);
+  fprintf(outfile, "int nsys_feclevel = %i;\n", feclevel);
+  fprintf(outfile, "int nsys_lateplay = %i;\n", lateplay);
+  fprintf(outfile, "float nsys_latetime = %g;\n", latetime);
+  fprintf(outfile,"char * nsys_sessionname = \"%s\";\n", session);
+
+  if (sessionkey)
+    fprintf(outfile, "char * nsys_sessionkey = \"%s\";\n\n", sessionkey);
+  else
+    fprintf(outfile, "char * nsys_sessionkey = NULL;\n\n");
+
+}
+
+----
+
+Change history:
+
+Version 1.04:
+
+  Updated to support <draft-ietf-avt-rtp-midi-format-09.txt>.
+  Main changes are to change the recovery journal response to
+  a Reset All Controllers, in order to match the new C-active
+  semantics described in the format-09.txt Change Log.
+
+Version 1.03:
+
+  Updated to support <draft-ietf-avt-rtp-midi-format-06.txt> and
+  <draft-ietf-avt-rtp-midi-format-07.txt> normative changes
+  (see Change Log of these documents for complete details):
+ 
+   o Chapter M bitfield changes (moving G bit) and counting 
+     method change (an errata to Chapter M coming to -08.txt)
+     appear in net_jsend.c (lines 1281+, 1428+, 1521+) and 
+     net_jrecv.c (lines 1218+).
+
+   o Changes to net_jsend.c to support oldest-first log ordering
+     (defined in Appendix A of draft-ietf-avt-rtp-midi-format-07.txt>
+     for Chapter E (lines 331+, 439+, 1886+, 3491+, 3534+, 3888+, 3918+), 
+     Chapter A (lines 2395+), and Chapter N (lines 1776+).
+
+   o Changes to net_jsend.c to support -07.txt Chapter Q coding
+     rules for the Start and Continue commands (lines 2950+).
+
+   o Numerous changes to net_siplib.c, to fix Session Description
+     Protocol bugs (including replacing ptime and maxptime with 
+     rtp_ptime and rtp_maxptime, as defined in -07.txt).  However,
+     SIP and SDP is still non-standard in many ways, because 
+     sfront's development (including servers running at Berkeley) 
+     predate "modern" SIP and SDP in many ways.
+
+Version 1.02:
+
+  New SysEx features (see <draft-ietf-avt-rtp-midi-format-03.txt>
+  Change Log for details) supported:
+
+     o  Receiver can handle (i.e. skip over) the new syntax
+        for cancelled SysEx commands.  See lines 343-365 in
+        net_sfront.c
+
+     o  net_include.c has new bitfield syntax for Chapter X,
+        that supports cancellation and other SysEx enhancements.
+        See lines 1226-1280 of net_include.c.
+
+     o  Sender can send modified Chapter X syntax.  See lines
+        3219-3254 of net_jsend.c.
+
+     o  Receiver can receive modified Chapter X syntax.  See
+        lines 2568-2650 of net_jrecv.c
+
+     o  Payload format name changed to pre1-mpeg4-generic, in
+        preparation for sfront release (not using mpeg4-generic,
+        in case "one more bug" causes an RTP MIDI syntax change
+        pre-RFC).  Actually name change is in net_globals.c, line
+        106.  As name is > 16 characters, changes in net_siplib.c
+        (lines 1250-1254) and net_include.h (line 1434) were
+        needed to support upto 32-character payload names.
+
+Version 1.01:
+
+  Implements the new Chapter E.  Sender generates Chapter E if
+  NSYS_NETOUT_CHAPTERE_STATUS (net_include.c) is set. Receiver
+  correctly parses Chapter E, but does not use it for recovery.
+
+Version 1.0:
+
+   Initial release.
+
+ 
+
+
