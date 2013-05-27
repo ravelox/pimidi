@@ -34,3 +34,26 @@ Set high=0001
 
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "rtp_packet.h"
+
+rtp_packet_t * new_rtp_packet( void )
+{
+	rtp_packet_t *new;
+
+	new = ( rtp_packet_t * ) malloc( sizeof( rtp_packet_t ) );
+
+	if( new )
+	{
+		memset( new, 0 , sizeof( rtp_packet_t ) );
+		new->header.pt = 97;
+		new->payload = NULL;
+	}
+
+	return new;
+}
