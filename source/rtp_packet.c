@@ -1,5 +1,7 @@
 /*
 
+MIDI Payload ( with journal ) is like this:
+
 43 80 27 00 20 63 90 00 07 08 81 F1 27 7F
 
 // Channel header
