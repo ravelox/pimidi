@@ -15,6 +15,15 @@ typedef struct channel_journal_header_t {
 	uint8_t		bitfield; // PCMWNETA
 } channel_journal_header_t;
 
+#define CHANNEL_P	0x80
+#define CHANNEL_C	0x40
+#define CHANNEL_M	0x20
+#define CHANNEL_W	0x10
+#define CHANNEL_N	0x08
+#define CHANNEL_E	0x04
+#define CHANNEL_T	0x02
+#define CHANNEL_A	0x01
+
 typedef struct chapter_n_journal_header_t {
 	unsigned	B:1;
 	unsigned	len:7;
