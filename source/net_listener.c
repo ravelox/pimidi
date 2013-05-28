@@ -21,7 +21,7 @@ extern int errno;
 #include "cmd_sync_handler.h"
 #include "cmd_end_handler.h"
 
-#include "midi_recv.h"
+#include "midi_note_packet.h"
 #include "utils.h"
 
 static int control_socket, data_socket, midi_socket;
@@ -186,10 +186,12 @@ int net_socket_listener( void )
 			// MIDI note from sending device
 			if( packet[0] == 0xaa )
 			{
-				midi_note_packet_t note_packet;
+				midi_note_packet_t *note_packet;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
-				ret = midi_note_unpack( &note_packet, packet, recv_len );
+				ret = midi_note_packet_unpack( &note_packet, packet, recv_len );
+
+				midi_note_packet_destroy( &note_packet );
 			}
 		}
 	}
