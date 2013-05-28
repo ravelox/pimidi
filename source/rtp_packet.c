@@ -51,7 +51,6 @@ rtp_packet_t * new_rtp_packet( void )
 	if( new )
 	{
 		memset( new, 0 , sizeof( rtp_packet_t ) );
-		new->header.pt = 97;
 		new->payload = NULL;
 	}
 

@@ -21,6 +21,9 @@ extern int errno;
 #include "cmd_sync_handler.h"
 #include "cmd_end_handler.h"
 
+#include "midi_recv.h"
+#include "utils.h"
+
 static int control_socket, data_socket, midi_socket;
 static int num_sockets;
 static int *sockets;
@@ -178,6 +181,13 @@ int net_socket_listener( void )
 				}
 
 				net_applemidi_cmd_destroy( &command );
+			}
+
+			// MIDI note from sending device
+			if( packet[0] == 0xaa )
+			{
+				midi_note_packet_t note_packet;
+				ret = midi_note_unpack( &note_packet, packet, recv_len );
 			}
 		}
 	}

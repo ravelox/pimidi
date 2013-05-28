@@ -4,7 +4,7 @@ CFLAGS = $(DEBUG) -Wall
 LDFLAGS =
 
 LISTENER_BINARY=parse_test
-LISTENER_OBJS=parse_test.o net_applemidi.o net_listener.o midi_journal.o rtp_packet.o net_connection.o cmd_inv_handler.o cmd_sync_handler.o cmd_end_handler.o
+LISTENER_OBJS=parse_test.o net_applemidi.o net_listener.o midi_journal.o rtp_packet.o net_connection.o cmd_inv_handler.o cmd_sync_handler.o cmd_end_handler.o midi_recv.o utils.o
 LISTENER_LIBS=
 
 AVAHI_BINARY=avahi_test

@@ -8,8 +8,8 @@
 #include "net_applemidi.h"
 #include "net_listener.h"
 #include "midi_journal.h"
-
 #include "net_connection.h"
+#include "utils.h"
 
 void show_command( net_applemidi_command *command)
 {
