@@ -8,15 +8,7 @@
 
 #include "midi_note_packet.h"
 
-
-typedef struct midi_note_packet_t {
-	char	signature;
-	char	channel;
-	char	note;
-	char	velocity;
-} midi_note_packet_t;
-
-int midi_note_packet_unpack( midi_note_packet_t **midi_note, char *packet, size_t packet_len )
+int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *packet, size_t packet_len )
 {
 	int ret = 0;
 
@@ -31,7 +23,7 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, char *packet, size_
 
 	if( ! *midi_note ) return -1;
 
-	memcpy( &(*midi_note), packet, packet_len );
+	memcpy( *midi_note, packet, packet_len );
 
 	return ret;
 }
@@ -43,4 +35,15 @@ void midi_note_packet_destroy( midi_note_packet_t **note_packet )
 
 	free( *note_packet );
 	*note_packet = NULL;
+}
+
+void midi_note_packet_dump( midi_note_packet_t *note_packet )
+{
+	if(! note_packet ) return;
+
+	fprintf( stderr, "Note Packet:\n");
+	fprintf( stderr, "\tSig     : %2x\n", note_packet->signature );
+	fprintf( stderr, "\tChannel : %2d\n", note_packet->channel );
+	fprintf( stderr, "\tNote    : %3d\n", note_packet->note );
+	fprintf( stderr, "\tVelocity: %3d\n", note_packet->velocity );
 }

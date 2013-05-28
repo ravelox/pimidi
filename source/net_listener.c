@@ -191,6 +191,8 @@ int net_socket_listener( void )
 				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet, recv_len );
 
+				midi_note_packet_dump( note_packet );
+
 				midi_note_packet_destroy( &note_packet );
 			}
 		}
