@@ -187,6 +187,8 @@ int net_socket_listener( void )
 			if( packet[0] == 0xaa )
 			{
 				midi_note_packet_t note_packet;
+
+				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_unpack( &note_packet, packet, recv_len );
 			}
 		}
