@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import Socket
+import socket
 import struct
 
 s = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
