@@ -34,9 +34,14 @@ typedef struct chapter_n_journal_t {
 	midi_note_t **notes;
 } chapter_n_journal_t;
 
+typedef struct channel_journal_t {
+	channel_journal_header_t *header;
+	chapter_n_journal_t *chapter_n;
+} channel_journal_t;
+
 typedef struct recovery_journal_t {
 	recovery_journal_header_t *header;
-	chapter_n_journal_t *chapter_n;
+	channel_journal_t channels[16];
 } recovery_journal_t;
 
 midi_note_t * new_midi_note( void );
