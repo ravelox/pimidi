@@ -135,7 +135,7 @@ recovery_journal_t * journal_init( void )
 	}
 	
 	journal->header = header;
-	journal->chapter_n = chapter_n;
+	// journal->chapter_n = chapter_n;
 
 	return journal;
 }
@@ -144,12 +144,6 @@ void journal_destroy( recovery_journal_t *journal )
 {
 
 	if( ! journal ) return;
-
-	if( journal->chapter_n )
-	{
-		chapter_n_journal_destroy( journal->chapter_n );
-		journal->chapter_n = NULL;
-	}
 
 	if( journal->header )
 	{

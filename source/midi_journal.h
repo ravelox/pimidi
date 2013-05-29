@@ -50,7 +50,7 @@ typedef struct channel_journal_t {
 
 typedef struct recovery_journal_t {
 	recovery_journal_header_t *header;
-	channel_journal_t channels[16];
+	channel_journal_t **channels;
 } recovery_journal_t;
 
 midi_note_t * new_midi_note( void );
