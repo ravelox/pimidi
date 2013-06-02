@@ -286,7 +286,10 @@ void midi_journal_add_note( midi_journal_t *journal, uint32_t seq, char channel,
 			journal->channels[channel - 1]->chapter_n->header->low = offset;
 		}
 
+		journal->header->seq = seq;
 		journal->channels[channel - 1]->chapter_n->offbits[offset] |=  ( 1 << shift );
+
+		return;
 	}
 
 	if( journal->channels[ channel - 1 ]->chapter_n->num_notes == MAX_CHAPTER_N_NOTES ) return;
