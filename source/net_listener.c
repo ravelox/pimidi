@@ -193,6 +193,9 @@ int net_socket_listener( void )
 
 				midi_note_packet_dump( note_packet );
 
+				debug_ctx_add_journal_note( 0 , note_packet->channel, note_packet->note, note_packet->velocity );
+				debug_ctx_journal_dump( 0 );
+
 				midi_note_packet_destroy( &note_packet );
 			}
 		}

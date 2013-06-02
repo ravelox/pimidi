@@ -166,3 +166,12 @@ void hex_dump( unsigned char *buffer, size_t len )
 	}
 	printf("\n");
 }
+
+void FREENULL( void **ptr )
+{
+	if( ! ptr ) return;
+	if( ! *ptr ) return;
+
+	free( *ptr );
+	*ptr = NULL;
+}

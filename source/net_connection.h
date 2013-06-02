@@ -1,6 +1,8 @@
 #ifndef NET_CONNECTION_H
 #define NET_CONNECTION_H
 
+#include "midi_journal.h"
+
 #define MAX_CTX 10
 
 typedef struct net_ctx_t {
@@ -12,14 +14,17 @@ typedef struct net_ctx_t {
 	uint16_t	port;
 	time_t		start;
 	char * 		ip_address;
-	
+	midi_journal_t	*journal;
 } net_ctx_t;
+
 
 
 void net_ctx_reset( net_ctx_t *ctx );
 void net_ctx_init( void );
 void net_ctx_destroy( void );
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
 net_ctx_t * net_ctx_find( uint32_t ssrc);
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
+void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity );
+void debug_ctx_journal_dump( uint8_t ctx_id );
 
 #endif

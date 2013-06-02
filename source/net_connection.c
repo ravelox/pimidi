@@ -7,7 +7,9 @@
 
 #include <arpa/inet.h>
 
+#include "midi_journal.h"
 #include "net_connection.h"
+#include "utils.h"
 
 static net_ctx_t *ctx[ MAX_CTX ];
 
@@ -20,11 +22,8 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->send_ssrc = 0;
 	ctx->initiator = 0;
 	ctx->seq = 0;
-	if( ctx->ip_address )
-	{
-		free( ctx->ip_address );
-	}
-	ctx->ip_address = NULL;
+	FREENULL( (void **)&(ctx->ip_address) );
+	midi_journal_destroy( &(ctx->journal) );
 }
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
@@ -50,10 +49,15 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 static net_ctx_t * new_net_ctx( void )
 {
 	net_ctx_t *new_ctx;
+	midi_journal_t *journal;
 
 	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
 
 	memset( new_ctx, 0, sizeof( net_ctx_t ) );
+
+	midi_journal_init( &journal );
+
+	new_ctx->journal = journal;
 
 	return new_ctx;
 
@@ -126,4 +130,21 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	}
 	
 	return NULL;
+}
+
+void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity )
+{
+	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
+
+	ctx[ctx_id]->seq += 1;
+
+	fprintf(stderr, "Adding note. Seq = %u\n", ctx[ctx_id]->seq );
+	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, channel, note, velocity );
+}
+
+void debug_ctx_journal_dump( uint8_t ctx_id )
+{
+	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
+
+	journal_dump( ctx[ctx_id]->journal );
 }
