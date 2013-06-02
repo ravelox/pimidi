@@ -44,6 +44,7 @@ typedef struct chapter_n_t {
 	chapter_n_header_t *header;
 	uint16_t	num_notes;
 	midi_note_t *notes[MAX_CHAPTER_N_NOTES];
+	uint8_t	offbits[16];
 } chapter_n_t;
 
 typedef struct channel_journal_t {

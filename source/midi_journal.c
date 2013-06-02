@@ -55,6 +55,7 @@ chapter_n_header_t * new_chapter_n_header( void )
 	if( chapter_n_header )
 	{
 		memset( chapter_n_header, 0 , sizeof( chapter_n_header_t) );
+		chapter_n_header->low = 0xf;
 	}
 
 	return chapter_n_header;
@@ -104,6 +105,8 @@ chapter_n_t * new_chapter_n_journal( void )
 		{
 			chaptern->notes[i] = NULL;
 		}
+		
+		memset( chaptern->offbits, 0, 16 );
 	}
 
 	return chaptern;
@@ -264,6 +267,28 @@ void midi_journal_add_note( midi_journal_t *journal, uint32_t seq, char channel,
 
 	}
 
+	// Store velocity 0 as NoteOff
+	if( velocity == 0 )
+	{
+		uint8_t offset, shift;
+		// Which element
+		offset = note / 8;
+		shift = (note - ( offset * 8 )) - 1;
+
+		// Set low and high values;
+		if( offset > journal->channels[channel - 1]->chapter_n->header->high )
+		{
+			journal->channels[channel - 1]->chapter_n->header->high = offset;
+		}
+
+		if( offset < journal->channels[channel - 1]->chapter_n->header->low )
+		{
+			journal->channels[channel - 1]->chapter_n->header->low = offset;
+		}
+
+		journal->channels[channel - 1]->chapter_n->offbits[offset] |=  ( 1 << shift );
+	}
+
 	if( journal->channels[ channel - 1 ]->chapter_n->num_notes == MAX_CHAPTER_N_NOTES ) return;
 
 	new_note = new_midi_note();
@@ -315,6 +340,11 @@ void chapter_n_dump( chapter_n_t *chaptern )
 		midi_note_dump( chaptern->notes[i] );
 	}
 	
+	for( i = 0 ; i < 16 ; i++ )
+	{
+		fprintf(stderr, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
+	}
+
 	fprintf(stderr, "End Chapter N\n");
 }
 
