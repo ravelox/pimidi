@@ -308,8 +308,6 @@ void chapter_n_dump( chapter_n_t *chaptern )
 
 	if( ! chaptern ) return;
 
-	fprintf(stderr, "Chapter N\n");
-
 	chapter_n_header_dump( chaptern->header );
 
 	for( i = 0 ; i < chaptern->num_notes ; i++ )
@@ -317,7 +315,7 @@ void chapter_n_dump( chapter_n_t *chaptern )
 		midi_note_dump( chaptern->notes[i] );
 	}
 	
-	fprintf(stderr, "END\n");
+	fprintf(stderr, "End Chapter N\n");
 }
 
 void channel_header_dump( channel_header_t *header )
