@@ -139,7 +139,7 @@ int net_socket_listener( void )
 
 			fprintf(stderr, "Socket: %u\n", sockets[i]);
 			fprintf(stderr, "Recv Length = %u\n", recv_len );
-			fprintf(stderr, "Byte[0] == %u\n", packet[0]);
+			fprintf(stderr, "Byte[0] == %02x\n", packet[0]);
 
 			hex_dump( packet, recv_len );
 
