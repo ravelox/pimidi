@@ -389,3 +389,4 @@ void journal_dump( midi_journal_t *journal )
 		channel_journal_dump( journal->channels[i] );
 	}
 }
+
