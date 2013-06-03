@@ -5,5 +5,5 @@ a $150 ION ION Sound Sessions drum kit through a Raspberry Pi to
 Logic Express.
 
 I'm doing this purely for fun and don't expect anyone else to use
-it but I'm happy to accept suggestions if you every come across
+it but I'm happy to accept suggestions if you ever come across
 this code.
