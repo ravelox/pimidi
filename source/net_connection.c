@@ -150,9 +150,14 @@ void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char 
 
 void debug_ctx_journal_dump( uint8_t ctx_id )
 {
+	char *buffer;
+	uint32_t size;
+
 	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
 
 	journal_dump( ctx[ctx_id]->journal );
+
+	journal_buffer_create( ctx[ctx_id]->journal, &buffer, &size );
 
 	net_ctx_reset( ctx[ctx_id] );
 }

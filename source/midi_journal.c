@@ -405,3 +405,47 @@ void journal_dump( journal_t *journal )
 	}
 }
 
+uint16_t calc_channel_size( channel_t *channel )
+{
+
+	uint16_t size = 0;
+
+	if( ! channel ) return 0;
+
+	size += sizeof( channel_header_t );
+	
+	size += sizeof( chaptern_header_t );
+
+	return size;
+}
+void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
+{
+	int i;
+	char *p;
+	uint16_t channel_size;
+
+	*buffer = NULL;
+	*size = 0;
+
+	if( ! journal ) return;
+
+	fprintf(stderr, "\n\nJournal Buffer\n");
+	for( i = 0 ; i < MAX_MIDI_CHANNELS; i++ )
+	{
+		if( ! journal->channels[i] ) continue;
+
+		if( ! *buffer )
+		{
+			*buffer = ( char * ) malloc( sizeof( journal_header_t ) );
+			memcpy( *buffer, journal->header, sizeof( journal_header_t ) );
+			*size += sizeof( journal_header_t );
+		}
+
+		*buffer = (char *)realloc( *buffer, *size + sizeof( channel_header_t ) );
+		*p = *buffer + *size;
+
+		channel_size = calc_channel_size( journal->channels[i] );
+
+		//memcpy( *buffer, journal->channels[i]->header, sizeof( channel_header_t ) );
+	}
+}
