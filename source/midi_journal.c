@@ -21,44 +21,49 @@ journal_header_t * journal_header_create( void )
 	return journal_header;
 }
 
-
-void channel_header_destroy( channel_header_t **header )
+void journal_header_destroy( journal_header_t **header )
 {
 	FREENULL( (void **)header );
 }
 
-channel_header_t * new_channel_header( void )
-{
-	channel_header_t *channel_header = NULL;
 
-	channel_header = ( channel_header_t * ) malloc( sizeof( channel_header_t ) );
-
-	if( channel_header )
-	{
-		memset( channel_header, 0 , sizeof( channel_header_t ) );
-	}
-
-	return channel_header;
-}
-
-void chapter_n_header_destroy( chapter_n_header_t **header )
+void channel_header_destroy( channel_header_t **header )
 {
 	FREENULL( (void **)header);
 }
 
-chapter_n_header_t * new_chapter_n_header( void )
+channel_header_t * channel_header_create( void )
 {
-	chapter_n_header_t *chapter_n_header = NULL;
+	channel_header_t *header = NULL;
 
-	chapter_n_header = ( chapter_n_header_t *) malloc( sizeof( chapter_n_header_t ) );
+	header = ( channel_header_t * ) malloc( sizeof( channel_header_t ) );
 
-	if( chapter_n_header )
+	if( header )
 	{
-		memset( chapter_n_header, 0 , sizeof( chapter_n_header_t) );
-		chapter_n_header->low = 0xf;
+		memset( header, 0 , sizeof( channel_header_t ) );
 	}
 
-	return chapter_n_header;
+	return header;
+}
+
+void chaptern_header_destroy( chaptern_header_t **header )
+{
+	FREENULL( (void **)header);
+}
+
+chaptern_header_t * chaptern_header_create( void )
+{
+	chaptern_header_t *header = NULL;
+
+	header = ( chaptern_header_t *) malloc( sizeof( chaptern_header_t ) );
+
+	if( header )
+	{
+		memset( header, 0 , sizeof( chaptern_header_t) );
+		header->low = 0xf;
+	}
+
+	return header;
 }
 
 void midi_note_destroy( midi_note_t **note )
@@ -66,7 +71,7 @@ void midi_note_destroy( midi_note_t **note )
 	FREENULL( (void **)note );
 }
 
-midi_note_t * new_midi_note( void )
+midi_note_t * midi_note_create( void )
 {
 	midi_note_t *note = NULL;
 	
@@ -81,16 +86,16 @@ midi_note_t * new_midi_note( void )
 }
 
 
-chapter_n_t * new_chapter_n_journal( void )
+chaptern_t * chaptern_create( void )
 {
-	chapter_n_t *chaptern = NULL;
+	chaptern_t *chaptern = NULL;
 	unsigned int i = 0;
 
-	chaptern = ( chapter_n_t * ) malloc( sizeof( chapter_n_t ) );
+	chaptern = ( chaptern_t * ) malloc( sizeof( chaptern_t ) );
 
 	if( chaptern )
 	{
-		chapter_n_header_t *header = new_chapter_n_header();
+		chaptern_header_t *header = chaptern_header_create();
 
 		if( ! header )
 		{
@@ -101,52 +106,65 @@ chapter_n_t * new_chapter_n_journal( void )
 		chaptern->header = header;
 
 		chaptern->num_notes = 0;
-		for( i = 0 ; i < MAX_CHAPTER_N_NOTES ; i++ )
+		for( i = 0 ; i < MAX_CHAPTERN_NOTES ; i++ )
 		{
 			chaptern->notes[i] = NULL;
 		}
 		
-		memset( chaptern->offbits, 0, 16 );
+		chaptern->offbits = ( char *)malloc( MAX_OFFBITS );
+		if (! chaptern->offbits )
+		{
+			chaptern_destroy( &chaptern );
+			return NULL;
+		}
+			
+		memset( chaptern->offbits, 0, MAX_OFFBITS );
 	}
 
 	return chaptern;
 }
 
-void chapter_n_destroy( chapter_n_t **chapter_n )
+void chaptern_destroy( chaptern_t **chaptern )
 {
 	int i;
-	if( ! chapter_n ) return;
-	if( ! *chapter_n ) return;
+	if( ! chaptern ) return;
+	if( ! *chaptern ) return;
 
-	for( i = 0 ; i < MAX_CHAPTER_N_NOTES ; i++ )
+	for( i = 0 ; i < MAX_CHAPTERN_NOTES ; i++ )
 	{
-		if( (*chapter_n)->notes[i] )
+		if( (*chaptern)->notes[i] )
 		{
-			midi_note_destroy( &( (*chapter_n)->notes[i] ) );
+			midi_note_destroy( &( (*chaptern)->notes[i] ) );
 		}
 	}
 
-	if( (*chapter_n)->header )
+	if( (*chaptern)->offbits )
 	{
-		chapter_n_header_destroy( &( (*chapter_n)->header ) );
-		(*chapter_n)->header = NULL;
+		free( (*chaptern)->offbits );
+		(*chaptern)->offbits = NULL;
 	}
 
-	free( *chapter_n );
+	if( (*chaptern)->header )
+	{
+		chaptern_header_destroy( &( (*chaptern)->header ) );
+		(*chaptern)->header = NULL;
+	}
 
-	*chapter_n = NULL;
+	free( *chaptern );
+
+	*chaptern = NULL;
 
 	return;
 }
 
-void channel_journal_destroy( channel_journal_t **channel )
+void channel_destroy( channel_journal_t **channel )
 {
 	if( ! channel ) return;
 	if( ! *channel ) return;
 
 	if( (*channel)->chapter_n )
 	{
-		chapter_n_destroy( &( (*channel)->chapter_n ) );
+		chaptern_destroy( &( (*channel)->chapter_n ) );
 	}
 
 	if( (*channel)->header )
@@ -158,31 +176,31 @@ void channel_journal_destroy( channel_journal_t **channel )
 	*channel = NULL;
 }
 
-channel_journal_t * new_channel_journal( void )
+channel_journal_t * channel_create( void )
 {
 	channel_journal_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
-	chapter_n_t *new_chapter_n = NULL;
+	chaptern_t *new_chapter_n = NULL;
 	
 	new_channel = ( channel_journal_t * ) malloc( sizeof( channel_journal_t ) );
 
 	if( ! new_channel ) return NULL;
 
-	new_header = new_channel_header();
+	new_header = channel_header_create();
 
 	if( ! new_header )
 	{
-		channel_journal_destroy( &new_channel );
+		channel_destroy( &new_channel );
 		return NULL;
 	}
 
 	new_channel->header = new_header;
 
-	new_chapter_n = new_chapter_n_journal();
+	new_chapter_n = chaptern_create();
 
 	if( ! new_chapter_n )
 	{
-		channel_journal_destroy( &new_channel );
+		channel_destroy( &new_channel );
 		return NULL;
 	}
 
@@ -191,14 +209,12 @@ channel_journal_t * new_channel_journal( void )
 	return new_channel;
 }
 
-
-
-int midi_journal_init( midi_journal_t **journal )
+int journal_init( journal_t **journal )
 {
 	journal_header_t *header;
 	unsigned char i;
 
-	*journal = ( midi_journal_t * ) malloc( sizeof ( midi_journal_t ) );
+	*journal = ( journal_t * ) malloc( sizeof ( journal_t ) );
 
 	if( ! journal )
 	{
@@ -224,7 +240,7 @@ int midi_journal_init( midi_journal_t **journal )
 	return 0;
 }
 
-void midi_journal_destroy( midi_journal_t **journal )
+void journal_destroy( journal_t **journal )
 {
 	unsigned int i = 0;
 
@@ -235,21 +251,20 @@ void midi_journal_destroy( midi_journal_t **journal )
 	{
 		if( (*journal)->channels[i] )
 		{
-			channel_journal_destroy( &( (*journal)->channels[i] ) );
+			channel_destroy( &( (*journal)->channels[i] ) );
 		}
 	}
 
 	if( (*journal)->header )
 	{
-		free( (*journal)->header );
-		(*journal)->header = NULL;
+		journal_header_destroy( &( (*journal)->header ) );
 	}
 
 	free( *journal );
 	*journal = NULL;
 }
 
-void midi_journal_add_note( midi_journal_t *journal, uint32_t seq, char channel, char note, char velocity )
+void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char note, char velocity )
 {
 	uint16_t note_slot = 0;
 	midi_note_t *new_note = NULL;
@@ -260,7 +275,7 @@ void midi_journal_add_note( midi_journal_t *journal, uint32_t seq, char channel,
 
 	if( ! journal->channels[ channel - 1 ] )
 	{
-		channel_journal_t *channel_journal = new_channel_journal();
+		channel_journal_t *channel_journal = channel_create();
 
 		if( ! channel_journal ) return;
 		journal->channels[ channel - 1 ] = channel_journal;
@@ -292,9 +307,9 @@ void midi_journal_add_note( midi_journal_t *journal, uint32_t seq, char channel,
 		return;
 	}
 
-	if( journal->channels[ channel - 1 ]->chapter_n->num_notes == MAX_CHAPTER_N_NOTES ) return;
+	if( journal->channels[ channel - 1 ]->chapter_n->num_notes == MAX_CHAPTERN_NOTES ) return;
 
-	new_note = new_midi_note();
+	new_note = midi_note_create();
 	if(! new_note ) return;
 
 	new_note->num = note;
@@ -323,14 +338,14 @@ void midi_note_dump( midi_note_t *note )
 	fprintf(stderr, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
 }
 
-void chapter_n_header_dump( chapter_n_header_t *header )
+void chapter_n_header_dump( chaptern_header_t *header )
 {
 	if( ! header ) return;
 
 	fprintf(stderr, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
 }
 
-void chapter_n_dump( chapter_n_t *chaptern )
+void chapter_n_dump( chaptern_t *chaptern )
 {
 	uint16_t i = 0;
 
@@ -343,7 +358,7 @@ void chapter_n_dump( chapter_n_t *chaptern )
 		midi_note_dump( chaptern->notes[i] );
 	}
 	
-	for( i = 0 ; i < 16 ; i++ )
+	for( i = chaptern->header->low; i <= chaptern->header->high ; i++ )
 	{
 		fprintf(stderr, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
 	}
@@ -377,7 +392,7 @@ void journal_header_dump( journal_header_t *header )
 	fprintf(stderr, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
 }
 
-void journal_dump( midi_journal_t *journal )
+void journal_dump( journal_t *journal )
 {
 	unsigned int i = 0;
 	if( ! journal ) return;

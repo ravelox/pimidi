@@ -14,7 +14,7 @@ typedef struct net_ctx_t {
 	uint16_t	port;
 	time_t		start;
 	char * 		ip_address;
-	midi_journal_t	*journal;
+	journal_t	*journal;
 } net_ctx_t;
 
 
