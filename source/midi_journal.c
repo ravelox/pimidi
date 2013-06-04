@@ -157,7 +157,7 @@ void chaptern_destroy( chaptern_t **chaptern )
 	return;
 }
 
-void channel_destroy( channel_journal_t **channel )
+void channel_destroy( channel_t **channel )
 {
 	if( ! channel ) return;
 	if( ! *channel ) return;
@@ -176,13 +176,13 @@ void channel_destroy( channel_journal_t **channel )
 	*channel = NULL;
 }
 
-channel_journal_t * channel_create( void )
+channel_t * channel_create( void )
 {
-	channel_journal_t *new_channel = NULL;
+	channel_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
 	chaptern_t *new_chapter_n = NULL;
 	
-	new_channel = ( channel_journal_t * ) malloc( sizeof( channel_journal_t ) );
+	new_channel = ( channel_t * ) malloc( sizeof( channel_t ) );
 
 	if( ! new_channel ) return NULL;
 
@@ -275,7 +275,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 
 	if( ! journal->channels[ channel - 1 ] )
 	{
-		channel_journal_t *channel_journal = channel_create();
+		channel_t *channel_journal = channel_create();
 
 		if( ! channel_journal ) return;
 		journal->channels[ channel - 1 ] = channel_journal;
@@ -373,7 +373,7 @@ void channel_header_dump( channel_header_t *header )
 	fprintf(stderr, "Channel #%d (Header: S=%d H=%d len=%u bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
 }
 
-void channel_journal_dump( channel_journal_t *channel )
+void channel_journal_dump( channel_t *channel )
 {
 	if( ! channel ) return;
 
@@ -418,6 +418,7 @@ uint16_t calc_channel_size( channel_t *channel )
 
 	return size;
 }
+
 void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
 {
 	int i;
@@ -442,7 +443,7 @@ void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
 		}
 
 		*buffer = (char *)realloc( *buffer, *size + sizeof( channel_header_t ) );
-		*p = *buffer + *size;
+		*p = (*buffer) + *size;
 
 		channel_size = calc_channel_size( journal->channels[i] );
 

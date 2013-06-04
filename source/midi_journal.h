@@ -48,16 +48,16 @@ typedef struct chaptern_t {
 	char			*offbits;
 } chaptern_t;
 
-typedef struct channel_journal_t {
+typedef struct channel_t {
 	channel_header_t *header;
 	chaptern_t *chapter_n;
-} channel_journal_t;
+} channel_t;
 
 #define MAX_MIDI_CHANNELS	16
 
 typedef struct journal_t {
 	journal_header_t *header;
-	channel_journal_t *channels[MAX_MIDI_CHANNELS];
+	channel_t *channels[MAX_MIDI_CHANNELS];
 } journal_t;
 
 
@@ -76,8 +76,8 @@ void midi_note_destroy( midi_note_t **note );
 chaptern_t * chaptern_create( void );
 void chaptern_destroy( chaptern_t **chapter_n );
 
-channel_journal_t * channel_create( void );
-void channel_destroy( channel_journal_t **channel );
+channel_t * channel_create( void );
+void channel_destroy( channel_t **channel );
 
 int journal_init( journal_t **journal );
 void journal_destroy( journal_t **journal );
@@ -85,7 +85,7 @@ void journal_destroy( journal_t **journal );
 void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char note, char velocity );
 
 void channel_header_dump( channel_header_t *header );
-void channel_journal_dump( channel_journal_t *channel );
+void channel_journal_dump( channel_t *channel );
 void journal_header_dump( journal_header_t *header );
 void journal_dump( journal_t *journal );
 
