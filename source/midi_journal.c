@@ -162,9 +162,9 @@ void channel_destroy( channel_t **channel )
 	if( ! channel ) return;
 	if( ! *channel ) return;
 
-	if( (*channel)->chapter_n )
+	if( (*channel)->chaptern )
 	{
-		chaptern_destroy( &( (*channel)->chapter_n ) );
+		chaptern_destroy( &( (*channel)->chaptern ) );
 	}
 
 	if( (*channel)->header )
@@ -180,7 +180,7 @@ channel_t * channel_create( void )
 {
 	channel_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
-	chaptern_t *new_chapter_n = NULL;
+	chaptern_t *new_chaptern = NULL;
 	
 	new_channel = ( channel_t * ) malloc( sizeof( channel_t ) );
 
@@ -196,15 +196,15 @@ channel_t * channel_create( void )
 
 	new_channel->header = new_header;
 
-	new_chapter_n = chaptern_create();
+	new_chaptern = chaptern_create();
 
-	if( ! new_chapter_n )
+	if( ! new_chaptern )
 	{
 		channel_destroy( &new_channel );
 		return NULL;
 	}
 
-	new_channel->chapter_n = new_chapter_n;
+	new_channel->chaptern = new_chaptern;
 		
 	return new_channel;
 }
@@ -291,23 +291,23 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 		shift = (note - ( offset * 8 )) - 1;
 
 		// Set low and high values;
-		if( offset > journal->channels[channel - 1]->chapter_n->header->high )
+		if( offset > journal->channels[channel - 1]->chaptern->header->high )
 		{
-			journal->channels[channel - 1]->chapter_n->header->high = offset;
+			journal->channels[channel - 1]->chaptern->header->high = offset;
 		}
 
-		if( offset < journal->channels[channel - 1]->chapter_n->header->low )
+		if( offset < journal->channels[channel - 1]->chaptern->header->low )
 		{
-			journal->channels[channel - 1]->chapter_n->header->low = offset;
+			journal->channels[channel - 1]->chaptern->header->low = offset;
 		}
 
 		journal->header->seq = seq;
-		journal->channels[channel - 1]->chapter_n->offbits[offset] |=  ( 1 << shift );
+		journal->channels[channel - 1]->chaptern->offbits[offset] |=  ( 1 << shift );
 
 		return;
 	}
 
-	if( journal->channels[ channel - 1 ]->chapter_n->num_notes == MAX_CHAPTERN_NOTES ) return;
+	if( journal->channels[ channel - 1 ]->chaptern->num_notes == MAX_CHAPTERN_NOTES ) return;
 
 	new_note = midi_note_create();
 	if(! new_note ) return;
@@ -315,9 +315,9 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 	new_note->num = note;
 	new_note->velocity = velocity;
 
-	note_slot = journal->channels[ channel - 1]->chapter_n->num_notes++;
+	note_slot = journal->channels[ channel - 1]->chaptern->num_notes++;
 
-	journal->channels[ channel - 1]->chapter_n->notes[note_slot] = new_note;
+	journal->channels[ channel - 1]->chaptern->notes[note_slot] = new_note;
 
 	journal->channels[ channel - 1]->header->bitfield |= CHAPTER_N;
 
@@ -338,20 +338,20 @@ void midi_note_dump( midi_note_t *note )
 	fprintf(stderr, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
 }
 
-void chapter_n_header_dump( chaptern_header_t *header )
+void chaptern_header_dump( chaptern_header_t *header )
 {
 	if( ! header ) return;
 
 	fprintf(stderr, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
 }
 
-void chapter_n_dump( chaptern_t *chaptern )
+void chaptern_dump( chaptern_t *chaptern )
 {
 	uint16_t i = 0;
 
 	if( ! chaptern ) return;
 
-	chapter_n_header_dump( chaptern->header );
+	chaptern_header_dump( chaptern->header );
 
 	for( i = 0 ; i < chaptern->num_notes ; i++ )
 	{
@@ -381,7 +381,7 @@ void channel_journal_dump( channel_t *channel )
 
 	if( channel->header->bitfield && CHAPTER_N )
 	{
-		chapter_n_dump( channel->chapter_n );
+		chaptern_dump( channel->chaptern );
 	}
 }
 
@@ -405,25 +405,73 @@ void journal_dump( journal_t *journal )
 	}
 }
 
-uint16_t calc_channel_size( channel_t *channel )
+uint16_t calc_chaptern_size( chaptern_t *chaptern )
 {
-
 	uint16_t size = 0;
 
-	if( ! channel ) return 0;
+	if( ! chaptern ) return 0;
 
-	size += sizeof( channel_header_t );
-	
 	size += sizeof( chaptern_header_t );
 
+	size += chaptern->num_notes * sizeof( midi_note_t );
+
+	if( ( chaptern->header->high - chaptern->header->low ) > 0 )
+	{
+		size += (chaptern->header->high - chaptern->header->low) + 1;
+	}
+
 	return size;
+}
+
+void journal_add_chaptern_to_buffer( char **buffer, uint32_t *size, chaptern_t *chaptern )
+{
+	char *p = NULL;
+
+	if( ! chaptern ) return;
+
+	if( chaptern->num_notes > 0 )
+	{
+		*buffer = (char *)realloc( *buffer, *size + ( chaptern->num_notes * sizeof(midi_note_t) ) );
+		p = (*buffer) + *size;
+
+		memcpy( p, chaptern->notes, chaptern->num_notes * sizeof( midi_note_t ) );
+
+		*size += chaptern->num_notes * sizeof( midi_note_t );
+	}
+
+	if( ( chaptern->header->high - chaptern->header->low ) > 0 )
+	{
+		char num_offbits = ( chaptern->header->high - chaptern->header->low ) + 1;
+
+		*buffer = (char *)realloc( *buffer, *size + num_offbits );
+		p = (*buffer) + *size;
+
+		memcpy( p, chaptern->offbits[ chaptern->header->low - 1 ], num_offbits );
+		*size += num_offbits;
+	}
+
+}
+
+void journal_add_channel_to_buffer( char **buffer, uint32_t *size, channel_t *channel )
+{
+	char *p = NULL;
+
+	if( ! channel ) return ;
+
+	*buffer = (char *)realloc( *buffer, *size + sizeof( channel_header_t ) );
+	
+	p = (*buffer) + *size;
+
+	memcpy( p, channel->header, sizeof( channel_header_t ) );
+
+	*size += sizeof( channel_header_t );
+
+	journal_add_chaptern_to_buffer( buffer, size, channel->chaptern );
 }
 
 void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
 {
 	int i;
-	char *p;
-	uint16_t channel_size;
 
 	*buffer = NULL;
 	*size = 0;
@@ -442,11 +490,8 @@ void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
 			*size += sizeof( journal_header_t );
 		}
 
-		*buffer = (char *)realloc( *buffer, *size + sizeof( channel_header_t ) );
-		*p = (*buffer) + *size;
-
-		channel_size = calc_channel_size( journal->channels[i] );
-
-		//memcpy( *buffer, journal->channels[i]->header, sizeof( channel_header_t ) );
+		journal_add_channel_to_buffer( buffer, size, journal->channels[i] );
 	}
+
+	fprintf(stderr, "Buffer size for journal is %u\n", *size );
 }

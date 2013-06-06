@@ -50,7 +50,7 @@ typedef struct chaptern_t {
 
 typedef struct channel_t {
 	channel_header_t *header;
-	chaptern_t *chapter_n;
+	chaptern_t *chaptern;
 } channel_t;
 
 #define MAX_MIDI_CHANNELS	16
@@ -74,7 +74,7 @@ midi_note_t * midi_note_create( void );
 void midi_note_destroy( midi_note_t **note );
 
 chaptern_t * chaptern_create( void );
-void chaptern_destroy( chaptern_t **chapter_n );
+void chaptern_destroy( chaptern_t **chaptern );
 
 channel_t * channel_create( void );
 void channel_destroy( channel_t **channel );
