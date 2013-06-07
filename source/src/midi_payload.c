@@ -7,32 +7,14 @@
 #include "midi_payload.h"
 #include "utils.h"
 
-midi_payload_header_t * midi_payload_header_create( void )
-{
-	midi_payload_header_t *header = NULL;
-
-	header = (midi_payload_header_t *)malloc( sizeof( midi_payload_header_t ) );
-
-	if( ! header) return NULL;
-
-	memset( header, 0 , sizeof( midi_payload_header_t ) );
-
-	return header;
-}
-
-void midi_payload_header_destroy( midi_payload_header_t **header )
-{
-	FREENULL( (void **)header );
-}
-
 void midi_payload_destroy( midi_payload_t **payload )
 {
 	if( ! payload ) return;
 	if( ! *payload ) return;
 
-	if( (*payload)->header )
+	if( (*payload)->buffer )
 	{
-		midi_payload_header_destroy( &( (*payload)->header) );
+		FREENULL( (void **)&((*payload)->buffer) );
 	}
 
 	FREENULL( (void **)payload );
@@ -46,13 +28,43 @@ midi_payload_t * midi_payload_create( void )
 
 	if( ! payload ) return NULL;
 
-	payload->header = midi_payload_header_create();
-
-	if( ! payload->header )
-	{
-		midi_payload_destroy( &payload );
-		return NULL;
-	}
+	memset( payload, 0, sizeof( midi_payload_t ) );
+	payload->buffer = NULL;
 
 	return payload;
+}
+
+void payload_set_b( midi_payload_t *payload )
+{
+	if(! payload) return;
+
+	payload->header |= PAYLOAD_HEADER_B;
+}
+
+void payload_set_j( midi_payload_t *payload )
+{
+	if( ! payload ) return;
+
+	payload->header |= PAYLOAD_HEADER_J;
+}
+
+void payload_set_z( midi_payload_t *payload )
+{
+	if( ! payload ) return;
+
+	payload->header |= PAYLOAD_HEADER_Z;
+}
+
+void payload_set_p( midi_payload_t *payload )
+{
+	if( ! payload ) return;
+
+	payload->header |= PAYLOAD_HEADER_P;
+}
+
+void payload_set_buffer( midi_payload_t *payload, char *buffer )
+{
+	if( ! payload ) return;
+
+	payload->buffer = buffer;
 }

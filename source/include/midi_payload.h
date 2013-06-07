@@ -9,9 +9,15 @@ typedef struct midi_payload_header_t {
 	unsigned char	len:4;
 } midi_payload_header_t;
 
+#define PAYLOAD_HEADER_B	0x80
+#define PAYLOAD_HEADER_J	0x40
+#define PAYLOAD_HEADER_Z	0x20
+#define PAYLOAD_HEADER_P	0x10
+#define PAYLOAD_HEADER_LEN	0x0f
+
 typedef struct midi_payload_t {
-	midi_payload_header_t	*header;
-	char			*payload;
+	unsigned char	header;
+	char		*buffer;
 } midi_payload_t;
 
 #endif

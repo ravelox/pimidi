@@ -494,4 +494,5 @@ void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
 	}
 
 	fprintf(stderr, "Buffer size for journal is %u\n", *size );
+	hex_dump( *buffer, *size );
 }

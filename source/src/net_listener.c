@@ -235,15 +235,8 @@ int net_socket_setup( void )
 
 	num_sockets = 0;
 	control_socket = net_socket_create( 5004 );
-	printf("Control Socket: %d\n", control_socket);
 	data_socket = net_socket_create( 5005 );
-	printf("Data Socket: %d\n", data_socket);
 	midi_socket = net_socket_create( 5006 );
-	printf("MIDI Socket: %d\n", midi_socket);
 
-	for( i = 0 ; i < num_sockets ; i++ )
-	{
-		printf("Socket(%d)=%d\n", i, sockets[i]);
-	}
 	return 0;
 }
