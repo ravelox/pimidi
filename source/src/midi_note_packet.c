@@ -31,10 +31,14 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 {
 	int ret = 0;
 
+
+	*midi_note = NULL;
+
 	if( ! packet ) return -1;
 
 	if( packet_len != sizeof( midi_note_packet_t ) )
 	{
+		fprintf(stderr, "Expecting %d, got %zd\n", sizeof( midi_note_packet_t ), packet_len );
 		return -1;
 	}
 
@@ -42,7 +46,7 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 	
 	if( ! *midi_note ) return -1;
 
-	memcpy( *midi_note, packet, packet_len );
+	memcpy( *midi_note, packet, sizeof( midi_note_packet_t ));
 
 	return ret;
 }
@@ -53,8 +57,8 @@ void midi_note_packet_dump( midi_note_packet_t *note_packet )
 	if(! note_packet ) return;
 
 	fprintf( stderr, "Note Packet:\n");
-	fprintf( stderr, "\tSig     : %2x\n", note_packet->signature );
-	fprintf( stderr, "\tChannel : %2d\n", note_packet->channel );
-	fprintf( stderr, "\tNote    : %3d\n", note_packet->note );
-	fprintf( stderr, "\tVelocity: %3d\n", note_packet->velocity );
+	fprintf( stderr, "\tCommand : %02x\n", note_packet->command );
+	fprintf( stderr, "\tChannel : %02x\n", note_packet->channel );
+	fprintf( stderr, "\tNote    : %02x\n", note_packet->note );
+	fprintf( stderr, "\tVelocity: %02x\n", note_packet->velocity );
 }

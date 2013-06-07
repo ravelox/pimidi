@@ -189,7 +189,7 @@ int net_socket_listener( void )
 				midi_note_packet_t *note_packet;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
-				ret = midi_note_packet_unpack( &note_packet, packet, recv_len );
+				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 
 				midi_note_packet_dump( note_packet );
 

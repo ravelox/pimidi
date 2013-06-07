@@ -2,16 +2,16 @@
 #define MIDI_JOURNAL_H
 
 typedef struct journal_header_t {
-	unsigned	bitfield:4; // SYAH
-	unsigned 	totchan:4;
+	unsigned char	bitfield:4; // SYAH
+	unsigned char	totchan:4;
 	uint16_t	seq;
 } journal_header_t;
 
 typedef struct channel_header_t {
-	unsigned	S:1;
-	unsigned	chan:4;
-	unsigned	H:1;
-	unsigned	len:10;
+	unsigned char	S:1;
+	unsigned char	chan:4;
+	unsigned char	H:1;
+	unsigned int	len:10;
 	uint8_t		bitfield; // PCMWNETA
 } channel_header_t;
 
@@ -28,17 +28,17 @@ typedef struct channel_header_t {
 #define MAX_OFFBITS		16
 
 typedef struct chaptern_header_t {
-	unsigned	B:1;
-	unsigned	len:7;
-	unsigned	low:4;
-	unsigned	high:4;
+	unsigned char	B:1;
+	unsigned char	len:7;
+	unsigned char	low:4;
+	unsigned char	high:4;
 } chaptern_header_t;
 
 typedef struct midi_note_t {
-	unsigned	S:1;
-	unsigned	num:7;
-	unsigned	Y:1;
-	unsigned	velocity:7;
+	unsigned char	S:1;
+	unsigned char	num:7;
+	unsigned char	Y:1;
+	unsigned char	velocity:7;
 } midi_note_t;
 
 typedef struct chaptern_t {

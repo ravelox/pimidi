@@ -446,7 +446,7 @@ void journal_add_chaptern_to_buffer( char **buffer, uint32_t *size, chaptern_t *
 		*buffer = (char *)realloc( *buffer, *size + num_offbits );
 		p = (*buffer) + *size;
 
-		memcpy( p, chaptern->offbits[ chaptern->header->low - 1 ], num_offbits );
+		memcpy( p, chaptern->offbits + chaptern->header->low - 1, num_offbits );
 		*size += num_offbits;
 	}
 
