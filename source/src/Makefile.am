@@ -1,19 +1,25 @@
-bin_PROGRAMS = policy-milter
+bin_PROGRAMS = net-midi
 
-policy_milter_SOURCES = \
-		pm_main.c \
-		avl_tree.c \
-		pm_match.c \
-		pm_policy.c \
-		pm_daemon.c \
-		pm_debug.c \
-		pm_syslog.c \
-		pm_tempfail.c
+net_midi_SOURCES = \
+	avahi_test.c \
+	cmd_end_handler.c \
+	cmd_inv_handler.c \
+	cmd_sync_handler.c \
+	midi_journal.c \
+	midi_note_packet.c \
+	midi_payload.c \
+	net_applemidi.c \
+	net_connection.c \
+	net_listener.c \
+	net_midi.c \
+	parse_test.c \
+	rtp_packet.c \
+	utils.c 
 
-policy_milter_LDADD	= -lmilter -lpthread
+net_midi_LDADD	= 
 
-policy_milter_LDFLAGS	= 
+net_midi_LDFLAGS	= 
 
-EXTRA_DIST = *.h Makefile.unix
+EXTRA_DIST = *.h
 
 INCLUDES =

@@ -1,3 +1,3 @@
-SUBDIRS = src data doc
+SUBDIRS = src
 
-EXTRA_DIST = policy-milter.spec
+EXTRA_DIST =
