@@ -1,7 +1,10 @@
-bin_PROGRAMS = net-midi
+bin_PROGRAMS = net-midi avahi-test 
+
+avahi_test_SOURCES = \
+	avahi_test.c
 
 net_midi_SOURCES = \
-	avahi_test.c \
+	net_midi.c \
 	cmd_end_handler.c \
 	cmd_inv_handler.c \
 	cmd_sync_handler.c \
@@ -11,15 +14,15 @@ net_midi_SOURCES = \
 	net_applemidi.c \
 	net_connection.c \
 	net_listener.c \
-	net_midi.c \
-	parse_test.c \
 	rtp_packet.c \
 	utils.c 
 
 net_midi_LDADD	= 
 
-net_midi_LDFLAGS	= 
+net_midi_LDFLAGS = 
+
+avahi_test_LDADD = -lavahi-client
 
 EXTRA_DIST = *.h
 
-INCLUDES =
+INCLUDES = -I ../include
