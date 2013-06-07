@@ -23,6 +23,6 @@ net_midi_LDFLAGS =
 
 avahi_test_LDADD = -lavahi-client
 
-EXTRA_DIST = *.h
+EXTRA_DIST = 
 
 INCLUDES = -I ../include

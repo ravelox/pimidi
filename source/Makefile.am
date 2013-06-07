@@ -1,4 +1,4 @@
 SUBDIRS = src
 
 CPPFLAGS = '-I ./include'
-EXTRA_DIST =
+EXTRA_DIST = include
