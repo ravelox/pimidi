@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -x
+
+rm -f Makefile
+
+aclocal 
+automake --add-missing --copy
+autoconf
