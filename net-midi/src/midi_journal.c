@@ -143,7 +143,8 @@ chaptern_header_t * chaptern_header_create( void )
 	if( header )
 	{
 		memset( header, 0 , sizeof( chaptern_header_t) );
-		header->low = 0xf;
+		header->low = 0x0f;
+		header->high = 0x01;
 	}
 
 	return header;
@@ -204,7 +205,8 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 	char *offbits_buffer = NULL;
 	char *p = NULL;
 	int i = 0;
-	size_t header_size, note_size, note_buffer_size, offbits_size;
+	size_t header_size, note_size, note_buffer_size;
+	int offbits_size;
 
 	*packed = NULL;
 	*size = 0;
@@ -213,7 +215,11 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 	if( ! chaptern ) return;
 
 	chaptern_header_pack( chaptern->header, &packed_header, &header_size) ;
-	*size += header_size;
+
+	if( packed_header )
+	{
+		*size += header_size;
+	}
 
 	if( chaptern->num_notes > 0 )
 	{
@@ -257,7 +263,10 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 	memcpy( p, note_buffer, note_buffer_size );
 	p+= note_buffer_size;
 
-	memcpy( p, offbits_buffer, offbits_size );
+	if( offbits_buffer )
+	{
+		memcpy( p, offbits_buffer, offbits_size );
+	}
 
 chaptern_pack_cleanup:
 	FREENULL( (void **)&packed_header );
@@ -464,7 +473,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 	// Join it all together
 
 	*packed = ( char * )malloc( packed_journal_header_size + packed_channel_buffer_size );
-	p = packed;
+	p = *packed;
 	memcpy( *packed, packed_journal_header, packed_journal_header_size );
 	*size += packed_journal_header_size;
 	p += packed_journal_header_size;
@@ -542,6 +551,9 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 
 	if( channel < 1 || channel > MAX_MIDI_CHANNELS ) return;
 
+	// Set Journal Header A flag
+	journal->header->bitfield |= 0x02;
+	
 	if( ! journal->channels[ channel - 1 ] )
 	{
 		channel_t *channel_journal = channel_create();

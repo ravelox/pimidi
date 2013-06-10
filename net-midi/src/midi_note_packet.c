@@ -46,10 +46,10 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 	
 	if( ! *midi_note ) return -1;
 
-	(*midi_note)->channel = packet[0] & 0x07;
-	(*midi_note)->command = packet[1] & 0x07;
-	(*midi_note)->note = packet[2];
-	(*midi_note)->velocity = packet[3];
+	(*midi_note)->command = (packet[0] & 0xf0) >> 4 ;
+	(*midi_note)->channel = (packet[0] & 0x0f);
+	(*midi_note)->note = ( packet[1] & 0x7f );
+	(*midi_note)->velocity = ( packet[2] & 0x7f );
 
 	return ret;
 }
