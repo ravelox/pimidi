@@ -2,18 +2,20 @@
 #define MIDI_JOURNAL_H
 
 typedef struct journal_header_t {
-	unsigned char	totchan:4;
-	unsigned char	bitfield:4; // SYAH
+	uint8_t	bitfield; // SYAH
+	uint8_t totchan;
 	uint16_t	seq;
 } journal_header_t;
+#define JOURNAL_HEADER_PACKED_SIZE	3
 
 typedef struct channel_header_t {
-	unsigned int	len:10;
-	unsigned char	H:1;
-	unsigned char	chan:4;
 	unsigned char	S:1;
+	unsigned char	chan:4;
+	unsigned char	H:1;
+	unsigned int	len:10;
 	uint8_t		bitfield; // PCMWNETA
 } channel_header_t;
+#define CHANNEL_HEADER_PACKED_SIZE	3
 
 #define CHAPTER_P	0x80
 #define CHAPTER_C	0x40
@@ -28,18 +30,20 @@ typedef struct channel_header_t {
 #define MAX_OFFBITS		16
 
 typedef struct chaptern_header_t {
-	unsigned char	high:4;
-	unsigned char	low:4;
-	unsigned char	len:7;
 	unsigned char	B:1;
+	unsigned char	len:7;
+	unsigned char	low:4;
+	unsigned char	high:4;
 } chaptern_header_t;
+#define CHAPTERN_HEADER_PACKED_SIZE	2
 
 typedef struct midi_note_t {
-	unsigned char	velocity:7;
-	unsigned char	Y:1;
-	unsigned char	num:7;
 	unsigned char	S:1;
+	unsigned char	num:7;
+	unsigned char	Y:1;
+	unsigned char	velocity:7;
 } midi_note_t;
+#define MIDI_NOTE_PACKED_SIZE	2
 
 typedef struct chaptern_t {
 	chaptern_header_t	*header;

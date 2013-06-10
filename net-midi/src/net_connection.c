@@ -142,7 +142,8 @@ void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char 
 {
 	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
 
-	ctx[ctx_id]->seq += 1;
+	//ctx[ctx_id]->seq += 1;
+	ctx[ctx_id]->seq = 0x6390;
 
 	fprintf(stderr, "Adding note. Seq = %u\n", ctx[ctx_id]->seq );
 	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, channel, note, velocity );
@@ -157,7 +158,11 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 
 	journal_dump( ctx[ctx_id]->journal );
 
-	journal_buffer_create( ctx[ctx_id]->journal, &buffer, &size );
+	journal_pack( ctx[ctx_id]->journal, &buffer, &size );
+	fprintf(stderr, "\n\nJournal Buffer Size = %u\n", size );
+	hex_dump( buffer, size );
+	FREENULL( (void **)&buffer );
+	fprintf(stderr, "\n\n");
 
 	net_ctx_reset( ctx[ctx_id] );
 }

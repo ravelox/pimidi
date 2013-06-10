@@ -7,6 +7,31 @@
 #include "midi_journal.h"
 #include "utils.h"
 
+void journal_header_pack( journal_header_t *header , char **packed , size_t *size )
+{
+	unsigned char *p = NULL;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! header ) return;
+
+	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
+
+	if( ! packed ) return;
+
+	p = *packed;
+
+	*p |= ( ( header->bitfield & 0x0f ) << 4 );
+	*p |= ( header->totchan & 0x0f ) ;
+
+	p += sizeof( char );
+	*size += sizeof( char );
+
+
+	put_uint16( &p, header->seq, size );
+}
+
 journal_header_t * journal_header_create( void )
 {
 	journal_header_t *journal_header = NULL;
@@ -27,6 +52,37 @@ void journal_header_destroy( journal_header_t **header )
 }
 
 
+void channel_header_pack( channel_header_t *header , char **packed , size_t *size )
+{
+	unsigned char *p = NULL;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! header ) return;
+
+	*packed = ( char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
+
+	if( ! packed ) return;
+
+	p = *packed;
+
+	*p |= ( ( header->S & 0x01 ) << 7 );
+	*p |= ( ( header->chan & 0x07 ) << 6 );
+	*p |= ( ( header->chan & 0x01 ) << 2 );
+
+	*p |= ( ( header->len & 0x0300) >> 8 );
+	p += sizeof( char );
+	*size += sizeof( char );
+
+	*p |= ( ( header->len & 0x00ff ) );
+	p += sizeof( char );
+	*size += sizeof( char );
+
+	*p = header->bitfield;
+	*size += sizeof( header->bitfield );
+}
+
 void channel_header_destroy( channel_header_t **header )
 {
 	FREENULL( (void **)header);
@@ -44,6 +100,33 @@ channel_header_t * channel_header_create( void )
 	}
 
 	return header;
+}
+
+void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *size )
+{
+	unsigned char *p = NULL;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! header ) return;
+
+	*packed = ( char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
+
+	if( ! packed ) return;
+
+	p = *packed;
+
+	*p |= ( ( header->B & 0x01 ) << 7 );
+	*p |= ( header->len & 0x7f ) ;
+
+	p += sizeof( char );
+	*size += sizeof( char );
+
+	*p |= ( ( header->low & 0x0f ) << 4 );
+	*p |= ( header->high & 0x0f );
+
+	*size += sizeof( char );
 }
 
 void chaptern_header_destroy( chaptern_header_t **header )
@@ -66,6 +149,33 @@ chaptern_header_t * chaptern_header_create( void )
 	return header;
 }
 
+void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
+{
+	unsigned char *p = NULL;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! note ) return;
+
+	*packed = ( char *)malloc( MIDI_NOTE_PACKED_SIZE );
+
+	if( ! packed ) return;
+
+	p = *packed;
+
+	*p |= ( ( note->S & 0x01 ) << 7 );
+	*p |= ( note->num & 0x7f ) ;
+
+	p += sizeof( char );
+	*size += sizeof( char );
+
+	*p |= ( ( note->Y & 0x01 ) << 7 );
+	*p |= ( note->velocity & 0x7f );
+
+	*size += sizeof( char );
+}
+
 void midi_note_destroy( midi_note_t **note )
 {
 	FREENULL( (void **)note );
@@ -85,6 +195,75 @@ midi_note_t * midi_note_create( void )
 	return note;
 }
 
+
+void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
+{
+	char *packed_header = NULL;
+	char *packed_note = NULL;
+	char *note_buffer = NULL;
+	char *offbits_buffer = NULL;
+	char *p = NULL;
+	int i = 0;
+	size_t header_size, note_size, note_buffer_size, offbits_size;
+
+	*packed = NULL;
+	*size = 0;
+
+
+	if( ! chaptern ) return;
+
+	chaptern_header_pack( chaptern->header, &packed_header, &header_size) ;
+	*size += header_size;
+
+	if( chaptern->num_notes > 0 )
+	{
+		note_buffer_size = MIDI_NOTE_PACKED_SIZE * chaptern->num_notes;
+		note_buffer = ( char * ) malloc( note_buffer_size );
+		if( note_buffer ) 
+		{
+			p = note_buffer;
+
+			for( i = 0 ; i < chaptern->num_notes ; i++ )
+			{
+				midi_note_pack( chaptern->notes[i], &packed_note, &note_size );
+				memcpy( p, packed_note, note_size );
+				p += note_size;
+				*size += note_size;
+				free( packed_note );
+			}
+		}
+	}
+
+	offbits_size = ( chaptern->header->high - chaptern->header->low ) + 1;
+	if( offbits_size > 0 )
+	{
+		offbits_buffer = ( char * )malloc( offbits_size );
+		p = chaptern->offbits + ( offbits_size - 1 );
+		memcpy( offbits_buffer, p, offbits_size );
+		*size += offbits_size;
+	}
+
+	// Now pack it all together
+
+	*packed = ( char * ) malloc( *size );
+
+	if( ! packed ) goto chaptern_pack_cleanup;
+
+	p = *packed;
+
+	memcpy( p , packed_header, header_size );
+	p += header_size;
+
+	memcpy( p, note_buffer, note_buffer_size );
+	p+= note_buffer_size;
+
+	memcpy( p, offbits_buffer, offbits_size );
+
+chaptern_pack_cleanup:
+	FREENULL( (void **)&packed_header );
+	FREENULL( (void **)&note_buffer );
+	FREENULL( (void **)&offbits_buffer );
+}
 
 chaptern_t * chaptern_create( void )
 {
@@ -157,6 +336,46 @@ void chaptern_destroy( chaptern_t **chaptern )
 	return;
 }
 
+void channel_pack( channel_t *channel, char **packed, size_t *size )
+{
+	char *packed_channel_header = NULL;
+	char *packed_chaptern = NULL;
+	
+	size_t packed_channel_header_size = 0;
+	size_t packed_chaptern_size = 0;
+
+	char *p = NULL;
+	int i = 0;
+
+	*packed = NULL;
+	*size = 0;
+
+
+	if( ! channel ) return;
+
+	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
+
+	chaptern_pack( channel->chaptern, &packed_chaptern, &packed_chaptern_size );
+
+	*packed = ( char * ) malloc( packed_channel_header_size + packed_chaptern_size );
+
+	if( ! packed ) goto channel_pack_cleanup;
+
+	p = *packed;
+
+	memcpy( p, packed_channel_header, packed_channel_header_size );
+	*size += packed_channel_header_size;
+
+	p += packed_channel_header_size;
+	
+	memcpy( p, packed_chaptern, packed_chaptern_size );
+	*size += packed_chaptern_size;
+
+channel_pack_cleanup:
+	FREENULL( (void **)&packed_channel_header );
+	FREENULL( (void **)&packed_chaptern );
+}
+
 void channel_destroy( channel_t **channel )
 {
 	if( ! channel ) return;
@@ -207,6 +426,56 @@ channel_t * channel_create( void )
 	new_channel->chaptern = new_chaptern;
 		
 	return new_channel;
+}
+
+void journal_pack( journal_t *journal, char **packed, size_t *size )
+{
+	char *packed_journal_header = NULL;
+	size_t packed_journal_header_size = 0;
+	char *packed_channel = NULL;
+	size_t packed_channel_size = 0;
+	char *packed_channel_buffer = NULL;	
+	size_t packed_channel_buffer_size = 0;
+	char *p = NULL;
+	int i = 0;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! journal ) return;
+
+	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
+
+	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
+	{
+		if( ! journal->channels[i] ) continue;
+
+		channel_pack( journal->channels[i], &packed_channel, &packed_channel_size );
+
+		packed_channel_buffer = ( char * )realloc( packed_channel_buffer, packed_channel_buffer_size + packed_channel_size );
+		if( ! packed_channel_buffer ) goto journal_pack_cleanup;
+		p = packed_channel_buffer + packed_channel_buffer_size;
+		packed_channel_buffer_size += packed_channel_size;
+		memcpy( packed_channel_buffer, packed_channel, packed_channel_size );
+
+		FREENULL( (void **)&packed_channel );
+	}
+
+	// Join it all together
+
+	*packed = ( char * )malloc( packed_journal_header_size + packed_channel_buffer_size );
+	p = packed;
+	memcpy( *packed, packed_journal_header, packed_journal_header_size );
+	*size += packed_journal_header_size;
+	p += packed_journal_header_size;
+
+	memcpy( *packed, packed_channel_buffer, packed_channel_buffer_size );
+	*size += packed_channel_buffer_size;
+	
+journal_pack_cleanup:
+	FREENULL( (void **)&packed_channel );
+	FREENULL( (void **)&packed_channel_buffer );
+	FREENULL( (void **)&packed_journal_header );
 }
 
 int journal_init( journal_t **journal )
@@ -390,6 +659,7 @@ void journal_header_dump( journal_header_t *header )
 	if( ! header ) return;
 
 	fprintf(stderr, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
+	fprintf(stderr, "Header Size = %u\n", sizeof( journal_header_t ) );
 }
 
 void journal_dump( journal_t *journal )
@@ -403,96 +673,4 @@ void journal_dump( journal_t *journal )
 	{
 		channel_journal_dump( journal->channels[i] );
 	}
-}
-
-uint16_t calc_chaptern_size( chaptern_t *chaptern )
-{
-	uint16_t size = 0;
-
-	if( ! chaptern ) return 0;
-
-	size += sizeof( chaptern_header_t );
-
-	size += chaptern->num_notes * sizeof( midi_note_t );
-
-	if( ( chaptern->header->high - chaptern->header->low ) > 0 )
-	{
-		size += (chaptern->header->high - chaptern->header->low) + 1;
-	}
-
-	return size;
-}
-
-void journal_add_chaptern_to_buffer( char **buffer, uint32_t *size, chaptern_t *chaptern )
-{
-	char *p = NULL;
-
-	if( ! chaptern ) return;
-
-	if( chaptern->num_notes > 0 )
-	{
-		*buffer = (char *)realloc( *buffer, *size + ( chaptern->num_notes * sizeof(midi_note_t) ) );
-		p = (*buffer) + *size;
-
-		memcpy( p, chaptern->notes, chaptern->num_notes * sizeof( midi_note_t ) );
-
-		*size += chaptern->num_notes * sizeof( midi_note_t );
-	}
-
-	if( ( chaptern->header->high - chaptern->header->low ) > 0 )
-	{
-		char num_offbits = ( chaptern->header->high - chaptern->header->low ) + 1;
-
-		*buffer = (char *)realloc( *buffer, *size + num_offbits );
-		p = (*buffer) + *size;
-
-		memcpy( p, chaptern->offbits + chaptern->header->low - 1, num_offbits );
-		*size += num_offbits;
-	}
-
-}
-
-void journal_add_channel_to_buffer( char **buffer, uint32_t *size, channel_t *channel )
-{
-	char *p = NULL;
-
-	if( ! channel ) return ;
-
-	*buffer = (char *)realloc( *buffer, *size + sizeof( channel_header_t ) );
-	
-	p = (*buffer) + *size;
-
-	memcpy( p, channel->header, sizeof( channel_header_t ) );
-
-	*size += sizeof( channel_header_t );
-
-	journal_add_chaptern_to_buffer( buffer, size, channel->chaptern );
-}
-
-void journal_buffer_create( journal_t *journal, char **buffer, uint32_t *size )
-{
-	int i;
-
-	*buffer = NULL;
-	*size = 0;
-
-	if( ! journal ) return;
-
-	fprintf(stderr, "\n\nJournal Buffer\n");
-	for( i = 0 ; i < MAX_MIDI_CHANNELS; i++ )
-	{
-		if( ! journal->channels[i] ) continue;
-
-		if( ! *buffer )
-		{
-			*buffer = ( char * ) malloc( sizeof( journal_header_t ) );
-			memcpy( *buffer, journal->header, sizeof( journal_header_t ) );
-			*size += sizeof( journal_header_t );
-		}
-
-		journal_add_channel_to_buffer( buffer, size, journal->channels[i] );
-	}
-
-	fprintf(stderr, "Buffer size for journal is %u\n", *size );
-	hex_dump( *buffer, *size );
 }
