@@ -14,6 +14,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 	*packed = NULL;
 	*size = 0;
 
+	fprintf( stderr, ">journal_header_pack\n");
 	if( ! header ) return;
 
 	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
@@ -23,7 +24,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 	p = *packed;
 
 	*p |= ( ( header->bitfield & 0x0f ) << 4 );
-	*p |= ( header->totchan & 0x0f ) ;
+	*p |= ( ( header->totchan == 0 ? 0 : header->totchan - 1 ) & 0x0f ) ;
 
 	p += sizeof( char );
 	*size += sizeof( char );
@@ -59,6 +60,7 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 	*packed = NULL;
 	*size = 0;
 
+	fprintf( stderr, ">channel_header_pack\n");
 	if( ! header ) return;
 
 	*packed = ( char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
@@ -69,7 +71,7 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 
 	*p |= ( ( header->S & 0x01 ) << 7 );
 	*p |= ( ( header->chan & 0x07 ) << 6 );
-	*p |= ( ( header->chan & 0x01 ) << 2 );
+	*p |= ( ( header->H & 0x01 ) << 2 );
 
 	*p |= ( ( header->len & 0x0300) >> 8 );
 	p += sizeof( char );
@@ -109,6 +111,7 @@ void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *s
 	*packed = NULL;
 	*size = 0;
 
+	fprintf(stderr, ">chaptern_header_pack\n");
 	if( ! header ) return;
 
 	*packed = ( char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
@@ -157,6 +160,7 @@ void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
 	*packed = NULL;
 	*size = 0;
 
+	fprintf(stderr, ">midi_note_pack\n");
 	if( ! note ) return;
 
 	*packed = ( char *)malloc( MIDI_NOTE_PACKED_SIZE );
@@ -211,10 +215,18 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 	*packed = NULL;
 	*size = 0;
 
+	fprintf(stderr, ">chaptern_pack\n");
+
+	header_size = note_size = note_buffer_size = 0;
 
 	if( ! chaptern ) return;
 
+	chaptern->header->len = chaptern->num_notes;
+
 	chaptern_header_pack( chaptern->header, &packed_header, &header_size) ;
+
+	fprintf(stderr, "Chapter N Header\n");
+	hex_dump( packed_header, header_size );
 
 	if( packed_header )
 	{
@@ -232,6 +244,8 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 			for( i = 0 ; i < chaptern->num_notes ; i++ )
 			{
 				midi_note_pack( chaptern->notes[i], &packed_note, &note_size );
+				fprintf(stderr, "Midi Note\n");
+				hex_dump( packed_note, note_size );
 				memcpy( p, packed_note, note_size );
 				p += note_size;
 				*size += note_size;
@@ -360,11 +374,19 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	*size = 0;
 
 
+	fprintf(stderr, ">channel_pack\n");
 	if( ! channel ) return;
 
-	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
 
 	chaptern_pack( channel->chaptern, &packed_chaptern, &packed_chaptern_size );
+	channel->header->len = packed_chaptern_size;
+	fprintf(stderr, "Chapter N\n");
+	hex_dump( packed_chaptern, packed_chaptern_size );
+
+	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
+	fprintf(stderr, "Channel Header\n");
+	hex_dump( packed_channel_header , packed_channel_header_size );
+
 
 	*packed = ( char * ) malloc( packed_channel_header_size + packed_chaptern_size );
 
@@ -451,9 +473,13 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 	*packed = NULL;
 	*size = 0;
 
+	fprintf(stderr, ">journal_pack\n");
 	if( ! journal ) return;
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
+
+	fprintf(stderr, "Packed Journal Header\n");
+	hex_dump( packed_journal_header, packed_journal_header_size );
 
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
 	{
@@ -474,11 +500,11 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	*packed = ( char * )malloc( packed_journal_header_size + packed_channel_buffer_size );
 	p = *packed;
-	memcpy( *packed, packed_journal_header, packed_journal_header_size );
+	memcpy( p, packed_journal_header, packed_journal_header_size );
 	*size += packed_journal_header_size;
 	p += packed_journal_header_size;
 
-	memcpy( *packed, packed_channel_buffer, packed_channel_buffer_size );
+	memcpy( p, packed_channel_buffer, packed_channel_buffer_size );
 	*size += packed_channel_buffer_size;
 	
 journal_pack_cleanup:
@@ -643,8 +669,6 @@ void chaptern_dump( chaptern_t *chaptern )
 	{
 		fprintf(stderr, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
 	}
-
-	fprintf(stderr, "End Chapter N\n");
 }
 
 void channel_header_dump( channel_header_t *header )
