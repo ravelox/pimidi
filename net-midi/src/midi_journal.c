@@ -29,7 +29,6 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 	p += sizeof( char );
 	*size += sizeof( char );
 
-
 	put_uint16( &p, header->seq, size );
 }
 
@@ -56,6 +55,7 @@ void journal_header_destroy( journal_header_t **header )
 void channel_header_pack( channel_header_t *header , char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
+	uint16_t temp_header = 0;
 
 	*packed = NULL;
 	*size = 0;
@@ -69,17 +69,20 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 
 	p = *packed;
 
-	*p |= ( ( header->S & 0x01 ) << 7 );
-	*p |= ( ( header->chan & 0x07 ) << 6 );
-	*p |= ( ( header->H & 0x01 ) << 2 );
+	fprintf(stderr, "Channel Header -> S    = %u\n", header->S );
+	fprintf(stderr, "Channel Header -> chan = 0x%02x\n", header->chan );
+	fprintf(stderr, "Channel Header -> H    = %u\n", header->H );
+	fprintf(stderr, "Channel Header -> len  = 0x%04x\n", header->len );
 
-	*p |= ( ( header->len & 0x0300) >> 8 );
-	p += sizeof( char );
-	*size += sizeof( char );
+	temp_header |= ( ( header->S & 0x01 ) << 15 );
+	temp_header |= ( ( ( header->chan == 0 ? 0 : header->chan - 1 ) & 0x0f ) << 11 );
+	temp_header |= ( ( header->H & 0x01 ) << 10 );
+	temp_header |= ( ( header->len & 0x03ff ) );
 
-	*p |= ( ( header->len & 0x00ff ) );
-	p += sizeof( char );
-	*size += sizeof( char );
+	temp_header = htons( temp_header );
+	memcpy( p , &temp_header, sizeof( uint16_t ) );
+	p += sizeof( uint16_t );
+	*size += sizeof( uint16_t );
 
 	*p = header->bitfield;
 	*size += sizeof( header->bitfield );
@@ -379,8 +382,8 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 
 
 	chaptern_pack( channel->chaptern, &packed_chaptern, &packed_chaptern_size );
-	channel->header->len = packed_chaptern_size;
-	fprintf(stderr, "Chapter N\n");
+	channel->header->len = packed_chaptern_size + CHANNEL_HEADER_PACKED_SIZE;
+	fprintf(stderr, "Chapter N (%u)\n", channel->header->len);
 	hex_dump( packed_chaptern, packed_chaptern_size );
 
 	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
@@ -396,7 +399,6 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 
 	memcpy( p, packed_channel_header, packed_channel_header_size );
 	*size += packed_channel_header_size;
-
 	p += packed_channel_header_size;
 	
 	memcpy( p, packed_chaptern, packed_chaptern_size );
@@ -627,6 +629,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 	journal->channels[ channel - 1]->chaptern->notes[note_slot] = new_note;
 
 	journal->channels[ channel - 1]->header->bitfield |= CHAPTER_N;
+	journal->channels[ channel - 1]->chaptern->header->B = 1;
 
 	if( journal->channels[ channel - 1 ]->header->chan != channel )
 	{
