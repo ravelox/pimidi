@@ -143,7 +143,7 @@ void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char 
 	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
 
 	//ctx[ctx_id]->seq += 1;
-	ctx[ctx_id]->seq = ntohs(0x6390);
+	ctx[ctx_id]->seq = 0x6390;
 
 	fprintf(stderr, "Adding note. Seq = %u\n", ctx[ctx_id]->seq );
 	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, channel, note, velocity );

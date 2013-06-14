@@ -79,10 +79,7 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 	temp_header |= ( ( header->H & 0x01 ) << 10 );
 	temp_header |= ( ( header->len & 0x03ff ) );
 
-	temp_header = htons( temp_header );
-	memcpy( p , &temp_header, sizeof( uint16_t ) );
-	p += sizeof( uint16_t );
-	*size += sizeof( uint16_t );
+	put_uint16( &p, temp_header, size );
 
 	*p = header->bitfield;
 	*size += sizeof( header->bitfield );
