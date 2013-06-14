@@ -140,7 +140,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 
 void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity )
 {
-	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
+	if( ctx_id > MAX_CTX - 1 ) return;
 
 	//ctx[ctx_id]->seq += 1;
 	ctx[ctx_id]->seq = 0x6390;
@@ -154,7 +154,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 	char *buffer;
 	uint32_t size;
 
-	if( ctx_id < 0 || ctx_id > MAX_CTX - 1 ) return;
+	if( ctx_id > MAX_CTX - 1 ) return;
 
 	journal_dump( ctx[ctx_id]->journal );
 

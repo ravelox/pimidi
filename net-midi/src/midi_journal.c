@@ -7,6 +7,9 @@
 #include "midi_journal.h"
 #include "utils.h"
 
+#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
+#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+
 void journal_header_pack( journal_header_t *header , char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
@@ -597,10 +600,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 		shift = (note - ( offset * 8 )) - 1;
 
 		// Set low and high values;
-		if( offset > journal->channels[channel - 1]->chaptern->header->high )
-		{
-			journal->channels[channel - 1]->chaptern->header->high = offset;
-		}
+		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );
 
 		if( offset < journal->channels[channel - 1]->chaptern->header->low )
 		{

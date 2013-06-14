@@ -13,7 +13,13 @@
 
 int main(int argc, char *argv[])
 {
-	net_socket_setup();
+
+	if( net_socket_setup() != 0 )
+	{
+		fprintf(stderr, "Unable to create sockets\n");
+		exit(1);
+	}
+
 	net_ctx_init();
 
         signal( SIGINT , net_socket_loop_shutdown);

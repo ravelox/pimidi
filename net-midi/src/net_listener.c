@@ -24,7 +24,6 @@ extern int errno;
 #include "midi_note_packet.h"
 #include "utils.h"
 
-static int control_socket, data_socket, midi_socket;
 static int num_sockets;
 static int *sockets;
 static int net_socket_shutdown;
@@ -85,7 +84,7 @@ int net_socket_create( unsigned int port )
 
 	fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
-	return new_socket;
+	return 0;
 }
 
 int net_socket_destroy( void )
@@ -233,11 +232,20 @@ void net_socket_loop_shutdown(int signal)
 int net_socket_setup( void )
 {
 	int i;
+	int ret;
 
 	num_sockets = 0;
-	control_socket = net_socket_create( 5004 );
-	data_socket = net_socket_create( 5005 );
-	midi_socket = net_socket_create( 5006 );
+
+	for( i = 5004 ; i <= 5006 ; i++ )
+	{
+		ret = net_socket_create( i );
+		fprintf(stderr, "ret = %d\n", ret);
+		if( ret != 0 )
+		{
+			fprintf(stderr, "Cannot create control/data socket on port %u: %s\n", i, strerror( errno ) );
+			return -1;
+		}
+	}
 
 	return 0;
 }
