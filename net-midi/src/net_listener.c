@@ -185,7 +185,7 @@ int net_socket_listener( void )
 			// MIDI note from sending device
 			if( packet[0] == 0xaa )
 			{
-				midi_note_packet_t *note_packet;
+				midi_note_packet_t *note_packet = NULL;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
@@ -193,10 +193,11 @@ int net_socket_listener( void )
 				midi_note_packet_dump( note_packet );
 
 				debug_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
-
 				debug_ctx_journal_dump( 0 );
 
+				// Add the NoteOff event for the same note
 				debug_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
+				debug_ctx_journal_dump( 0 );
 
 				midi_note_packet_destroy( &note_packet );
 			}
@@ -239,10 +240,9 @@ int net_socket_setup( void )
 	for( i = 5004 ; i <= 5006 ; i++ )
 	{
 		ret = net_socket_create( i );
-		fprintf(stderr, "ret = %d\n", ret);
 		if( ret != 0 )
 		{
-			fprintf(stderr, "Cannot create control/data socket on port %u: %s\n", i, strerror( errno ) );
+			fprintf(stderr, "Cannot create socket on port %u: %s\n", i, strerror( errno ) );
 			return -1;
 		}
 	}

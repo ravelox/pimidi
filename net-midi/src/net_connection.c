@@ -151,8 +151,8 @@ void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char 
 
 void debug_ctx_journal_dump( uint8_t ctx_id )
 {
-	char *buffer;
-	uint32_t size;
+	unsigned char *buffer = NULL;
+	size_t size = 0;
 
 	if( ctx_id > MAX_CTX - 1 ) return;
 

@@ -155,14 +155,17 @@ void get_uint64( void *dest, unsigned char **src, size_t *len )
 
 void hex_dump( unsigned char *buffer, size_t len )
 {
-	size_t i;
+	size_t i = 0 ;
+	unsigned char c = 0 ;
+
 	for( i = 0 ; i < len ; i++ )
 	{
 		if( i % 8 == 0 )
 		{
 			printf("\n");
 		}
-		printf("%02x %c\t", buffer[i] , isprint( buffer[i] )? buffer[i] : '.' );
+		c = buffer[i];
+		printf("%02x %c\t", c, isprint(c)  ? c : '.' );
 	}
 	printf("\n");
 }

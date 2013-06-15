@@ -23,6 +23,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
+	memset( *packed, 0 , JOURNAL_HEADER_PACKED_SIZE );
 
 	p = *packed;
 
@@ -69,6 +70,8 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 	*packed = ( char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
+
+	memset( *packed, 0, CHANNEL_HEADER_PACKED_SIZE );
 
 	p = *packed;
 
@@ -120,6 +123,7 @@ void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *s
 	*packed = ( char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
+	memset( *packed, 0 , CHAPTERN_HEADER_PACKED_SIZE );
 
 	p = *packed;
 
@@ -170,6 +174,7 @@ void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
 
 	if( ! packed ) return;
 
+	memset( *packed, 0, MIDI_NOTE_PACKED_SIZE );
 	p = *packed;
 
 	*p |= ( ( note->S & 0x01 ) << 7 );
@@ -242,6 +247,7 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 		note_buffer = ( char * ) malloc( note_buffer_size );
 		if( note_buffer ) 
 		{
+			memset( note_buffer, 0 , note_buffer_size);
 			p = note_buffer;
 
 			for( i = 0 ; i < chaptern->num_notes ; i++ )
@@ -302,6 +308,7 @@ chaptern_t * chaptern_create( void )
 	{
 		chaptern_header_t *header = chaptern_header_create();
 
+		memset( chaptern, 0, sizeof( chaptern_t ) );
 		if( ! header )
 		{
 			free( chaptern );
@@ -492,6 +499,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 		packed_channel_buffer = ( char * )realloc( packed_channel_buffer, packed_channel_buffer_size + packed_channel_size );
 		if( ! packed_channel_buffer ) goto journal_pack_cleanup;
 		p = packed_channel_buffer + packed_channel_buffer_size;
+		memset( p, 0, packed_channel_size );
 		packed_channel_buffer_size += packed_channel_size;
 		memcpy( packed_channel_buffer, packed_channel, packed_channel_size );
 
@@ -595,17 +603,16 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 	if( velocity == 0 )
 	{
 		uint8_t offset, shift;
+
 		// Which element
 		offset = note / 8;
 		shift = (note - ( offset * 8 )) - 1;
 
+		fprintf(stderr, "NoteOff: offset=%u shift=%u\n", offset, shift );
+
 		// Set low and high values;
 		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );
-
-		if( offset < journal->channels[channel - 1]->chaptern->header->low )
-		{
-			journal->channels[channel - 1]->chaptern->header->low = offset;
-		}
+		journal->channels[channel - 1]->chaptern->header->low = MIN( offset , journal->channels[channel - 1]->chaptern->header->low );
 
 		journal->header->seq = seq;
 		journal->channels[channel - 1]->chaptern->offbits[offset] |=  ( 1 << shift );
