@@ -599,6 +599,17 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 
 	}
 
+	journal->channels[ channel - 1]->header->bitfield |= CHAPTER_N;
+	journal->channels[ channel - 1]->chaptern->header->B = 1;
+
+	if( journal->channels[ channel - 1 ]->header->chan != channel )
+	{
+		journal->channels[ channel - 1]->header->chan = channel;
+		journal->header->totchan +=1;
+	}
+
+	journal->header->seq = seq;
+
 	// Store velocity 0 as NoteOff
 	if( velocity == 0 )
 	{
@@ -614,7 +625,6 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );
 		journal->channels[channel - 1]->chaptern->header->low = MIN( offset , journal->channels[channel - 1]->chaptern->header->low );
 
-		journal->header->seq = seq;
 		journal->channels[channel - 1]->chaptern->offbits[offset] |=  ( 1 << shift );
 
 		return;
@@ -631,18 +641,6 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 	note_slot = journal->channels[ channel - 1]->chaptern->num_notes++;
 
 	journal->channels[ channel - 1]->chaptern->notes[note_slot] = new_note;
-
-	journal->channels[ channel - 1]->header->bitfield |= CHAPTER_N;
-	journal->channels[ channel - 1]->chaptern->header->B = 1;
-
-	if( journal->channels[ channel - 1 ]->header->chan != channel )
-	{
-		journal->channels[ channel - 1]->header->chan = channel;
-		journal->header->totchan +=1;
-	}
-
-	journal->header->seq = seq;
-	fprintf(stderr, "Setting journal header seq to %u\n", journal->header->seq);
 }
 
 void midi_note_dump( midi_note_t *note )

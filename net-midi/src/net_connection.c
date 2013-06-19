@@ -23,7 +23,7 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->ssrc = 0;
 	ctx->send_ssrc = 0;
 	ctx->initiator = 0;
-	ctx->seq = 0;
+	ctx->seq = 0x638F;
 	FREENULL( (void **)&(ctx->ip_address) );
 	journal_destroy( &(ctx->journal) );
 	
@@ -43,7 +43,7 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->ssrc = ssrc;
 	ctx->send_ssrc = send_ssrc;
 	ctx->initiator = initiator;
-	ctx->seq = 1;
+	ctx->seq = 0x638F;
 	ctx->port = port;
 	ctx->start = time( NULL );
 
@@ -59,6 +59,7 @@ static net_ctx_t * new_net_ctx( void )
 	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
 
 	memset( new_ctx, 0, sizeof( net_ctx_t ) );
+	new_ctx->seq = 0x638F;
 
 	journal_init( &journal );
 
@@ -129,7 +130,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 				time_t now = time( NULL );
 				unsigned int send_ssrc = rand_r( (unsigned int *)&now );
 
-				net_ctx_set( ctx[i], ssrc, initiator, send_ssrc, 0, port, ip_address );
+				net_ctx_set( ctx[i], ssrc, initiator, send_ssrc, 0x638F, port, ip_address );
 				return ctx[i];
 			}
 		}
@@ -142,8 +143,7 @@ void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char 
 {
 	if( ctx_id > MAX_CTX - 1 ) return;
 
-	//ctx[ctx_id]->seq += 1;
-	ctx[ctx_id]->seq = 0x6390;
+	ctx[ctx_id]->seq += 1;
 
 	fprintf(stderr, "Adding note. Seq = %u\n", ctx[ctx_id]->seq );
 	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, channel, note, velocity );
