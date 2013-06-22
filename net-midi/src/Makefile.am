@@ -21,7 +21,7 @@ net_midi_LDADD	=
 
 net_midi_LDFLAGS = 
 
-avahi_test_LDADD = -lavahi-client
+avahi_test_LDADD = ${AVAHI_LIBS}
 
 EXTRA_DIST = 
 
