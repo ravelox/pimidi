@@ -4,6 +4,7 @@ set -x
 
 rm -f Makefile
 
-aclocal 
-automake --add-missing --copy
+aclocal
 autoconf
+
+automake --foreign --add-missing --force-missing --copy
