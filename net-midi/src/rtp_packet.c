@@ -1,39 +1,3 @@
-/*
-
-MIDI Payload ( with journal ) is like this:
-
-43 80 27 00 20 63 90 00 07 08 81 F1 27 7F
-
-// Channel header
-Set BJZP flags = 0000 ( if no journal ) and 0100 ( if journal )
-Set length = 3
-
-// MIDI Note ON/OFF
-0x90 NOTE ON 0x80 NOTE OFF
-NOTE
-VELOCITY
-
-// Journal header
-Set SYAH = 0010
-Set totchan = 0000
-SEQ NUM
-
-// Channel header
-Set S=0
-Set channel = 0000
-Set H=0
-Set Length = 0000000111
-Set chapter flags
-   N=1
-
-// Chapter N header
-Set B=1
-Set len=1
-Set low=1111
-Set high=0001
-
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -55,4 +19,44 @@ rtp_packet_t * new_rtp_packet( void )
 	}
 
 	return new;
+}
+
+int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )
+{
+	unsigned char *p;
+	size_t packed_header_buffer_size = 0;
+
+	*out_buffer = NULL;
+	*out_buffer_len = 0;
+
+	if( ! packet )
+	{
+		return 1;
+	}
+
+	packed_header_buffer_size = ( sizeof(uint8_t) * 2 ) + sizeof(uint16_t) + sizeof(uint32_t);
+	*out_buffer = (unsigned char *)malloc( packed_header_buffer_size );
+	memset( *out_buffer, 0, packed_header_buffer_size );
+
+	if( ! *out_buffer )
+	{
+		return 1;
+	}
+	
+	*out_buffer[0] |= ( packet->header.v << 6 );
+	*out_buffer[0] |= ( packet->header.p << 5 );
+	*out_buffer[0] |= ( packet->header.x << 4 );
+	*out_buffer[0] |= ( packet->header.cc & 0x0f );
+
+	*out_buffer[1] |= ( packet->header.m << 7 );
+	*out_buffer[1] |= ( packet->header.pt & 0x7f );
+
+	out_buffer_len += 2;
+	p = out_buffer[2];
+
+	put_uint16( &p , packet->header.seq, out_buffer_len );
+	put_uint32( &p , packet->header.timestamp, out_buffer_len );
+	put_uint16( &p , packet->header.ssrc, out_buffer_len );
+
+	return 0;
 }

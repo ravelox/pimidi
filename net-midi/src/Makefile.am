@@ -15,6 +15,7 @@ net_midi_SOURCES = \
 	net_connection.c \
 	net_listener.c \
 	rtp_packet.c \
+	midi_command.c \
 	utils.c 
 
 net_midi_LDADD	= @PTHREAD_LIBS@
