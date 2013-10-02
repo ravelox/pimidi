@@ -10,6 +10,8 @@
 #include <netinet/in.h>
 #include <net/if.h>
 
+#include <pthread.h>
+
 #include <errno.h>
 extern int errno;
 
@@ -27,6 +29,8 @@ extern int errno;
 static int num_sockets;
 static int *sockets;
 static int net_socket_shutdown;
+
+static pthread_mutex_t shutdown_lock;
 
 net_response_t * new_net_response( void )
 {
@@ -206,12 +210,30 @@ int net_socket_listener( void )
 	return ret;
 }
 
+static void set_shutdown_lock( int i )
+{
+	pthread_mutex_lock( &shutdown_lock );
+	net_socket_shutdown = i;
+	pthread_mutex_unlock( &shutdown_lock );
+}
+
+static int get_shutdown_lock ( void )
+{
+	int i = 0;
+	pthread_mutex_lock( &shutdown_lock );
+	i = net_socket_shutdown;
+	pthread_mutex_unlock( &shutdown_lock );
+	return i;
+}
+
 int net_socket_loop( unsigned int interval )
 {
         struct timeval tv; 
         int ret = 0;
 
-	net_socket_shutdown = 0;
+	pthread_mutex_init( &shutdown_lock , NULL );
+
+	set_shutdown_lock( 0 );
         do {
                 tv.tv_sec = 0;
                 tv.tv_usec = interval;
@@ -219,7 +241,9 @@ int net_socket_loop( unsigned int interval )
 
 		net_socket_listener();
 
-	} while( net_socket_shutdown == 0 );
+	} while( get_shutdown_lock() == 0 );
+
+	pthread_mutex_destroy( &shutdown_lock );
 
 	return ret;
 }
@@ -227,7 +251,7 @@ int net_socket_loop( unsigned int interval )
 void net_socket_loop_shutdown(int signal)
 {
 	fprintf(stderr, "Received signal(%d) shutting down\n", signal);
-	net_socket_shutdown = 1;
+	set_shutdown_lock( 1 );
 }
 
 int net_socket_setup( void )

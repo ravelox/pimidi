@@ -17,9 +17,9 @@ net_midi_SOURCES = \
 	rtp_packet.c \
 	utils.c 
 
-net_midi_LDADD	= 
+net_midi_LDADD	= @PTHREAD_LIBS@
 
-net_midi_LDFLAGS = 
+net_midi_LDFLAGS = @PTHREAD_CFLAGS@
 
 avahi_test_LDADD = ${AVAHI_LIBS}
 
