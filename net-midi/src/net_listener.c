@@ -24,6 +24,7 @@ extern int errno;
 #include "cmd_end_handler.h"
 
 #include "midi_note_packet.h"
+#include "rtp_packet.h"
 #include "utils.h"
 
 static int num_sockets;
@@ -189,6 +190,9 @@ int net_socket_listener( void )
 			// MIDI note from sending device
 			if( packet[0] == 0xaa )
 			{
+				unsigned char *rtp_buffer = NULL;
+				size_t rtp_buffer_len = 0;
+
 				midi_note_packet_t *note_packet = NULL;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
@@ -196,11 +200,13 @@ int net_socket_listener( void )
 
 				midi_note_packet_dump( note_packet );
 
-				debug_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
+				rtp_gen_buffer_from_note( note_packet, &rtp_buffer, &rtp_buffer_len );
+
+				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
 				debug_ctx_journal_dump( 0 );
 
 				// Add the NoteOff event for the same note
-				debug_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
+				net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
 				debug_ctx_journal_dump( 0 );
 
 				midi_note_packet_destroy( &note_packet );

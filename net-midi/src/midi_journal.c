@@ -12,7 +12,7 @@
 
 void journal_header_pack( journal_header_t *header , char **packed , size_t *size )
 {
-	unsigned char *p = NULL;
+	char *p = NULL;
 
 	*packed = NULL;
 	*size = 0;
@@ -32,7 +32,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 	p += sizeof( char );
 	*size += sizeof( char );
 
-	put_uint16( &p, header->seq, size );
+	put_uint16( (unsigned char **)&p, header->seq, size );
 }
 
 journal_header_t * journal_header_create( void )
@@ -155,7 +155,7 @@ chaptern_header_t * chaptern_header_create( void )
 
 void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
 {
-	unsigned char *p = NULL;
+	char *p = NULL;
 
 	*packed = NULL;
 	*size = 0;
@@ -364,7 +364,6 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	size_t packed_chaptern_size = 0;
 
 	char *p = NULL;
-	int i = 0;
 
 	*packed = NULL;
 	*size = 0;

@@ -13,8 +13,8 @@ net_midi_SOURCES = \
 	midi_payload.c \
 	net_applemidi.c \
 	net_connection.c \
-	net_listener.c \
 	rtp_packet.c \
+	net_listener.c \
 	midi_command.c \
 	utils.c 
 

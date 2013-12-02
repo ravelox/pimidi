@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 #include "rtp_packet.h"
+#include "utils.h"
 
 rtp_packet_t * new_rtp_packet( void )
 {
@@ -60,3 +61,8 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 
 	return 0;
 }
+
+int rtp_gen_buffer_from_note( midi_note_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )
+{
+}
+

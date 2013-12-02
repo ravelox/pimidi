@@ -139,7 +139,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	return NULL;
 }
 
-void debug_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity )
+void net_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity )
 {
 	if( ctx_id > MAX_CTX - 1 ) return;
 
@@ -159,7 +159,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 
 	journal_pack( ctx[ctx_id]->journal, &buffer, &size );
 	fprintf(stderr, "\n\nJournal Buffer Size = %u\n", size );
-	hex_dump( buffer, size );
+	hex_dump( (unsigned char *)buffer, size );
 	FREENULL( (void **)&buffer );
 	fprintf(stderr, "\n\n");
 
