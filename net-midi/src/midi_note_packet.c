@@ -54,6 +54,30 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 	return ret;
 }
 
+int midi_note_packet_pack( midi_note_packet_t *midi_note, unsigned char **packet, size_t *packet_len )
+{
+	int ret = 0;
+
+	*packet = NULL;
+	*packet_len = 0;
+
+	if( ! midi_note )
+	{
+		return -1;
+	}
+
+	*packet = (unsigned char *)malloc( PACKED_MIDI_NOTE_PACKET_SIZE );
+	
+	if( !packet) return -1;
+
+	*packet_len = PACKED_MIDI_NOTE_PACKET_SIZE;
+
+	(*packet)[0] = ( midi_note->command << 4 ) + (midi_note->channel & 0x0f);
+	(*packet)[1] = ( midi_note->note & 0x7f );
+	(*packet)[2] = ( midi_note->velocity & 0x7f );
+
+	return ret;
+}
 
 void midi_note_packet_dump( midi_note_packet_t *note_packet )
 {

@@ -64,5 +64,18 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 
 int rtp_gen_buffer_from_note( midi_note_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )
 {
+	unsigned char *packed_midi_note;
+	size_t packed_midi_note_len;
+	int ret = 0;
+
+	ret = midi_note_packet_pack( packet, &packed_midi_note, &packed_midi_note_len );
+
+	fprintf(stderr, "MIDI NOTE PACK = %u\n", ret);
+	fprintf(stderr, "\tpacked = %p", packed_midi_note);
+	fprintf(stderr, "\tpacked_len = %u\n", packed_midi_note_len);
+	hex_dump( packed_midi_note, packed_midi_note_len );
+
+	FREENULL( (void **)&packed_midi_note );
+	
 }
 
