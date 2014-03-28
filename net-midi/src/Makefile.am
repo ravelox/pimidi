@@ -1,4 +1,4 @@
-bin_PROGRAMS = net-midi avahi-test 
+bin_PROGRAMS = net_midi avahi_test 
 
 avahi_test_SOURCES = \
 	avahi_test.c
