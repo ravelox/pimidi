@@ -37,7 +37,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	fprintf(stderr, "\tversion  : 0x%08x\n", inv->version);
 	fprintf(stderr, "\tinitiator: 0x%08x\n", inv->initiator);
 
-	ctx = net_ctx_find( inv->ssrc );
+	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
 	{

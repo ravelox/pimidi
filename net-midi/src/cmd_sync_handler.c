@@ -40,7 +40,7 @@ net_response_t * cmd_sync_handler( void *data )
 	fprintf(stderr, "\ttimestamp2: 0x%llu\n", sync->timestamp2);
 	fprintf(stderr, "\ttimestamp3: 0x%llu\n", sync->timestamp3);
 
-	ctx = net_ctx_find( sync->ssrc);
+	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
 	if( ! ctx ) return NULL;
 

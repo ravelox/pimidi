@@ -9,6 +9,7 @@
 
 #include "midi_journal.h"
 #include "net_connection.h"
+#include "rtp_packet.h"
 #include "utils.h"
 
 static net_ctx_t *ctx[ MAX_CTX ];
@@ -96,7 +97,22 @@ void net_ctx_destroy( void )
 	}
 }
 
-net_ctx_t * net_ctx_find( uint32_t ssrc)
+net_ctx_t * net_ctx_find_by_id( uint8_t id )
+{
+	if( id < MAX_CTX )
+	{
+		if( ctx[id] )
+		{
+			if( ctx[id]->used > 0 )
+			{
+				return ctx[id];
+			}
+		}
+	}
+	return NULL;
+}
+
+net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 {
 	uint8_t i;
 
@@ -164,4 +180,14 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 	fprintf(stderr, "\n\n");
 
 	net_ctx_reset( ctx[ctx_id] );
+}
+
+void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)
+{
+	net_ctx_t *ctx = NULL;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+
+	if( ! ctx ) return;
+
 }

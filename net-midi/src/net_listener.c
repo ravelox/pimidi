@@ -190,17 +190,27 @@ int net_socket_listener( void )
 			// MIDI note from sending device
 			if( packet[0] == 0xaa )
 			{
-				unsigned char *rtp_buffer = NULL;
-				size_t rtp_buffer_len = 0;
+				rtp_packet_t *rtp_packet = NULL;
+				unsigned char *packed_rtp_buffer = NULL;
+				size_t packed_rtp_buffer_len = 0;
+				unsigned char *payload = NULL;
+				size_t packed_midi_note_len;
+				int ret = 0;
 
 				midi_note_packet_t *note_packet = NULL;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
-
 				midi_note_packet_dump( note_packet );
 
-				rtp_gen_buffer_from_note( note_packet, &rtp_buffer, &rtp_buffer_len );
+				// No need to pack again because packet+1 is the packed payload
+				rtp_packet = new_rtp_packet();
+
+				if( rtp_packet )
+				{
+					net_ctx_update_rtp_fields( 0 , rtp_packet );
+				}
+				
 
 				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
 				debug_ctx_journal_dump( 0 );

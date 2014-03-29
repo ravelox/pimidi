@@ -17,6 +17,15 @@ rtp_packet_t * new_rtp_packet( void )
 	{
 		memset( new, 0 , sizeof( rtp_packet_t ) );
 		new->payload = NULL;
+
+		// Initialise the standard fields
+
+		new->header.v = RTP_VERSION;
+		new->header.p = 0;
+		new->header.x = 0;
+		new->header.cc = 0;
+		new->header.m = 1;
+		new->header.pt = RTP_DYNAMIC_PAYLOAD_97;
 	}
 
 	return new;

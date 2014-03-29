@@ -20,6 +20,8 @@ typedef struct rtp_packet_t {
 	void *payload;
 } rtp_packet_t;
 
+#define RTP_VERSION 2
+
 #define RTP_DYNAMIC_PAYLOAD_97	97
 
 rtp_packet_t * new_rtp_packet( void );
