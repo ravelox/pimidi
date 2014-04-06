@@ -186,8 +186,13 @@ void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)
 {
 	net_ctx_t *ctx = NULL;
 
+	if( ! rtp_packet ) return;
+
 	ctx = net_ctx_find_by_id( ctx_id );
 
 	if( ! ctx ) return;
 
+	rtp_packet->header.seq = ctx->seq;
+	rtp_packet->header.timestamp = time(0) - ctx->start;
+	rtp_packet->header.ssrc = ctx->ssrc;
 }

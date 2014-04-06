@@ -25,7 +25,6 @@ typedef struct rtp_packet_t {
 #define RTP_DYNAMIC_PAYLOAD_97	97
 
 rtp_packet_t * new_rtp_packet( void );
-
-int rtp_gen_buffer_from_note( midi_note_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len );
+int destroy_rtp_packet( rtp_packet_t **packet );
 
 #endif
