@@ -212,12 +212,12 @@ int net_socket_listener( void )
 				}
 				
 
-				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
 				debug_ctx_journal_dump( 0 );
+				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
+				debug_ctx_journal_reset( 0 );
 
 				// Add the NoteOff event for the same note
 				net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
-				debug_ctx_journal_dump( 0 );
 
 				midi_note_packet_destroy( &note_packet );
 			}

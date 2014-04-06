@@ -627,11 +627,31 @@ void midi_note_dump( midi_note_t *note )
 	fprintf(stderr, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
 }
 
+void midi_note_reset( midi_note_t *note )
+{
+	if( ! note ) return;
+
+	note->S = 0;
+	note->num = 0;
+	note->Y = 0;
+	note->velocity = 0;
+}
+
 void chaptern_header_dump( chaptern_header_t *header )
 {
 	if( ! header ) return;
 
 	fprintf(stderr, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
+}
+
+void chaptern_header_reset( chaptern_header_t *header )
+{
+	if( ! header ) return;
+
+	header->B = 0;
+	header->len = 0;
+	header->high = 0;
+	header->low = 0;
 }
 
 void chaptern_dump( chaptern_t *chaptern )
@@ -653,11 +673,35 @@ void chaptern_dump( chaptern_t *chaptern )
 	}
 }
 
+void chaptern_reset( chaptern_t *chaptern )
+{
+	uint16_t i = 0;
+
+	if( ! chaptern ) return;
+
+	for( i = 0 ; i < chaptern->num_notes ; i++ )
+	{
+		midi_note_reset( chaptern->notes[i] );
+	}
+	FREENULL( (void **)&(chaptern->offbits));
+	chaptern_header_reset( chaptern->header );
+}
+
 void channel_header_dump( channel_header_t *header )
 {
 	if( ! header ) return;
 
 	fprintf(stderr, "Channel #%d (Header: S=%d H=%d len=%u bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
+}
+
+void channel_header_reset( channel_header_t *header )
+{
+	if( ! header ) return;
+
+	header->chan = 0;
+	header->S = 0;
+	header->H = 0;
+	header->bitfield = 0;
 }
 
 void channel_journal_dump( channel_t *channel )
@@ -672,12 +716,32 @@ void channel_journal_dump( channel_t *channel )
 	}
 }
 
+void channel_journal_reset( channel_t *channel )
+{
+	if( ! channel ) return;
+
+	if( channel->header->bitfield && CHAPTER_N )
+	{
+		chaptern_reset( channel->chaptern );
+	}
+	channel_header_reset( channel->header );
+}
+
 void journal_header_dump( journal_header_t *header )
 {
 	if( ! header ) return;
 
 	fprintf(stderr, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
 	fprintf(stderr, "Header Size = %u\n", sizeof( journal_header_t ) );
+}
+
+void journal_header_reset( journal_header_t *header )
+{
+	if( ! header ) return;
+
+	header->bitfield = 0;
+	header->totchan = 0;
+	header->seq = 0;
 }
 
 void journal_dump( journal_t *journal )
@@ -690,5 +754,19 @@ void journal_dump( journal_t *journal )
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
 	{
 		channel_journal_dump( journal->channels[i] );
+	}
+}
+
+void journal_reset( journal_t *journal )
+{
+	unsigned int i = 0;
+
+	if( !journal ) return;
+
+	journal_header_reset( journal->header );
+
+	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
+	{
+		channel_journal_reset( journal->channels[i] );
 	}
 }

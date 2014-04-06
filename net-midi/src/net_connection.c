@@ -182,6 +182,13 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 	net_ctx_reset( ctx[ctx_id] );
 }
 
+void debug_ctx_journal_reset( uint8_t ctx_id )
+{
+	if( ctx_id > MAX_CTX - 1) return;
+
+	journal_reset( ctx[ctx_id]->journal);
+}
+
 void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)
 {
 	net_ctx_t *ctx = NULL;
