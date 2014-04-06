@@ -94,5 +94,6 @@ void channel_header_dump( channel_header_t *header );
 void channel_journal_dump( channel_t *channel );
 void journal_header_dump( journal_header_t *header );
 void journal_dump( journal_t *journal );
+int journal_has_data( journal_t *journal );
 
 #endif

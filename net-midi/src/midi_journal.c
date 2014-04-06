@@ -596,11 +596,9 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 
 		fprintf(stderr, "NoteOff: note=%u offset=%u shift=%u\n", note, offset, shift );
 
-		chaptern_header_dump( journal->channels[channel - 1]->chaptern->header);
 		// Set low and high values;
 		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );
 		journal->channels[channel - 1]->chaptern->header->low = MIN( offset , journal->channels[channel - 1]->chaptern->header->low );
-		chaptern_header_dump( journal->channels[channel - 1]->chaptern->header);
 
 		journal->channels[channel - 1]->chaptern->offbits[offset] |=  ( 1 << shift );
 
@@ -683,7 +681,7 @@ void chaptern_reset( chaptern_t *chaptern )
 	{
 		midi_note_reset( chaptern->notes[i] );
 	}
-	FREENULL( (void **)&(chaptern->offbits));
+	memset( chaptern->offbits, 0, MAX_OFFBITS );
 	chaptern_header_reset( chaptern->header );
 }
 
@@ -725,6 +723,14 @@ void channel_journal_reset( channel_t *channel )
 		chaptern_reset( channel->chaptern );
 	}
 	channel_header_reset( channel->header );
+}
+
+int journal_has_data( journal_t *journal )
+{
+	if( ! journal ) return 0;
+	if( ! journal->header ) return 0;
+
+	return (journal->header->totchan > 0);
 }
 
 void journal_header_dump( journal_header_t *header )

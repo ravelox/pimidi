@@ -24,7 +24,7 @@ typedef struct rtp_packet_t {
 
 #define RTP_DYNAMIC_PAYLOAD_97	97
 
-rtp_packet_t * new_rtp_packet( void );
-int destroy_rtp_packet( rtp_packet_t **packet );
+rtp_packet_t * rtp_packet_create( void );
+int rtp_packet_destroy( rtp_packet_t **packet );
 
 #endif

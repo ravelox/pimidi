@@ -7,7 +7,7 @@
 #include "rtp_packet.h"
 #include "utils.h"
 
-rtp_packet_t * new_rtp_packet( void )
+rtp_packet_t * rtp_packet_create( void )
 {
 	rtp_packet_t *new;
 
@@ -31,7 +31,7 @@ rtp_packet_t * new_rtp_packet( void )
 	return new;
 }
 
-int destroy_rtp_packet( rtp_packet_t **packet )
+int rtp_packet_destroy( rtp_packet_t **packet )
 {
 
 	if( ! packet ) return 1;

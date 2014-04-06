@@ -171,6 +171,11 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 
 	if( ctx_id > MAX_CTX - 1 ) return;
 
+	fprintf(stderr, "Journal has data (NULLTEST) -----: %u\n", journal_has_data( NULL ));
+	fprintf(stderr, "Journal has data ----------------: %u\n", journal_has_data( ctx[ctx_id]->journal ));
+
+	if( ! journal_has_data( ctx[ctx_id]->journal ) ) return;
+
 	journal_dump( ctx[ctx_id]->journal );
 
 	journal_pack( ctx[ctx_id]->journal, &buffer, &size );

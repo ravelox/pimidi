@@ -204,22 +204,31 @@ int net_socket_listener( void )
 				midi_note_packet_dump( note_packet );
 
 				// No need to pack again because packet+1 is the packed payload
-				rtp_packet = new_rtp_packet();
+				rtp_packet = rtp_packet_create();
 
 				if( rtp_packet )
 				{
 					net_ctx_update_rtp_fields( 0 , rtp_packet );
-				}
+
+					rtp_packet_destroy( &rtp_packet );
 				
+					debug_ctx_journal_dump( 0 );
+			
+					fprintf(stderr, "Adding note to journal\n");
+					net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
 
-				debug_ctx_journal_dump( 0 );
-				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
-				debug_ctx_journal_reset( 0 );
+					debug_ctx_journal_dump( 0 );
 
-				// Add the NoteOff event for the same note
-				net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
+					fprintf( stderr, "Resetting journal\n");
+					debug_ctx_journal_reset( 0 );
 
-				midi_note_packet_destroy( &note_packet );
+					debug_ctx_journal_dump( 0 );
+
+					// Add the NoteOff event for the same note
+					net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
+
+					midi_note_packet_destroy( &note_packet );
+				}
 			}
 		}
 	}
