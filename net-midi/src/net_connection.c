@@ -187,7 +187,21 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 	net_ctx_reset( ctx[ctx_id] );
 }
 
-void debug_ctx_journal_reset( uint8_t ctx_id )
+void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journal_buffer_size)
+{
+	net_ctx_t *ctx = NULL;
+
+	*journal_buffer = NULL;
+	*journal_buffer_size = 0;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+
+	if( ! ctx) return;
+
+	journal_pack( ctx->journal, journal_buffer, journal_buffer_size );
+}
+	
+void net_ctx_journal_reset( uint8_t ctx_id )
 {
 	if( ctx_id > MAX_CTX - 1) return;
 

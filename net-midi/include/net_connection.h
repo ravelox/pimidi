@@ -27,5 +27,7 @@ net_ctx_t * net_ctx_find_by_id( uint8_t id);
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
 void net_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity );
 void debug_ctx_journal_dump( uint8_t ctx_id );
+void net_ctx_journal_pack( uint8_t ctx_id, char **buffer, size_t *buffer_len);
+void net_ctx_journal_reset( uint8_t ctx_id);
 
 #endif

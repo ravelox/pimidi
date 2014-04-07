@@ -25,6 +25,7 @@ extern int errno;
 
 #include "midi_note_packet.h"
 #include "rtp_packet.h"
+#include "midi_payload.h"
 #include "utils.h"
 
 static int num_sockets;
@@ -193,12 +194,12 @@ int net_socket_listener( void )
 				rtp_packet_t *rtp_packet = NULL;
 				unsigned char *packed_rtp_buffer = NULL;
 				size_t packed_rtp_buffer_len = 0;
-				unsigned char *packed_payload = NULL;
-				unsigned char *packed_midi_note = NULL;
-				size_t packed_midi_note_len;
-				int ret = 0;
+
 				midi_note_packet_t *note_packet = NULL;
-				midi_paylod_t *midi_payload = NULL'
+				midi_payload_t *midi_payload = NULL;
+
+				char *packed_journal = NULL;
+				size_t packed_journal_len = 0;
 
 				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
@@ -207,12 +208,15 @@ int net_socket_listener( void )
 				midi_note_packet_dump( note_packet );
 
 				// NOTE ON
-				// Create the MIDI payload
-				// TODO:
-				// Pack the journal
-				// TODO:
-				// Merge the payload and the journal
-				// TODO:
+				// Get a journal if there is one
+				net_ctx_journal_pack( 0 , &packed_journal, &packed_journal_len);
+				// Create the payload
+				midi_payload = midi_payload_create();
+				if( packed_journal_len > 0 )
+				{
+					payload_toggle_j( midi_payload );
+				}
+				midi_payload_destroy( &midi_payload );
 
 				// Build the RTP packet
 				rtp_packet = rtp_packet_create();
