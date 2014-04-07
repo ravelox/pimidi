@@ -463,6 +463,8 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	if( ! journal ) return;
 
+	if(  ! journal_has_data( journal ) ) return;
+
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
 
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )

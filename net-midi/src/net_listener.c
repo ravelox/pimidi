@@ -201,6 +201,12 @@ int net_socket_listener( void )
 				char *packed_journal = NULL;
 				size_t packed_journal_len = 0;
 
+				unsigned char *packed_payload = NULL;
+				size_t packed_payload_len = 0;
+
+				unsigned char *packed_rtp_payload = NULL;
+				size_t packed_rtp_payload_len = 0;
+
 				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 
@@ -210,30 +216,56 @@ int net_socket_listener( void )
 				// NOTE ON
 				// Get a journal if there is one
 				net_ctx_journal_pack( 0 , &packed_journal, &packed_journal_len);
+				// For the NOTE ON event, the MIDI note is already packed
+				// but we still need to pack it into a payload
 				// Create the payload
 				midi_payload = midi_payload_create();
-				if( packed_journal_len > 0 )
+
+				if( midi_payload )
 				{
-					payload_toggle_j( midi_payload );
-				}
-				midi_payload_destroy( &midi_payload );
+					payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 
-				// Build the RTP packet
-				rtp_packet = rtp_packet_create();
-				net_ctx_update_rtp_fields( 0 , rtp_packet );
+					if( packed_journal_len > 0 )
+					{
+						payload_toggle_j( midi_payload );
+					}
+					
+					payload_pack( midi_payload, &packed_payload, &packed_payload_len );
+
+					// Join the packed MIDI payload and the journal together
+					packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
+					memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
+					memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
+
+					// Do some cleanup
+					FREENULL( (void **)&packed_payload );
+					FREENULL( (void **)&packed_journal );
+					midi_payload_destroy( &midi_payload );
+
+					// Build the RTP packet
+					rtp_packet = rtp_packet_create();
+					rtp_packet_dump( rtp_packet );
+					net_ctx_update_rtp_fields( 0 , rtp_packet );
+					rtp_packet_dump( rtp_packet );
 	
-				// Add the MIDI data to the RTP packet
-				// TODO:
-				// Pack the RTP data
-				// TODO:
-				// Send the RTP packet
-				// TODO:
+					// Add the MIDI data to the RTP packet
+					rtp_packet->payload_len = packed_payload_len + packed_journal_len;
+					rtp_packet->payload = packed_rtp_payload;
 
-				// Clean up
-				rtp_packet_destroy( &rtp_packet );
+					// Pack the RTP data
+					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-				fprintf(stderr, "Adding note to journal\n");
-				net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
+					// Send the RTP packet
+					// TODO:
+					hex_dump( packed_rtp_buffer, packed_rtp_buffer_len );
+
+					// Clean up
+					FREENULL( (void **)&packed_payload );
+					rtp_packet_destroy( &rtp_packet );
+
+					fprintf(stderr, "Adding note to journal\n");
+					net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
+				}
 
 				// Add the NoteOff event for the same note
 				net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );

@@ -38,6 +38,7 @@ int rtp_packet_destroy( rtp_packet_t **packet )
 	if( ! *packet ) return 1;
 
 	(*packet)->payload = NULL;
+	(*packet)->payload_len = 0;
 	FREENULL( (void **)packet);
 	return 0;
 }
@@ -47,6 +48,7 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 {
 	unsigned char *p;
 	size_t packed_header_buffer_size = 0;
+	uint16_t temp_header = 0;
 
 	*out_buffer = NULL;
 	*out_buffer_len = 0;
@@ -56,7 +58,7 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 		return 1;
 	}
 
-	packed_header_buffer_size = ( sizeof(uint8_t) * 2 ) + sizeof(uint16_t) + sizeof(uint32_t);
+	packed_header_buffer_size = ( sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint16_t) );
 	*out_buffer = (unsigned char *)malloc( packed_header_buffer_size );
 	memset( *out_buffer, 0, packed_header_buffer_size );
 
@@ -65,20 +67,53 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 		return 1;
 	}
 	
-	*out_buffer[0] |= ( packet->header.v << 6 );
-	*out_buffer[0] |= ( packet->header.p << 5 );
-	*out_buffer[0] |= ( packet->header.x << 4 );
-	*out_buffer[0] |= ( packet->header.cc & 0x0f );
+	p = *out_buffer;
 
-	*out_buffer[1] |= ( packet->header.m << 7 );
-	*out_buffer[1] |= ( packet->header.pt & 0x7f );
+	temp_header |= ( packet->header.v << 6 ) << 8;
+	temp_header |= ( packet->header.p << 5 ) << 8;
+	temp_header |= ( packet->header.x << 4 ) << 8;
+	temp_header |= ( packet->header.cc & 0x0f ) << 8;
+	temp_header |= ( packet->header.m << 7 );
+	temp_header |= ( packet->header.pt & 0x7f );
 
-	out_buffer_len += 2;
-	p = out_buffer[2];
-
+	put_uint16( &p , temp_header,  out_buffer_len );
 	put_uint16( &p , packet->header.seq, out_buffer_len );
 	put_uint32( &p , packet->header.timestamp, out_buffer_len );
 	put_uint16( &p , packet->header.ssrc, out_buffer_len );
 
+	fprintf( stderr, "RTP Payload len = %u\n", packet->payload_len );
+
+	if( packet->payload && (packet->payload_len > 0) )
+	{
+		*out_buffer = (unsigned char *)realloc( *out_buffer, *out_buffer_len + packet->payload_len );
+		if( *out_buffer )
+		{
+			p = *out_buffer + *out_buffer_len;
+			memcpy( p , packet->payload, packet->payload_len );
+			*out_buffer_len += packet->payload_len;
+		}
+	}
+
 	return 0;
+}
+
+void rtp_packet_dump( rtp_packet_t *packet )
+{
+	if( ! packet ) return;
+
+	fprintf( stderr, "RTP Packet\n");
+	fprintf( stderr, "V = %u\n", packet->header.v);
+	fprintf( stderr, "P = %u\n", packet->header.p);
+	fprintf( stderr, "X = %u\n", packet->header.x);
+	fprintf( stderr, "CC = %u\n", packet->header.cc);
+	fprintf( stderr, "M = %u\n", packet->header.m);
+	fprintf( stderr, "PT = %u\n", packet->header.pt);
+	fprintf( stderr, "seq = %u\n", packet->header.seq);
+	fprintf( stderr, "timestamp = %u\n", packet->header.timestamp );
+	fprintf( stderr, "ssrc = %u\n", packet->header.ssrc );
+
+	fprintf( stderr, "payload length = %u\n", packet->payload_len);
+	fprintf( stderr, "payload = %p\n", packet->payload);
+
+	return;
 }

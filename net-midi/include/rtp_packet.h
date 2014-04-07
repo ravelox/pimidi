@@ -17,6 +17,7 @@ typedef struct rtp_packet_header_t {
 
 typedef struct rtp_packet_t {
 	rtp_packet_header_t header;
+	size_t payload_len;
 	void *payload;
 } rtp_packet_t;
 
