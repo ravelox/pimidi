@@ -143,8 +143,11 @@ int net_socket_listener( void )
 			// Determine the packet type
 
 			fprintf(stderr, "Socket: %u\n", sockets[i]);
+			fprintf(stderr, "Connection: %s:%u\n", ip_address, from_addr.sin_port);
 			fprintf(stderr, "Recv Length = %u\n", recv_len );
 			fprintf(stderr, "Byte[0] == %02x\n", packet[0]);
+
+			debug_net_ctx_enumerate();
 
 			hex_dump( packet, recv_len );
 
@@ -184,6 +187,7 @@ int net_socket_listener( void )
 					sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
 					net_response_destroy( &response );
 				}
+				debug_net_ctx_enumerate();
 
 				net_applemidi_cmd_destroy( &command );
 			}
@@ -251,16 +255,20 @@ int net_socket_listener( void )
 					// Add the MIDI data to the RTP packet
 					rtp_packet->payload_len = packed_payload_len + packed_journal_len;
 					rtp_packet->payload = packed_rtp_payload;
+					rtp_packet_dump( rtp_packet );
 
 					// Pack the RTP data
 					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
 					// Send the RTP packet
 					// TODO:
-					hex_dump( packed_rtp_buffer, packed_rtp_buffer_len );
+
+					net_ctx_send( 0 , sockets[i],  packed_rtp_buffer, packed_rtp_buffer_len );
 
 					// Clean up
 					FREENULL( (void **)&packed_payload );
+					FREENULL( (void **)&packed_rtp_payload );
+					FREENULL( (void **)&packed_rtp_buffer );
 					rtp_packet_destroy( &rtp_packet );
 
 					fprintf(stderr, "Adding note to journal\n");

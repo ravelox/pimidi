@@ -220,5 +220,50 @@ void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)
 
 	rtp_packet->header.seq = ctx->seq;
 	rtp_packet->header.timestamp = time(0) - ctx->start;
-	rtp_packet->header.ssrc = ctx->ssrc;
+	rtp_packet->header.ssrc = ctx->send_ssrc;
+}
+
+void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_t buffer_len )
+{
+	net_ctx_t *ctx = NULL;
+	struct sockaddr_in send_address;
+	size_t bytes_sent = 0;
+
+	if(  send_socket < 0 ) return;
+	if( ! buffer ) return;
+	if( buffer_len <= 0 ) return;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+
+	if( ! ctx ) return;
+
+	memset((char *)&send_address, 0, sizeof( send_address));
+	send_address.sin_family = AF_INET;
+	send_address.sin_port = ctx->port;
+	inet_aton( ctx->ip_address, &send_address.sin_addr );
+
+	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
+	fprintf(stderr, "Sent %u bytes to connection\n", bytes_sent);
+
+	hex_dump( buffer, buffer_len );
+}
+
+void debug_net_ctx_enumerate( void )
+{
+	uint8_t ctx_id;
+	net_ctx_t *ctx = NULL;
+
+	for( ctx_id = 0 ; ctx_id < MAX_CTX ; ctx_id++ )
+	{
+		fprintf(stderr, "%u:\t", ctx_id);
+		ctx = net_ctx_find_by_id( ctx_id );
+
+		if( ! ctx )
+		{
+			fprintf(stderr, "NULL\n");
+			continue;
+		}
+
+		fprintf( stderr, "%s:%u\t%08x\n", ctx->ip_address, ctx->port, ctx->ssrc );
+	}
 }

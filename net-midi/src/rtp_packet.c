@@ -79,7 +79,7 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 	put_uint16( &p , temp_header,  out_buffer_len );
 	put_uint16( &p , packet->header.seq, out_buffer_len );
 	put_uint32( &p , packet->header.timestamp, out_buffer_len );
-	put_uint16( &p , packet->header.ssrc, out_buffer_len );
+	put_uint32( &p , packet->header.ssrc, out_buffer_len );
 
 	fprintf( stderr, "RTP Payload len = %u\n", packet->payload_len );
 
@@ -110,7 +110,7 @@ void rtp_packet_dump( rtp_packet_t *packet )
 	fprintf( stderr, "PT = %u\n", packet->header.pt);
 	fprintf( stderr, "seq = %u\n", packet->header.seq);
 	fprintf( stderr, "timestamp = %u\n", packet->header.timestamp );
-	fprintf( stderr, "ssrc = %u\n", packet->header.ssrc );
+	fprintf( stderr, "ssrc = %08x\n", packet->header.ssrc );
 
 	fprintf( stderr, "payload length = %u\n", packet->payload_len);
 	fprintf( stderr, "payload = %p\n", packet->payload);

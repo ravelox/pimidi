@@ -158,16 +158,21 @@ void hex_dump( unsigned char *buffer, size_t len )
 	size_t i = 0 ;
 	unsigned char c = 0 ;
 
+	fprintf(stderr, "hexdump(%p , %u)\n", buffer, len );
+	if( ! buffer ) return;
+	if( len <= 0 ) return;
+
 	for( i = 0 ; i < len ; i++ )
 	{
 		if( i % 8 == 0 )
 		{
-			printf("\n");
+			fprintf( stderr, "\n");
 		}
 		c = buffer[i];
-		printf("%02x %c\t", c, isprint(c)  ? c : '.' );
+		fprintf( stderr, "%02x %c\t", c, isprint(c)  ? c : '.' );
 	}
-	printf("\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "-- end hexdump\n");
 }
 
 void FREENULL( void **ptr )

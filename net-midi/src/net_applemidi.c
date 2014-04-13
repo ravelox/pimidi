@@ -185,7 +185,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 	get_uint16( &( (*command_buffer)->command ), &p, &in_buffer_len );
 
 	fprintf( stderr, "[parse]:remaining_buffer=%zu\n", in_buffer_len );
-	fprintf( stderr, "[parse]:expected=%zu\n", NET_APPLEMIDI_INV_STATIC_SIZE - sizeof( char * ) );
+	fprintf( stderr, "[parse]:expected static length is = %zu\n", NET_APPLEMIDI_INV_STATIC_SIZE - sizeof( char * ) );
 	fflush( stderr );
 
 	if( 	(*command_buffer)->command == NET_APPLEMIDI_CMD_INV ||

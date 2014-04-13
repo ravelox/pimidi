@@ -97,9 +97,24 @@ void payload_set_buffer( midi_payload_t *payload, char *buffer , uint16_t buffer
 }
 
 
+void payload_dump( midi_payload_t *payload )
+{
+	if( ! payload ) return;
+	if( ! payload->header ) return;
+
+	fprintf( stderr, "MIDI Payload\n");
+	fprintf( stderr, "B=%d\n", payload->header->B);
+	fprintf( stderr, "J=%d\n", payload->header->J);
+	fprintf( stderr, "Z=%d\n", payload->header->Z);
+	fprintf( stderr, "P=%d\n", payload->header->P);
+	fprintf( stderr, "Payload length=%u\n", payload->header->len);
+	fprintf( stderr, "--end\n");
+}
+
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
 {
-	uint16_t temp_header;
+	uint8_t temp_header;
+	unsigned char *p = NULL;
 
 	*buffer = NULL;
 	*buffer_size = 0;
@@ -109,27 +124,35 @@ void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buff
 	if( ! payload->buffer ) return;
 	if( ! payload->header ) return;
 
-	*buffer_size = payload->header->len + (payload->header->len > 15 ? 1 : 0);
+	payload_dump( payload );
+
+	*buffer_size = 1 + payload->header->len + (payload->header->len > 15 ? 1 : 0);
 	*buffer = (unsigned char *)malloc( *buffer_size );
 
 	if( ! *buffer ) return;
 
-	if( payload->header->B) temp_header |= PAYLOAD_HEADER_B << 8;
-	if( payload->header->J) temp_header |= PAYLOAD_HEADER_J << 7;
-	if( payload->header->Z) temp_header |= PAYLOAD_HEADER_Z << 6;
-	if( payload->header->P) temp_header |= PAYLOAD_HEADER_P << 5;
+	p = *buffer;
 
-	if( payload->header->len > 15 )
+	if( payload->header->B) temp_header |= PAYLOAD_HEADER_B;
+	if( payload->header->J) temp_header |= PAYLOAD_HEADER_J;
+	if( payload->header->Z) temp_header |= PAYLOAD_HEADER_Z;
+	if( payload->header->P) temp_header |= PAYLOAD_HEADER_P;
+
+	*p = temp_header;
+
+	if( payload->header->len <= 15 )
 	{
-		temp_header |= (payload->header->len & 0x0f00 ) << 4;
-		temp_header |= (payload->header->len & 0x00ff);
-
-		(*buffer)[1] = ( temp_header & 0x00ff );
-	} else  {
-		temp_header |= (payload->header->len & 0x0f );
+		*p |= ( payload->header->len & 0x0f );
+		p++;
+	} else {
+		temp_header |= (payload->header->len & 0x0f00 ) >> 8;
+		*p = temp_header;
+		p++;
+		*p =  (payload->header->len & 0x00ff);
+		p++;
 	}
 
-	(*buffer)[0] = ( temp_header & 0xff00 ) >> 8;
+	memcpy( p, payload->buffer, payload->header->len );
 
-	memcpy( *buffer, payload->buffer, payload->header->len );
+	hex_dump( *buffer, *buffer_size );
 }
