@@ -7,3 +7,5 @@ Logic Express.
 I'm doing this purely for fun and don't expect anyone else to use
 it but I'm happy to accept suggestions if you ever come across
 this code.
+
+This code is released under GPLv3.
