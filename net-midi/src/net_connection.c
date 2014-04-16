@@ -32,6 +32,19 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->journal = journal;
 }
 
+void debug_net_ctx_dump( net_ctx_t *ctx )
+{
+	if( ! ctx ) return;
+	
+	fprintf(stderr, "CTX( ");
+	fprintf(stderr, "Used=%d , ", ctx->used);
+	fprintf(stderr, "ssrc=%08x , ", ctx->ssrc);
+	fprintf(stderr, "send_ssrc=%08x , ", ctx->send_ssrc);
+	fprintf(stderr, "initiator=%08x , ", ctx->initiator);
+	fprintf(stderr, "seq=%08x (%08d) , ", ctx->seq, ctx->seq);
+	fprintf(stderr, "host=%s:%u )\n", ctx->ip_address, ctx->port);
+}
+
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
 {
 	if( ! ctx ) return;
@@ -179,10 +192,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 	journal_dump( ctx[ctx_id]->journal );
 
 	journal_pack( ctx[ctx_id]->journal, &buffer, &size );
-	fprintf(stderr, "\n\nJournal Buffer Size = %u\n", size );
-	hex_dump( (unsigned char *)buffer, size );
 	FREENULL( (void **)&buffer );
-	fprintf(stderr, "\n\n");
 
 	net_ctx_reset( ctx[ctx_id] );
 }
@@ -237,33 +247,13 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 
 	if( ! ctx ) return;
 
+	debug_net_ctx_dump( ctx );
+
 	memset((char *)&send_address, 0, sizeof( send_address));
 	send_address.sin_family = AF_INET;
-	send_address.sin_port = ctx->port;
+	send_address.sin_port = htons( ctx->port + 1) ;
 	inet_aton( ctx->ip_address, &send_address.sin_addr );
 
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
 	fprintf(stderr, "Sent %u bytes to connection\n", bytes_sent);
-
-	hex_dump( buffer, buffer_len );
-}
-
-void debug_net_ctx_enumerate( void )
-{
-	uint8_t ctx_id;
-	net_ctx_t *ctx = NULL;
-
-	for( ctx_id = 0 ; ctx_id < MAX_CTX ; ctx_id++ )
-	{
-		fprintf(stderr, "%u:\t", ctx_id);
-		ctx = net_ctx_find_by_id( ctx_id );
-
-		if( ! ctx )
-		{
-			fprintf(stderr, "NULL\n");
-			continue;
-		}
-
-		fprintf( stderr, "%s:%u\t%08x\n", ctx->ip_address, ctx->port, ctx->ssrc );
-	}
 }

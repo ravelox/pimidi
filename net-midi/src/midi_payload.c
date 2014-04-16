@@ -102,13 +102,12 @@ void payload_dump( midi_payload_t *payload )
 	if( ! payload ) return;
 	if( ! payload->header ) return;
 
-	fprintf( stderr, "MIDI Payload\n");
-	fprintf( stderr, "B=%d\n", payload->header->B);
-	fprintf( stderr, "J=%d\n", payload->header->J);
-	fprintf( stderr, "Z=%d\n", payload->header->Z);
-	fprintf( stderr, "P=%d\n", payload->header->P);
-	fprintf( stderr, "Payload length=%u\n", payload->header->len);
-	fprintf( stderr, "--end\n");
+	fprintf( stderr, "MIDI Payload( ");
+	fprintf( stderr, "B=%d , ", payload->header->B);
+	fprintf( stderr, "J=%d , ", payload->header->J);
+	fprintf( stderr, "Z=%d , ", payload->header->Z);
+	fprintf( stderr, "P=%d , ", payload->header->P);
+	fprintf( stderr, "payloadlength=%u )\n", payload->header->len);
 }
 
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
@@ -153,6 +152,4 @@ void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buff
 	}
 
 	memcpy( p, payload->buffer, payload->header->len );
-
-	hex_dump( *buffer, *buffer_size );
 }

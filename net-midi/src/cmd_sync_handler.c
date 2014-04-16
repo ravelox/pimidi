@@ -32,13 +32,13 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync = ( net_applemidi_sync *) data;
 
-	fprintf(stderr, "SYNC\n");
+	fprintf(stderr, "SYNC( ");
 
-	fprintf(stderr, "\tssrc      : 0x%08x\n", sync->ssrc);
-	fprintf(stderr, "\tcount     : 0x%08x\n", sync->count);
-	fprintf(stderr, "\ttimestamp1: 0x%llu\n", sync->timestamp1);
-	fprintf(stderr, "\ttimestamp2: 0x%llu\n", sync->timestamp2);
-	fprintf(stderr, "\ttimestamp3: 0x%llu\n", sync->timestamp3);
+	fprintf(stderr, "ssrc=0x%08x , ", sync->ssrc);
+	fprintf(stderr, "count=0x%08x , ", sync->count);
+	fprintf(stderr, "timestamp1=0x%llu , ", sync->timestamp1);
+	fprintf(stderr, "timestamp2=0x%llu , ", sync->timestamp2);
+	fprintf(stderr, "timestamp3=0x%llu )\n", sync->timestamp3);
 
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
@@ -89,7 +89,6 @@ net_response_t * cmd_sync_handler( void *data )
 	if( response )
 	{
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
-		fprintf(stderr, "Packing: result = %u\t len=%d\n", ret, response->len );
 	}
 
 	net_applemidi_cmd_destroy( &cmd );

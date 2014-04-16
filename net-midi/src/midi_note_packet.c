@@ -83,9 +83,9 @@ void midi_note_packet_dump( midi_note_packet_t *note_packet )
 {
 	if(! note_packet ) return;
 
-	fprintf( stderr, "Note Packet:\n");
-	fprintf( stderr, "\tCommand : %02x\n", note_packet->command );
-	fprintf( stderr, "\tChannel : %02x\n", note_packet->channel );
-	fprintf( stderr, "\tNote    : %02x\n", note_packet->note );
-	fprintf( stderr, "\tVelocity: %02x\n", note_packet->velocity );
+	fprintf( stderr, "Note Packet( ");
+	fprintf( stderr, "Command=%d , ", note_packet->command );
+	fprintf( stderr, "Channel=%d , ", note_packet->channel );
+	fprintf( stderr, "Note=%d , ", note_packet->note );
+	fprintf( stderr, "Velocity=%d )\n", note_packet->velocity );
 }

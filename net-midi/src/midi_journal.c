@@ -599,7 +599,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char
 		offset = note / 8;
 		shift = (note - ( offset * 8 )) - 1;
 
-		fprintf(stderr, "NoteOff: note=%u offset=%u shift=%u\n", note, offset, shift );
+		fprintf(stderr, "NoteOff( note=%u , offset=%u , shift=%u )\n", note, offset, shift );
 
 		// Set low and high values;
 		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );

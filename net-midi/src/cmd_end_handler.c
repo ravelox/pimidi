@@ -26,12 +26,12 @@ net_response_t * cmd_end_handler( void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	fprintf(stderr, "BYE\n");
+	fprintf(stderr, "BYE( ");
 
-	fprintf(stderr, "\tname     : %s\n", inv->name);
-	fprintf(stderr, "\tssrc     : 0x%08x\n", inv->ssrc);
-	fprintf(stderr, "\tversion  : 0x%08x\n", inv->version);
-	fprintf(stderr, "\tinitiator: 0x%08x\n", inv->initiator);
+	fprintf(stderr, "name=<<%s>> , ", inv->name);
+	fprintf(stderr, "ssrc=0x%08x , ", inv->ssrc);
+	fprintf(stderr, "version = 0x%08x , ", inv->version);
+	fprintf(stderr, "initiator=0x%08x )\n", inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 

@@ -142,16 +142,6 @@ int net_socket_listener( void )
 
 			// Determine the packet type
 
-			fprintf(stderr, "Socket: %u\n", sockets[i]);
-			fprintf(stderr, "Connection: %s:%u\n", ip_address, from_addr.sin_port);
-			fprintf(stderr, "Recv Length = %u\n", recv_len );
-			fprintf(stderr, "Byte[0] == %02x\n", packet[0]);
-
-			debug_net_ctx_enumerate();
-
-			hex_dump( packet, recv_len );
-
-			fflush( stderr );
 			// Apple MIDI command
 			if( packet[0] == 0xff )
 			{
@@ -162,7 +152,7 @@ int net_socket_listener( void )
 				switch( command->command )
 				{
 					case NET_APPLEMIDI_CMD_INV:
-						response = cmd_inv_handler( ip_address, from_addr.sin_port, command->data );
+						response = cmd_inv_handler( ip_address, ntohs( from_addr.sin_port ), command->data );
 						break;
 					case NET_APPLEMIDI_CMD_ACCEPT:
 						break;
@@ -183,11 +173,9 @@ int net_socket_listener( void )
 
 				if( response )
 				{
-					hex_dump( response->buffer, response->len );
 					sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
 					net_response_destroy( &response );
 				}
-				debug_net_ctx_enumerate();
 
 				net_applemidi_cmd_destroy( &command );
 			}
@@ -211,7 +199,6 @@ int net_socket_listener( void )
 				unsigned char *packed_rtp_payload = NULL;
 				size_t packed_rtp_payload_len = 0;
 
-				fprintf(stderr, "Connection on MIDI note port\n");
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 
 				// DEBUG
@@ -271,7 +258,6 @@ int net_socket_listener( void )
 					FREENULL( (void **)&packed_rtp_buffer );
 					rtp_packet_destroy( &rtp_packet );
 
-					fprintf(stderr, "Adding note to journal\n");
 					net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
 				}
 

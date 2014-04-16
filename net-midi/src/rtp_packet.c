@@ -24,7 +24,7 @@ rtp_packet_t * rtp_packet_create( void )
 		new->header.p = 0;
 		new->header.x = 0;
 		new->header.cc = 0;
-		new->header.m = 1;
+		new->header.m = 0;
 		new->header.pt = RTP_DYNAMIC_PAYLOAD_97;
 	}
 
@@ -81,8 +81,6 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 	put_uint32( &p , packet->header.timestamp, out_buffer_len );
 	put_uint32( &p , packet->header.ssrc, out_buffer_len );
 
-	fprintf( stderr, "RTP Payload len = %u\n", packet->payload_len );
-
 	if( packet->payload && (packet->payload_len > 0) )
 	{
 		*out_buffer = (unsigned char *)realloc( *out_buffer, *out_buffer_len + packet->payload_len );
@@ -101,19 +99,18 @@ void rtp_packet_dump( rtp_packet_t *packet )
 {
 	if( ! packet ) return;
 
-	fprintf( stderr, "RTP Packet\n");
-	fprintf( stderr, "V = %u\n", packet->header.v);
-	fprintf( stderr, "P = %u\n", packet->header.p);
-	fprintf( stderr, "X = %u\n", packet->header.x);
-	fprintf( stderr, "CC = %u\n", packet->header.cc);
-	fprintf( stderr, "M = %u\n", packet->header.m);
-	fprintf( stderr, "PT = %u\n", packet->header.pt);
-	fprintf( stderr, "seq = %u\n", packet->header.seq);
-	fprintf( stderr, "timestamp = %u\n", packet->header.timestamp );
-	fprintf( stderr, "ssrc = %08x\n", packet->header.ssrc );
-
-	fprintf( stderr, "payload length = %u\n", packet->payload_len);
-	fprintf( stderr, "payload = %p\n", packet->payload);
+	fprintf( stderr, "RTP Packet( ");
+	fprintf( stderr, "V=%u , ", packet->header.v);
+	fprintf( stderr, "P=%u , ", packet->header.p);
+	fprintf( stderr, "X=%u , ", packet->header.x);
+	fprintf( stderr, "CC=%u , ", packet->header.cc);
+	fprintf( stderr, "M=%u , ", packet->header.m);
+	fprintf( stderr, "PT=%u , ", packet->header.pt);
+	fprintf( stderr, "seq=%u , ", packet->header.seq);
+	fprintf( stderr, "timestamp= 0x%08x , ", packet->header.timestamp );
+	fprintf( stderr, "ssrc=0x%08x , ", packet->header.ssrc );
+	fprintf( stderr, "payloadlength=%u , ", packet->payload_len);
+	fprintf( stderr, "payload=%p )\n", packet->payload);
 
 	return;
 }

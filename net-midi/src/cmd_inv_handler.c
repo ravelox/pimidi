@@ -30,18 +30,18 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	fprintf(stderr, "INV: %s:%u\n", ip_address, port );
+	fprintf(stderr, "INV(%s:%u , ", ip_address, port );
 
-	fprintf(stderr, "\tname     : %s\n", inv->name);
-	fprintf(stderr, "\tssrc     : 0x%08x\n", inv->ssrc);
-	fprintf(stderr, "\tversion  : 0x%08x\n", inv->version);
-	fprintf(stderr, "\tinitiator: 0x%08x\n", inv->initiator);
+	fprintf(stderr, "name=%s , ", inv->name);
+	fprintf(stderr, "ssrc=0x%08x , ", inv->ssrc);
+	fprintf(stderr, "version=0x%08x , ", inv->version);
+	fprintf(stderr, "initiator=0x%08x )\n", inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
 	{
-		fprintf(stderr, "No existing connection found\n");
+		fprintf(stderr, "Registering new connection\n");
 		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port );
 
 		if( ! ctx ) 
@@ -80,7 +80,6 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	if( response )
 	{
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
-		fprintf(stderr, "Packing: result = %u\t len=%d\n", ret, response->len );
 	}
 
 	net_applemidi_cmd_destroy( &cmd );
