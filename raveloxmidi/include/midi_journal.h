@@ -88,10 +88,10 @@ typedef struct journal_t {
 void journal_header_pack( journal_header_t *header , char **packed , size_t *size );
 journal_header_t * journal_header_create( void );
 void journal_header_destroy( journal_header_t **header );
-void channel_header_pack( channel_header_t *header , char **packed , size_t *size );
+void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size );
 void channel_header_destroy( channel_header_t **header );
 channel_header_t * channel_header_create( void );
-void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *size );
+void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size );
 void chaptern_header_destroy( chaptern_header_t **header );
 chaptern_header_t * chaptern_header_create( void );
 void midi_note_pack( midi_note_t *note , char **packed , size_t *size );
@@ -108,12 +108,19 @@ int journal_init( journal_t **journal );
 void journal_destroy( journal_t **journal );
 void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char note, char velocity );
 void midi_note_dump( midi_note_t *note );
+void midi_note_reset( midi_note_t *note );
 void chaptern_header_dump( chaptern_header_t *header );
+void chaptern_header_reset( chaptern_header_t *header );
 void chaptern_dump( chaptern_t *chaptern );
+void chaptern_reset( chaptern_t *chaptern );
 void channel_header_dump( channel_header_t *header );
+void channel_header_reset( channel_header_t *header );
 void channel_journal_dump( channel_t *channel );
-void journal_header_dump( journal_header_t *header );
-void journal_dump( journal_t *journal );
+void channel_journal_reset( channel_t *channel );
 int journal_has_data( journal_t *journal );
+void journal_header_dump( journal_header_t *header );
+void journal_header_reset( journal_header_t *header );
+void journal_dump( journal_t *journal );
+void journal_reset( journal_t *journal );
 
 #endif

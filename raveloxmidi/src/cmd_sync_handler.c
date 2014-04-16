@@ -46,7 +46,6 @@ net_response_t * cmd_sync_handler( void *data )
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
 	uint32_t delta = 0;
-	int ret = 0;
 
 	if( ! data ) return NULL;
 
@@ -108,7 +107,13 @@ net_response_t * cmd_sync_handler( void *data )
 
 	if( response )
 	{
+		int ret = 0;
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+		if( ret != 0 )
+		{
+			fprintf(stderr, "Unable to pack response to sync command\n");
+			net_response_destroy( &response );
+		}
 	}
 
 	net_applemidi_cmd_destroy( &cmd );

@@ -28,7 +28,6 @@ typedef struct net_response_t {
 
 net_response_t * new_net_response( void );
 void net_response_destroy( net_response_t **response );
-
 int net_socket_create( unsigned int port );
 int net_socket_destroy( void );
 int net_socket_listener( void );

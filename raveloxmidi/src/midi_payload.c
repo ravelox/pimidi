@@ -108,7 +108,7 @@ void payload_toggle_p( midi_payload_t *payload )
 	payload->header->P ^= 1;
 }
 
-void payload_set_buffer( midi_payload_t *payload, char *buffer , uint16_t buffer_size)
+void payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , uint16_t buffer_size)
 {
 	if( ! payload ) return;
 
@@ -132,7 +132,7 @@ void payload_dump( midi_payload_t *payload )
 
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
 {
-	uint8_t temp_header;
+	uint8_t temp_header = 0;
 	unsigned char *p = NULL;
 
 	*buffer = NULL;

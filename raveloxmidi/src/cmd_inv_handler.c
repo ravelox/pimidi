@@ -44,7 +44,6 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	net_applemidi_inv *accept_inv = NULL;
 	net_ctx_t *ctx = NULL;
 	net_response_t *response;
-	int ret = 0;
 
 	if( ! data ) return NULL;
 
@@ -99,7 +98,13 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	if( response )
 	{
+		int ret = 0;
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+		if( ret != 0 )
+		{
+			fprintf(stderr, "Unable to pack response to inv command\n");
+			net_response_destroy( &response );
+		}
 	}
 
 	net_applemidi_cmd_destroy( &cmd );

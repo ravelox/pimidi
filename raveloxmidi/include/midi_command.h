@@ -30,4 +30,7 @@ typedef struct midi_command_t {
 #define MIDI_COMMAND_NOTE_ON	0x90
 #define MIDI_COMMAND_NOTE_OFF	0x80
 
+void midi_command_destroy( midi_command_t **command );
+midi_command_t * midi_command_create( void );
+
 #endif

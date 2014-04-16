@@ -37,17 +37,18 @@ typedef struct midi_payload_header_t {
 
 typedef struct midi_payload_t {
 	midi_payload_header_t *header;
-	char		*buffer;
+	unsigned char	*buffer;
 } midi_payload_t;
 
-midi_payload_t *midi_payload_create( void );
 void midi_payload_destroy( midi_payload_t **payload );
 void payload_reset( midi_payload_t **payload );
+midi_payload_t * midi_payload_create( void );
 void payload_toggle_b( midi_payload_t *payload );
 void payload_toggle_j( midi_payload_t *payload );
 void payload_toggle_z( midi_payload_t *payload );
 void payload_toggle_p( midi_payload_t *payload );
-void payload_set_buffer( midi_payload_t *payload, char *buffer , uint16_t buffer_size);
+void payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , uint16_t buffer_size);
+void payload_dump( midi_payload_t *payload );
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
 
 #endif

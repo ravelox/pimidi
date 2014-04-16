@@ -217,7 +217,6 @@ int net_socket_listener( void )
 				size_t packed_payload_len = 0;
 
 				unsigned char *packed_rtp_payload = NULL;
-				size_t packed_rtp_payload_len = 0;
 
 				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 

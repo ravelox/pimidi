@@ -75,7 +75,7 @@ void journal_header_destroy( journal_header_t **header )
 }
 
 
-void channel_header_pack( channel_header_t *header , char **packed , size_t *size )
+void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 	uint16_t temp_header = 0;
@@ -85,7 +85,7 @@ void channel_header_pack( channel_header_t *header , char **packed , size_t *siz
 
 	if( ! header ) return;
 
-	*packed = ( char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
+	*packed = ( unsigned char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
 
@@ -123,7 +123,7 @@ channel_header_t * channel_header_create( void )
 	return header;
 }
 
-void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *size )
+void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 
@@ -133,7 +133,7 @@ void chaptern_header_pack( chaptern_header_t *header , char **packed , size_t *s
 	if( ! header ) return;
 
 	chaptern_header_dump( header );
-	*packed = ( char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
+	*packed = ( unsigned char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
 	memset( *packed, 0 , CHAPTERN_HEADER_PACKED_SIZE );
@@ -223,7 +223,7 @@ midi_note_t * midi_note_create( void )
 
 void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 {
-	char *packed_header = NULL;
+	unsigned char *packed_header = NULL;
 	char *packed_note = NULL;
 	char *note_buffer = NULL;
 	char *offbits_buffer = NULL;
@@ -377,7 +377,7 @@ void chaptern_destroy( chaptern_t **chaptern )
 
 void channel_pack( channel_t *channel, char **packed, size_t *size )
 {
-	char *packed_channel_header = NULL;
+	unsigned char *packed_channel_header = NULL;
 	char *packed_chaptern = NULL;
 	
 	size_t packed_channel_header_size = 0;
@@ -733,7 +733,7 @@ void channel_journal_dump( channel_t *channel )
 
 	channel_header_dump( channel->header );
 
-	if( channel->header->bitfield && CHAPTER_N )
+	if( channel->header->bitfield & CHAPTER_N )
 	{
 		chaptern_dump( channel->chaptern );
 	}
@@ -743,7 +743,7 @@ void channel_journal_reset( channel_t *channel )
 {
 	if( ! channel ) return;
 
-	if( channel->header->bitfield && CHAPTER_N )
+	if( channel->header->bitfield & CHAPTER_N )
 	{
 		chaptern_reset( channel->chaptern );
 	}

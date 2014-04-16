@@ -30,9 +30,10 @@ typedef struct midi_note_packet_t {
 
 #define PACKED_MIDI_NOTE_PACKET_SIZE	3
 
+midi_note_packet_t * midi_note_packet_create( void );
+void midi_note_packet_destroy( midi_note_packet_t **note_packet );
 int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *packet, size_t packet_len );
 int midi_note_packet_pack( midi_note_packet_t *midi_note, unsigned char **packet, size_t *packet_len );
-void midi_note_packet_destroy( midi_note_packet_t **note_packet );
 void midi_note_packet_dump( midi_note_packet_t *note_packet );
 
 #endif
