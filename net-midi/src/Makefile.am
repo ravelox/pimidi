@@ -1,7 +1,7 @@
-bin_PROGRAMS = net_midi avahi_test  parse_test
+bin_PROGRAMS = raveloxmidi dns_service_publisher  parse_test
 
-avahi_test_SOURCES = \
-	avahi_test.c
+dns_service_publisher_SOURCES = \
+	dns_service_publisher.c
 
 parse_test_SOURCES = \
 	parse_test.c \
@@ -18,8 +18,8 @@ parse_test_SOURCES = \
 	midi_command.c \
 	utils.c
 
-net_midi_SOURCES = \
-	net_midi.c \
+raveloxmidi_SOURCES = \
+	raveloxmidi.c \
 	cmd_end_handler.c \
 	cmd_inv_handler.c \
 	cmd_sync_handler.c \
@@ -33,11 +33,11 @@ net_midi_SOURCES = \
 	midi_command.c \
 	utils.c 
 
-net_midi_LDADD	= @PTHREAD_LIBS@
+raveloxmidi_LDADD	= @PTHREAD_LIBS@
 
-net_midi_LDFLAGS = @PTHREAD_CFLAGS@
+raveloxmidi_LDFLAGS = @PTHREAD_CFLAGS@
 
-avahi_test_LDADD = ${AVAHI_LIBS}
+dns_service_publisher_LDADD = ${AVAHI_LIBS}
 
 EXTRA_DIST = 
 

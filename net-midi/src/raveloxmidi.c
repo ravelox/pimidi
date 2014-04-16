@@ -1,5 +1,5 @@
 /*
-   This file is part of raveloxmidi.
+   raveloxmidi - rtpMIDI implementation for sending NoteOn/Off MIDI events
 
    Copyright (C) 2014 Dave Kelly
 
@@ -10,40 +10,45 @@
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
+   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 
-#include "midi_command.h"
+#include <signal.h>
+
+#include "net_applemidi.h"
+#include "net_listener.h"
+#include "midi_journal.h"
+#include "net_connection.h"
 #include "utils.h"
 
-void midi_command_destroy( midi_command_t **command )
+int main(int argc, char *argv[])
 {
-	if( ! command ) return;
-	if( ! *command ) return;
 
-	FREENULL( (void **)command );
-}
+	if( net_socket_setup() != 0 )
+	{
+		fprintf(stderr, "Unable to create sockets\n");
+		exit(1);
+	}
 
-midi_command_t * midi_command_create( void )
-{
-	midi_command_t *command = NULL;
+	net_ctx_init();
 
-	command = ( midi_command_t * )malloc( sizeof( midi_command_t ) );
+        signal( SIGINT , net_socket_loop_shutdown);
+        signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	if( ! command ) return NULL;
+	net_socket_loop( 5000 );
 
-	memset( command, 0, sizeof( midi_command_t ) );
+	net_socket_destroy();
+	net_ctx_destroy();
 
-	return command;
+	return 0;
 }
