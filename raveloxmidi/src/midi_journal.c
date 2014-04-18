@@ -487,8 +487,6 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 	fprintf( stderr, "journal_has_data = %u\n", journal_has_data( journal ));
 	if(  ! journal_has_data( journal ) ) return;
 
-	fprintf( stderr, "Packing journal header\n");
-
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
 
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )

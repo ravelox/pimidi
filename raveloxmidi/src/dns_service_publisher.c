@@ -192,10 +192,10 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
     }
 }
 
-int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char*argv[]) {
+void *dns_service_publisher( void *service_name )
+{
     AvahiClient *client = NULL;
     int error;
-    int ret = 1;
     // struct timeval tv;
 
     /* Allocate main loop object */
@@ -204,7 +204,7 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char*argv[]) {
         goto fail;
     }
 
-    name = avahi_strdup("DKAvahiTest");
+    name = avahi_strdup( (char *) service_name );
 
     /* Allocate a new client */
     client = avahi_client_new(avahi_simple_poll_get(simple_poll), 0, client_callback, NULL, &error);
@@ -218,8 +218,6 @@ int main(AVAHI_GCC_UNUSED int argc, AVAHI_GCC_UNUSED char*argv[]) {
     avahi_simple_poll_loop(simple_poll);
     fprintf(stderr, "End of loop\n");
 
-    ret = 0;
-
 fail:
 
     /* Cleanup things */
@@ -232,5 +230,5 @@ fail:
 
     avahi_free(name);
 
-    return ret;
+	return NULL;
 }

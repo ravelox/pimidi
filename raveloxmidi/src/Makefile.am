@@ -1,13 +1,12 @@
-bin_PROGRAMS = raveloxmidi dns_service_publisher
-
-dns_service_publisher_SOURCES = \
-	dns_service_publisher.c
+bin_PROGRAMS = raveloxmidi
 
 raveloxmidi_SOURCES = \
 	raveloxmidi.c \
+	dns_service_publisher.c \
 	cmd_end_handler.c \
 	cmd_inv_handler.c \
 	cmd_sync_handler.c \
+	cmd_feedback_handler.c \
 	midi_journal.c \
 	midi_note_packet.c \
 	midi_payload.c \
@@ -17,11 +16,9 @@ raveloxmidi_SOURCES = \
 	net_listener.c \
 	utils.c 
 
-raveloxmidi_LDADD	= @PTHREAD_LIBS@
+raveloxmidi_LDADD	= @PTHREAD_LIBS@ ${AVAHI_LIBS}
 
 raveloxmidi_LDFLAGS = @PTHREAD_CFLAGS@
-
-dns_service_publisher_LDADD = ${AVAHI_LIBS}
 
 EXTRA_DIST = 
 

@@ -41,6 +41,7 @@ extern int errno;
 
 #include "cmd_inv_handler.h"
 #include "cmd_sync_handler.h"
+#include "cmd_feedback_handler.h"
 #include "cmd_end_handler.h"
 
 #include "midi_note_packet.h"
@@ -185,6 +186,7 @@ int net_socket_listener( void )
 						response = cmd_sync_handler( command->data );
 						break;
 					case NET_APPLEMIDI_CMD_FEEDBACK:
+						response = cmd_feedback_handler( command->data );
 						break;
 					case NET_APPLEMIDI_CMD_BITRATE:
 						break;

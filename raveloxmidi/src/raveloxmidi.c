@@ -25,14 +25,20 @@
 
 #include <signal.h>
 
+#include <pthread.h>
+
 #include "net_applemidi.h"
 #include "net_listener.h"
 #include "midi_journal.h"
 #include "net_connection.h"
 #include "utils.h"
 
+#include "dns_service_publisher.h"
+
 int main(int argc, char *argv[])
 {
+	pthread_t dns_publisher_thread;
+	char *dns_service_name="raveloxmidi";
 
 	if( net_socket_setup() != 0 )
 	{
@@ -44,6 +50,14 @@ int main(int argc, char *argv[])
 
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
+
+	fprintf(stderr, "Starting DNS service publish thread\n");
+	
+	if( pthread_create( &dns_publisher_thread , NULL, dns_service_publisher, dns_service_name )  )
+	{
+		fprintf(stderr, "Unable to create publish thread\n");
+		exit(1);
+	}
 
 	net_socket_loop( 5000 );
 
