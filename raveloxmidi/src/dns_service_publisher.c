@@ -1,5 +1,8 @@
 /***
-  This file is part of avahi.
+  This file is a modified version of client-publish-service.c
+  which uses AvahiThreadedPoll
+
+  client-publish-service.c is part of avahi.
 
   avahi is free software; you can redistribute it and/or modify it
   under the terms of the GNU Lesser General Public License as
@@ -30,14 +33,15 @@
 #include <avahi-client/publish.h>
 
 #include <avahi-common/alternative.h>
-#include <avahi-common/simple-watch.h>
+#include <avahi-common/thread-watch.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
 #include <avahi-common/timeval.h>
 
 static AvahiEntryGroup *group = NULL;
-static AvahiSimplePoll *simple_poll = NULL;
-static char *name = NULL;
+static AvahiThreadedPoll *threaded_poll = NULL;
+static AvahiClient *client = NULL;
+static char *service_name_copy = NULL;
 
 static void create_services(AvahiClient *c);
 
@@ -50,7 +54,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
     switch (state) {
         case AVAHI_ENTRY_GROUP_ESTABLISHED :
             /* The entry group has been established successfully */
-            fprintf(stderr, "Service '%s' successfully established.\n", name);
+            fprintf(stderr, "Service '%s' successfully established.\n", service_name_copy);
             break;
 
         case AVAHI_ENTRY_GROUP_COLLISION : {
@@ -58,11 +62,11 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 
             /* A service name collision with a remote service
              * happened. Let's pick a new name */
-            n = avahi_alternative_service_name(name);
-            avahi_free(name);
-            name = n;
+            n = avahi_alternative_service_name( service_name_copy );
+            avahi_free(service_name_copy);
+            service_name_copy = n;
 
-            fprintf(stderr, "Service name collision, renaming service to '%s'\n", name);
+            fprintf(stderr, "Service name collision, renaming service to '%s'\n", service_name_copy);
 
             /* And recreate the services */
             create_services(avahi_entry_group_get_client(g));
@@ -74,7 +78,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
             fprintf(stderr, "Entry group failure: %s\n", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(g))));
 
             /* Some kind of failure happened while we were registering our services */
-            avahi_simple_poll_quit(simple_poll);
+            avahi_threaded_poll_quit(threaded_poll);
             break;
 
         case AVAHI_ENTRY_GROUP_UNCOMMITED:
@@ -101,23 +105,18 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        fprintf(stderr, "Adding service '%s'\n", name);
+        fprintf(stderr, "Adding service '%s'\n", service_name_copy);
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
-        /* We will now add two services and one subtype to the entry
-         * group. The two services have the same name, but differ in
-         * the service type (IPP vs. BSD LPR). Only services with the
-         * same name should be put in the same entry group. */
-
-        /* Add the service for IPP */
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, name, "_apple-midi._udp", NULL, NULL, 5004, "test=blah", r, NULL)) < 0) {
+        /* Add the service for _apple-midi.udp */
+        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  service_name_copy , "_apple-midi._udp", NULL, NULL, 5004, "test=blah", r, NULL)) < 0) {
 
             if (ret == AVAHI_ERR_COLLISION)
                 goto collision;
 
-            fprintf(stderr, "Failed to add _ipp._tcp service: %s\n", avahi_strerror(ret));
+            fprintf(stderr, "Failed to add _apple-midi._udp service: %s\n", avahi_strerror(ret));
             goto fail;
         }
 
@@ -134,11 +133,11 @@ collision:
 
     /* A service name collision with a local service happened. Let's
      * pick a new name */
-    n = avahi_alternative_service_name(name);
-    avahi_free(name);
-    name = n;
+    n = avahi_alternative_service_name( service_name_copy );
+    avahi_free(service_name_copy);
+    service_name_copy = n;
 
-    fprintf(stderr, "Service name collision, renaming service to '%s'\n", name);
+    fprintf(stderr, "Service name collision, renaming service to '%s'\n", service_name_copy );
 
     avahi_entry_group_reset(group);
 
@@ -146,7 +145,7 @@ collision:
     return;
 
 fail:
-    avahi_simple_poll_quit(simple_poll);
+    avahi_threaded_poll_quit(threaded_poll);
 }
 
 static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
@@ -165,7 +164,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
         case AVAHI_CLIENT_FAILURE:
 
             fprintf(stderr, "Client failure: %s\n", avahi_strerror(avahi_client_errno(c)));
-            avahi_simple_poll_quit(simple_poll);
+            avahi_threaded_poll_quit(threaded_poll);
 
             break;
 
@@ -192,43 +191,55 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
     }
 }
 
-void *dns_service_publisher( void *service_name )
+void dns_service_publisher_cleanup( void )
 {
-    AvahiClient *client = NULL;
-    int error;
-    // struct timeval tv;
+	if( client)
+	{
+		avahi_client_free( client );
+	}
 
-    /* Allocate main loop object */
-    if (!(simple_poll = avahi_simple_poll_new())) {
-        fprintf(stderr, "Failed to create simple poll object.\n");
-        goto fail;
-    }
+	if( service_name_copy )
+	{
+		avahi_free( service_name_copy );
+	}
 
-    name = avahi_strdup( (char *) service_name );
+	if( threaded_poll )
+	{
+		avahi_threaded_poll_free( threaded_poll );
+	}
+}
 
-    /* Allocate a new client */
-    client = avahi_client_new(avahi_simple_poll_get(simple_poll), 0, client_callback, NULL, &error);
+int dns_service_publisher_start( char *service_name )
+{
+	int ret = 0;
+	int error;
 
-    /* Check wether creating the client object succeeded */
-    if (!client) {
-        fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
-        goto fail;
-    }
-    /* Run the main loop */
-    avahi_simple_poll_loop(simple_poll);
-    fprintf(stderr, "End of loop\n");
+	if( ! (threaded_poll = avahi_threaded_poll_new() ) ) {
+		fprintf(stderr, "Unable to create publisher thread\n");
+		return 1;
+	}
 
-fail:
+	service_name_copy = avahi_strdup( service_name );
 
-    /* Cleanup things */
+	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 
-    if (client)
-        avahi_client_free(client);
+	if (! client) {
+		fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
+		dns_service_publisher_cleanup();
+		return 1;
+	}
 
-    if (simple_poll)
-        avahi_simple_poll_free(simple_poll);
+	avahi_threaded_poll_start( threaded_poll );
 
-    avahi_free(name);
+	return ret;
+}
 
-	return NULL;
+void dns_service_publisher_stop( void )
+{
+	if( threaded_poll )
+	{
+		avahi_threaded_poll_stop( threaded_poll );
+	}
+
+	dns_service_publisher_cleanup();
 }
