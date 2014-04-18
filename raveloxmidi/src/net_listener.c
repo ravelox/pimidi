@@ -223,10 +223,10 @@ int net_socket_listener( void )
 				// DEBUG
 				midi_note_packet_dump( note_packet );
 
-				// NOTE ON
 				// Get a journal if there is one
 				net_ctx_journal_pack( 0 , &packed_journal, &packed_journal_len);
-				// For the NOTE ON event, the MIDI note is already packed
+
+				// For the NOTE event, the MIDI note is already packed
 				// but we still need to pack it into a payload
 				// Create the payload
 				midi_payload = midi_payload_create();
@@ -277,11 +277,8 @@ int net_socket_listener( void )
 					FREENULL( (void **)&packed_rtp_buffer );
 					rtp_packet_destroy( &rtp_packet );
 
-					net_ctx_add_journal_note( 0 , note_packet->channel + 1 , note_packet->note, note_packet->velocity );
+					net_ctx_add_journal_note( 0 , note_packet );
 				}
-
-				// Add the NoteOff event for the same note
-				net_ctx_add_journal_note( 0 , note_packet->channel + 1, note_packet->note, 0 );
 
 				midi_note_packet_destroy( &note_packet );
 			}

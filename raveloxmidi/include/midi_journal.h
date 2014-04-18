@@ -21,6 +21,8 @@
 #ifndef MIDI_JOURNAL_H
 #define MIDI_JOURNAL_H
 
+#include "midi_note_packet.h"
+
 typedef struct journal_header_t {
 	uint8_t	bitfield; // SYAH
 	uint8_t totchan;
@@ -106,7 +108,7 @@ channel_t * channel_create( void );
 void journal_pack( journal_t *journal, char **packed, size_t *size );
 int journal_init( journal_t **journal );
 void journal_destroy( journal_t **journal );
-void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char note, char velocity );
+void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t *note_packet );
 void midi_note_dump( midi_note_t *note );
 void midi_note_reset( midi_note_t *note );
 void chaptern_header_dump( chaptern_header_t *header );

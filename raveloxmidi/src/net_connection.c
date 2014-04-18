@@ -188,13 +188,15 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	return NULL;
 }
 
-void net_ctx_add_journal_note( uint8_t ctx_id , char channel, char note, char velocity )
+void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_packet_t *note_packet )
 {
 	if( ctx_id > MAX_CTX - 1 ) return;
+	
+	if( ! note_packet ) return;
 
 	ctx[ctx_id]->seq += 1;
 
-	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, channel, note, velocity );
+	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, note_packet );
 }
 
 void debug_ctx_journal_dump( uint8_t ctx_id )

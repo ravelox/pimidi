@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "midi_note_packet.h"
 #include "midi_journal.h"
 #include "utils.h"
 
@@ -578,69 +579,71 @@ void journal_destroy( journal_t **journal )
 	*journal = NULL;
 }
 
-void midi_journal_add_note( journal_t *journal, uint32_t seq, char channel, char note, char velocity )
+void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t *note_packet)
 {
 	uint16_t note_slot = 0;
 	midi_note_t *new_note = NULL;
+	unsigned char channel = 0;
 
 	if( ! journal ) return;
+	if( ! note_packet ) return;
 
 	if( channel < 1 || channel > MAX_MIDI_CHANNELS ) return;
+
 
 	// Set Journal Header A flag
 	journal->header->bitfield |= 0x02;
 	
-	if( ! journal->channels[ channel - 1 ] )
+	if( ! journal->channels[ channel ] )
 	{
 		channel_t *channel_journal = channel_create();
 
 		if( ! channel_journal ) return;
-		journal->channels[ channel - 1 ] = channel_journal;
+		journal->channels[ channel ] = channel_journal;
 
 	}
 
-	journal->channels[ channel - 1]->header->bitfield |= CHAPTER_N;
-	journal->channels[ channel - 1]->chaptern->header->B = 1;
+	journal->channels[ channel ]->header->bitfield |= CHAPTER_N;
+	journal->channels[ channel ]->chaptern->header->B = 1;
 
-	if( journal->channels[ channel - 1 ]->header->chan != channel )
+	if( journal->channels[ channel ]->header->chan != ( channel + 1 ) )
 	{
-		journal->channels[ channel - 1]->header->chan = channel;
+		journal->channels[ channel ]->header->chan = ( channel + 1 );
 		journal->header->totchan +=1;
 	}
 
 	journal->header->seq = seq;
 
-	// Store velocity 0 as NoteOff
-	if( velocity == 0 )
+	if( note_packet->command == MIDI_COMMAND_NOTE_OFF )
 	{
 		uint8_t offset, shift;
 
 		// Which element
-		offset = note / 8;
-		shift = (note - ( offset * 8 )) - 1;
+		offset = (note_packet->note) / 8;
+		shift = ( (note_packet->note) - ( offset * 8 )) - 1;
 
-		fprintf(stderr, "NoteOff( note=%u , offset=%u , shift=%u )\n", note, offset, shift );
+		fprintf(stderr, "NoteOff( note=%u , offset=%u , shift=%u )\n", note_packet->note, offset, shift );
 
 		// Set low and high values;
-		journal->channels[channel - 1]->chaptern->header->high = MAX( offset , journal->channels[channel - 1]->chaptern->header->high );
-		journal->channels[channel - 1]->chaptern->header->low = MIN( offset , journal->channels[channel - 1]->chaptern->header->low );
+		journal->channels[ channel ]->chaptern->header->high = MAX( offset , journal->channels[ channel ]->chaptern->header->high );
+		journal->channels[ channel ]->chaptern->header->low = MIN( offset , journal->channels[ channel ]->chaptern->header->low );
 
-		journal->channels[channel - 1]->chaptern->offbits[offset] |=  ( 1 << shift );
+		journal->channels[ channel ]->chaptern->offbits[offset] |=  ( 1 << shift );
 
 		return;
 	}
 
-	if( journal->channels[ channel - 1 ]->chaptern->num_notes == MAX_CHAPTERN_NOTES ) return;
+	if( journal->channels[ channel ]->chaptern->num_notes == MAX_CHAPTERN_NOTES ) return;
 
 	new_note = midi_note_create();
 	if(! new_note ) return;
 
-	new_note->num = note;
-	new_note->velocity = velocity;
+	new_note->num = note_packet->note;
+	new_note->velocity = note_packet->velocity;
 
-	note_slot = journal->channels[ channel - 1]->chaptern->num_notes++;
+	note_slot = journal->channels[ channel ]->chaptern->num_notes++;
 
-	journal->channels[ channel - 1]->chaptern->notes[note_slot] = new_note;
+	journal->channels[ channel ]->chaptern->notes[note_slot] = new_note;
 }
 
 void midi_note_dump( midi_note_t *note )

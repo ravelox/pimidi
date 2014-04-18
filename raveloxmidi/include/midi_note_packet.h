@@ -28,6 +28,9 @@ typedef struct midi_note_packet_t {
 	char		velocity;
 } midi_note_packet_t;
 
+#define MIDI_COMMAND_NOTE_ON	0x09
+#define MIDI_COMMAND_NOTE_OFF	0x08
+
 #define PACKED_MIDI_NOTE_PACKET_SIZE	3
 
 midi_note_packet_t * midi_note_packet_create( void );

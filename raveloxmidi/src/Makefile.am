@@ -15,7 +15,6 @@ parse_test_SOURCES = \
 	net_connection.c \
 	rtp_packet.c \
 	net_listener.c \
-	midi_command.c \
 	utils.c
 
 raveloxmidi_SOURCES = \
@@ -30,7 +29,6 @@ raveloxmidi_SOURCES = \
 	net_connection.c \
 	rtp_packet.c \
 	net_listener.c \
-	midi_command.c \
 	utils.c 
 
 raveloxmidi_LDADD	= @PTHREAD_LIBS@
