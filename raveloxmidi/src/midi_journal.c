@@ -588,7 +588,8 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t
 	if( ! journal ) return;
 	if( ! note_packet ) return;
 
-	if( channel < 1 || channel > MAX_MIDI_CHANNELS ) return;
+	channel = note_packet->channel;
+	if( channel > MAX_MIDI_CHANNELS ) return;
 
 
 	// Set Journal Header A flag
@@ -614,6 +615,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t
 
 	journal->header->seq = seq;
 
+	// Need to update NOTE OFF bits if the command is NOTE OFF
 	if( note_packet->command == MIDI_COMMAND_NOTE_OFF )
 	{
 		uint8_t offset, shift;
@@ -621,8 +623,6 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t
 		// Which element
 		offset = (note_packet->note) / 8;
 		shift = ( (note_packet->note) - ( offset * 8 )) - 1;
-
-		fprintf(stderr, "NoteOff( note=%u , offset=%u , shift=%u )\n", note_packet->note, offset, shift );
 
 		// Set low and high values;
 		journal->channels[ channel ]->chaptern->header->high = MAX( offset , journal->channels[ channel ]->chaptern->header->high );
