@@ -35,7 +35,7 @@
 
 int main(int argc, char *argv[])
 {
-	char *dns_service_name="raveloxmidi";
+	dns_service_t service;
 	int ret = 0;
 
 	if( net_socket_setup() != 0 )
@@ -49,9 +49,10 @@ int main(int argc, char *argv[])
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	fprintf(stderr, "Starting DNS service publish thread\n");
+	service.name = "raveloxmidi";
+	service.service = "_apple-midi._udp";
 
-	ret = dns_service_publisher_start( dns_service_name );
+	ret = dns_service_publisher_start( &service );
 	
 	if( ret != 0 )
 	{

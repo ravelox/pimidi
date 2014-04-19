@@ -38,10 +38,13 @@
 #include <avahi-common/error.h>
 #include <avahi-common/timeval.h>
 
+#include "dns_service_publisher.h"
+
 static AvahiEntryGroup *group = NULL;
 static AvahiThreadedPoll *threaded_poll = NULL;
 static AvahiClient *client = NULL;
 static char *service_name_copy = NULL;
+static char *service_service_copy = NULL;
 
 static void create_services(AvahiClient *c);
 
@@ -105,18 +108,17 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        fprintf(stderr, "Adding service '%s'\n", service_name_copy);
+        fprintf(stderr, "Adding service '%s.%s'\n", service_name_copy, service_service_copy );
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
-        /* Add the service for _apple-midi.udp */
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  service_name_copy , "_apple-midi._udp", NULL, NULL, 5004, "test=blah", r, NULL)) < 0) {
+        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  service_name_copy , service_service_copy , NULL, NULL, 5004, "test=blah", r, NULL)) < 0) {
 
             if (ret == AVAHI_ERR_COLLISION)
                 goto collision;
 
-            fprintf(stderr, "Failed to add _apple-midi._udp service: %s\n", avahi_strerror(ret));
+            fprintf(stderr, "Failed to add %s service: %s\n", service_service_copy,avahi_strerror(ret));
             goto fail;
         }
 
@@ -203,23 +205,31 @@ void dns_service_publisher_cleanup( void )
 		avahi_free( service_name_copy );
 	}
 
+	if( service_service_copy )
+	{
+		avahi_free( service_service_copy );
+	}
+
 	if( threaded_poll )
 	{
 		avahi_threaded_poll_free( threaded_poll );
 	}
 }
 
-int dns_service_publisher_start( char *service_name )
+int dns_service_publisher_start( dns_service_t *service )
 {
 	int ret = 0;
 	int error;
+
+	if( ! service ) return 1;
 
 	if( ! (threaded_poll = avahi_threaded_poll_new() ) ) {
 		fprintf(stderr, "Unable to create publisher thread\n");
 		return 1;
 	}
 
-	service_name_copy = avahi_strdup( service_name );
+	service_name_copy = avahi_strdup( service->name );
+	service_service_copy = avahi_strdup( service->service );
 
 	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 

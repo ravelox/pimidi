@@ -220,10 +220,6 @@ int net_socket_listener( void )
 
 				unsigned char *packed_rtp_payload = NULL;
 
-				ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
-
-				// DEBUG
-				midi_note_packet_dump( note_packet );
 
 				// Get a journal if there is one
 				net_ctx_journal_pack( 0 , &packed_journal, &packed_journal_len);
@@ -269,8 +265,6 @@ int net_socket_listener( void )
 					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
 					// Send the RTP packet
-					// TODO:
-
 					net_ctx_send( 0 , sockets[i],  packed_rtp_buffer, packed_rtp_buffer_len );
 
 					// Clean up
@@ -279,6 +273,7 @@ int net_socket_listener( void )
 					FREENULL( (void **)&packed_rtp_buffer );
 					rtp_packet_destroy( &rtp_packet );
 
+					ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 					net_ctx_add_journal_note( 0 , note_packet );
 				}
 
