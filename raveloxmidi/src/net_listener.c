@@ -159,6 +159,7 @@ int net_socket_listener( void )
 				break;
 			}
 
+			fprintf( stderr, "socket=%d\n", i);
 			ip_address = inet_ntoa(from_addr.sin_addr);	
 
 			// Determine the packet type

@@ -21,13 +21,14 @@
 #ifndef DNS_SERVICE_PUBLISHER_H
 #define DNS_SERVICE_PUBLISHER_H
 
-typedef struct dns_service_t {
+typedef struct dns_service_desc_t {
 	char *name;
 	char *service;
-} dns_service_t;
+	int port;
+} dns_service_desc_t;
 
 void dns_service_publisher_cleanup( void );
-int dns_service_publisher_start( dns_service_t *service );
+int dns_service_publisher_start( dns_service_desc_t *service );
 void dns_service_publisher_stop( void );
 
 #endif

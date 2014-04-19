@@ -33,10 +33,14 @@
 
 #include "dns_service_publisher.h"
 
+#include "config.h"
+
 int main(int argc, char *argv[])
 {
-	dns_service_t service;
+	dns_service_desc_t service_desc;
 	int ret = 0;
+
+	fprintf( stderr, "%s (%s)\n", PACKAGE, VERSION);
 
 	if( net_socket_setup() != 0 )
 	{
@@ -49,10 +53,11 @@ int main(int argc, char *argv[])
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	service.name = "raveloxmidi";
-	service.service = "_apple-midi._udp";
+	service_desc.name = "raveloxmidi";
+	service_desc.service = "_apple-midi._udp";
+	service_desc.port = 5004;
 
-	ret = dns_service_publisher_start( &service );
+	ret = dns_service_publisher_start( &service_desc );
 	
 	if( ret != 0 )
 	{

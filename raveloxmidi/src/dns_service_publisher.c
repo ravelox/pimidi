@@ -43,8 +43,9 @@
 static AvahiEntryGroup *group = NULL;
 static AvahiThreadedPoll *threaded_poll = NULL;
 static AvahiClient *client = NULL;
-static char *service_name_copy = NULL;
-static char *service_service_copy = NULL;
+static char *sd_name_copy = NULL;
+static char *sd_service_copy = NULL;
+static int sd_port = 0;
 
 static void create_services(AvahiClient *c);
 
@@ -57,7 +58,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
     switch (state) {
         case AVAHI_ENTRY_GROUP_ESTABLISHED :
             /* The entry group has been established successfully */
-            fprintf(stderr, "Service '%s' successfully established.\n", service_name_copy);
+            fprintf(stderr, "Service '%s' successfully established.\n", sd_name_copy);
             break;
 
         case AVAHI_ENTRY_GROUP_COLLISION : {
@@ -65,11 +66,11 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 
             /* A service name collision with a remote service
              * happened. Let's pick a new name */
-            n = avahi_alternative_service_name( service_name_copy );
-            avahi_free(service_name_copy);
-            service_name_copy = n;
+            n = avahi_alternative_service_name( sd_name_copy );
+            avahi_free(sd_name_copy);
+            sd_name_copy = n;
 
-            fprintf(stderr, "Service name collision, renaming service to '%s'\n", service_name_copy);
+            fprintf(stderr, "Service name collision, renaming service to '%s'\n", sd_name_copy);
 
             /* And recreate the services */
             create_services(avahi_entry_group_get_client(g));
@@ -108,17 +109,17 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        fprintf(stderr, "Adding service '%s.%s'\n", service_name_copy, service_service_copy );
+        fprintf(stderr, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  service_name_copy , service_service_copy , NULL, NULL, 5004, "test=blah", r, NULL)) < 0) {
+        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  sd_name_copy , sd_service_copy , NULL, NULL,  sd_port, "test=blah", r, NULL)) < 0) {
 
             if (ret == AVAHI_ERR_COLLISION)
                 goto collision;
 
-            fprintf(stderr, "Failed to add %s service: %s\n", service_service_copy,avahi_strerror(ret));
+            fprintf(stderr, "Failed to add %s service: %s\n", sd_service_copy,avahi_strerror(ret));
             goto fail;
         }
 
@@ -135,11 +136,11 @@ collision:
 
     /* A service name collision with a local service happened. Let's
      * pick a new name */
-    n = avahi_alternative_service_name( service_name_copy );
-    avahi_free(service_name_copy);
-    service_name_copy = n;
+    n = avahi_alternative_service_name( sd_name_copy );
+    avahi_free(sd_name_copy);
+    sd_name_copy = n;
 
-    fprintf(stderr, "Service name collision, renaming service to '%s'\n", service_name_copy );
+    fprintf(stderr, "Service name collision, renaming service to '%s'\n", sd_name_copy );
 
     avahi_entry_group_reset(group);
 
@@ -200,14 +201,14 @@ void dns_service_publisher_cleanup( void )
 		avahi_client_free( client );
 	}
 
-	if( service_name_copy )
+	if( sd_name_copy )
 	{
-		avahi_free( service_name_copy );
+		avahi_free( sd_name_copy );
 	}
 
-	if( service_service_copy )
+	if( sd_service_copy )
 	{
-		avahi_free( service_service_copy );
+		avahi_free( sd_service_copy );
 	}
 
 	if( threaded_poll )
@@ -216,20 +217,21 @@ void dns_service_publisher_cleanup( void )
 	}
 }
 
-int dns_service_publisher_start( dns_service_t *service )
+int dns_service_publisher_start( dns_service_desc_t *service_desc )
 {
 	int ret = 0;
 	int error;
 
-	if( ! service ) return 1;
+	if( ! service_desc ) return 1;
 
 	if( ! (threaded_poll = avahi_threaded_poll_new() ) ) {
 		fprintf(stderr, "Unable to create publisher thread\n");
 		return 1;
 	}
 
-	service_name_copy = avahi_strdup( service->name );
-	service_service_copy = avahi_strdup( service->service );
+	sd_name_copy = avahi_strdup( service_desc->name );
+	sd_service_copy = avahi_strdup( service_desc->service );
+	sd_port = service_desc->port;
 
 	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 

@@ -1,0 +1,56 @@
+Introduction
+- - - - - - -
+
+raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events via rtpMIDI.
+
+The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads.
+
+Except for the Avahi code, it’s all mine but I have leaned heavily on the following references:
+
+RTP MIDI: An RTP Payload Format for MIDI ( http://www.eecs.berkeley.edu/~lazzaro/rtpmidi/index.html )
+The RTP MIDI dissector in wireshark. Written by Tobias Erichsen ( http://www.tobias-erichsen.de )
+
+
+Description
+- - - - - - 
+
+There are a number of stages in the general rtpMIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn’t documented.
+
+Stage 1 - SIP
+- - - - - - - 
+
+Audio MIDI setup needs to know which server to connect to. In order to do that, the raveloxmidi announces the Apple MIDI service (_apple-midi._udp). By default, the announcement is for connections on port 5004. This also implies port 5005 is open for connections too.
+
+The connecting server will sent 2 connection (INV) requests containing its name, its IP address and the port that connections can be made on.
+
+raveloxmidi will accept the first INV request and store the connection information in a table ( limited to 8 entries ) for later use.
+
+raveloxmidi sends back an OK response to both requests.
+
+The connecting server will send SYNC packets to raveloxmid to get a sense of timing. It’s a little fuzzy in what’s expected in the responses. In the SYNC packet, there is a field called “count” which cycles between 0,1 and 2. raveloxmidi will populate the fields “timestamp”1-N ( depending on the value of “count” ). The timestamps are the delta between the time the INV packet was received and now. That is, if count=1, timestamp1 and timestamp2 will be populated in the response.
+
+SYNC packets are sent from the connecting server on a regular basis.
+
+Stage 2 - MIDI
+- - - - - - - 
+
+This stage uses the defined MIDI RTP payload. raveloxmidi opens an additional listening port (by default 5006) which will accept a simple data packet containing note information. Where Apple MIDI packets are prefixed with a single byte 0xff, note data packets are expected to be prefixed with 0xaa. The rest of data packet is expected to be a MIDI Note command.
+
+Command: 4 bits ( NoteOn = 0x9, NoteOff = 0x8 )
+Channel: 4 bits ( 0 - 15 )
+Note: 8 bits ( -127 to 127 )
+Velocity: 8 bits ( 0 to 127 )
+
+When raveloxmidi receives the note packet, it will send that MIDI command to any  active connections in the connection table. NOTE: The initial implementation will only send to the first connection.
+
+The rtpMIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn and NoteOff events, only Chapter N journal entries are stored.
+
+Stage 3 - Feedback
+- - - - - - - - - 
+
+The Apple MIDI implementation sends a feedback packet (RS) from the connecting server. This packet contains a RTP sequence number to indicate that the connecting server is acknowledging that it has received packets with a sequence number up to and including that particular value.
+
+This tells the receiving server that it doesn’t need to send journal events for any packets with a sequence number lower than that value.
+
+raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
+
