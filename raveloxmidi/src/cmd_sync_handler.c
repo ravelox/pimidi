@@ -81,22 +81,23 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync_resp->ssrc = ctx->send_ssrc;
 	sync_resp->count = ( sync->count < 2 ? sync->count + 1 : 0 );
+
+	/* Copy the timestamps from the SYNC command */
+	sync_resp->timestamp1 = sync->timestamp1;
+	sync_resp->timestamp2 = sync->timestamp2;
+	sync_resp->timestamp3 = sync->timestamp3;
+
+	delta = time( NULL ) - ctx->start;
 	
 	switch( sync_resp->count )
 	{
 		case 2:
-			delta = time( NULL ) - ctx->start;
 			sync_resp->timestamp3 = delta;
-			sync_resp->timestamp2 = delta;
-			sync_resp->timestamp1 = delta;
 			break;
 		case 1:
-			delta = time( NULL ) - ctx->start;
 			sync_resp->timestamp2 = delta;
-			sync_resp->timestamp1 = delta;
 			break;
 		case 0:
-			delta = time( NULL ) - ctx->start;
 			sync_resp->timestamp1 = delta;
 			break;
 	}

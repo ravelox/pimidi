@@ -27,7 +27,7 @@ raveloxmidi will accept the first INV request and store the connection informati
 
 raveloxmidi sends back an OK response to both requests.
 
-The connecting server will send SYNC packets to raveloxmid to get a sense of timing. It’s a little fuzzy in what’s expected in the responses. In the SYNC packet, there is a field called “count” which cycles between 0,1 and 2. raveloxmidi will populate the fields “timestamp”1-N ( depending on the value of “count” ). The timestamps are the delta between the time the INV packet was received and now. That is, if count=1, timestamp1 and timestamp2 will be populated in the response.
+The connecting server will send SYNC packets to raveloxmidi. According to http://en.wikipedia.org/wiki/RTP_MIDI, the sender will send timestamp1 to indicate its local time. This timestamp isn't an actual time value but can be a delta from a local value, the receiver will send timestamp2 with its local delta and then the sender will send timestamp3 indicating the time it received the timestamp2 response from the receiver. This gives the system an idea of latency.
 
 SYNC packets are sent from the connecting server on a regular basis.
 
