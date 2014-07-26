@@ -274,8 +274,9 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 	memset((char *)&send_address, 0, sizeof( send_address));
 	send_address.sin_family = AF_INET;
 	send_address.sin_port = htons( ctx->port + 1) ;
+	// send_address.sin_port = htons( ctx->port ) ;
 	inet_aton( ctx->ip_address, &send_address.sin_addr );
 
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
-	fprintf(stderr, "Sent %u bytes to connection\n", bytes_sent);
+	fprintf(stderr, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, ctx->port + 1 );
 }

@@ -48,10 +48,10 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	feedback = ( net_applemidi_feedback *) data;
 
-	printf("FEEDBACK( \n");
-	printf("ssrc=0x%08x , ", feedback->ssrc);
-	printf("appleseq=%u , ", feedback->apple_seq);
-	printf("rtpseq=%u )", feedback->rtp_seq[1]);
+	fprintf(stderr, "FEEDBACK( ");
+	fprintf(stderr, "ssrc=0x%08x , ", feedback->ssrc);
+	fprintf(stderr, "appleseq=%u , ", feedback->apple_seq);
+	fprintf(stderr, "rtpseq=%u )\n", feedback->rtp_seq[1]);
 
 	ctx = net_ctx_find_by_ssrc( feedback->ssrc);
 

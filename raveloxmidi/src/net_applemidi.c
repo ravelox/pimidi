@@ -38,25 +38,25 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 	switch( command->command )
 	{
 		case NET_APPLEMIDI_CMD_INV:
-			printf("Command: IN\n");
+			fprintf(stderr,"Command: IN\n");
 			break;
 		case NET_APPLEMIDI_CMD_END:
-			printf("Command: BY\n");
+			fprintf(stderr,"Command: BY\n");
 			break;
 		case NET_APPLEMIDI_CMD_ACCEPT:
-			printf("Command: OK\n");
+			fprintf(stderr,"Command: OK\n");
 			break;
 		case NET_APPLEMIDI_CMD_REJECT:
-			printf("Command: NO\n");
+			fprintf(stderr,"Command: NO\n");
 			break;
 		case NET_APPLEMIDI_CMD_FEEDBACK:
-			printf("Command: RS\n");
+			fprintf(stderr,"Command: RS\n");
 			break;
 		case NET_APPLEMIDI_CMD_BITRATE:
-			printf("Command: RL\n");
+			fprintf(stderr,"Command: RL\n");
 			break;
 		case NET_APPLEMIDI_CMD_SYNC:
-			printf("Command: CK\n");
+			fprintf(stderr,"Command: CK\n");
 			break;
 	}
 
@@ -64,35 +64,35 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 	{
 		net_applemidi_inv	*inv_data;
 		inv_data = (net_applemidi_inv *)command->data;
-		printf("inv_data:\n");
-		printf("Version  : %u\n", inv_data->version);
-		printf("Initiator: 0x%08x\n", inv_data->initiator);
-		printf("SSRC     : 0x%08x\n", inv_data->ssrc);
-		printf("Name     : %s\n", inv_data->name);
+		fprintf(stderr,"inv_data:\n");
+		fprintf(stderr,"Version  : %u\n", inv_data->version);
+		fprintf(stderr,"Initiator: 0x%08x\n", inv_data->initiator);
+		fprintf(stderr,"SSRC     : 0x%08x\n", inv_data->ssrc);
+		fprintf(stderr,"Name     : %s\n", inv_data->name);
 	}
 
 	if( command->command == NET_APPLEMIDI_CMD_SYNC )
 	{
 		net_applemidi_sync	*sync_data;
 		sync_data = (net_applemidi_sync *)command->data;
-		printf("sync_data:\n");
-		printf("SSRC	   : 0x%08x\n", sync_data->ssrc);
-		printf("Count	   : %d\n", sync_data->count);
-		printf("Padding    : 0x%02x%02x%02x\n",
+		fprintf(stderr,"sync_data:\n");
+		fprintf(stderr,"SSRC	   : 0x%08x\n", sync_data->ssrc);
+		fprintf(stderr,"Count	   : %d\n", sync_data->count);
+		fprintf(stderr,"Padding    : 0x%02x%02x%02x\n",
 			sync_data->padding[0], sync_data->padding[1], sync_data->padding[2] );
-		printf("Timestamp 1: 0x%016llx\n", sync_data->timestamp1 );
-		printf("Timestamp 2: 0x%016llx\n", sync_data->timestamp2 );
-		printf("Timestamp 3: 0x%016llx\n", sync_data->timestamp3 );
+		fprintf(stderr,"Timestamp 1: 0x%016llx\n", sync_data->timestamp1 );
+		fprintf(stderr,"Timestamp 2: 0x%016llx\n", sync_data->timestamp2 );
+		fprintf(stderr,"Timestamp 3: 0x%016llx\n", sync_data->timestamp3 );
 	}
 
 	if( command->command == NET_APPLEMIDI_CMD_FEEDBACK )
 	{
 		net_applemidi_feedback	*feedback_data;
 		feedback_data = (net_applemidi_feedback *)command->data;
-		printf("feedback_data:\n");
-		printf("SSRC	     : 0x%08x\n", feedback_data->ssrc);
-		printf("Apple seq num: %u\n", feedback_data->apple_seq);
-		printf("RTP seq num  : %u\n", feedback_data->rtp_seq[1]);
+		fprintf(stderr,"feedback_data:\n");
+		fprintf(stderr,"SSRC	     : 0x%08x\n", feedback_data->ssrc);
+		fprintf(stderr,"Apple seq num: %u\n", feedback_data->apple_seq);
+		fprintf(stderr,"RTP seq num  : %u\n", feedback_data->rtp_seq[1]);
 	}
 }
 
