@@ -484,7 +484,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	if( ! journal ) return;
 
-	fprintf( stderr, "journal_has_data = %u\n", journal_has_data( journal ));
+	fprintf( stderr, "journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
 	if(  ! journal_has_data( journal ) ) return;
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
@@ -639,9 +639,10 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_packet_t
 	new_note->num = note_packet->note;
 	new_note->velocity = note_packet->velocity;
 
-	note_slot = journal->channels[ channel ]->chaptern->num_notes++;
+	note_slot = journal->channels[ channel ]->chaptern->num_notes;
 
 	journal->channels[ channel ]->chaptern->notes[note_slot] = new_note;
+	journal->channels[ channel ]->chaptern->num_notes++;
 }
 
 void midi_note_dump( midi_note_t *note )
@@ -707,6 +708,7 @@ void chaptern_reset( chaptern_t *chaptern )
 	{
 		midi_note_reset( chaptern->notes[i] );
 	}
+	chaptern->num_notes = 0;
 	memset( chaptern->offbits, 0, MAX_OFFBITS );
 	chaptern_header_reset( chaptern->header );
 }
@@ -744,10 +746,7 @@ void channel_journal_reset( channel_t *channel )
 {
 	if( ! channel ) return;
 
-	if( channel->header->bitfield & CHAPTER_N )
-	{
-		chaptern_reset( channel->chaptern );
-	}
+	chaptern_reset( channel->chaptern );
 	channel_header_reset( channel->header );
 }
 
@@ -795,10 +794,12 @@ void journal_reset( journal_t *journal )
 
 	if( !journal ) return;
 
-	journal_header_reset( journal->header );
 
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
 	{
 		channel_journal_reset( journal->channels[i] );
 	}
+
+	journal_header_reset( journal->header );
+
 }

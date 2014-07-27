@@ -159,8 +159,8 @@ int net_socket_listener( void )
 				break;
 			}
 
-			fprintf( stderr, "socket=%d\n", i);
 			ip_address = inet_ntoa(from_addr.sin_addr);	
+			fprintf( stderr, "Data (0x%02x) on socket(%d) from (%s)\n", packet[0], i,ip_address);
 
 			// Determine the packet type
 
@@ -254,6 +254,7 @@ int net_socket_listener( void )
 					// Build the RTP packet
 					rtp_packet = rtp_packet_create();
 					rtp_packet_dump( rtp_packet );
+					net_ctx_increment_seq( 0 );
 					net_ctx_update_rtp_fields( 0 , rtp_packet );
 					rtp_packet_dump( rtp_packet );
 	
@@ -266,7 +267,7 @@ int net_socket_listener( void )
 					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
 					// Send the RTP packet
-					net_ctx_send( 0 , sockets[i],  packed_rtp_buffer, packed_rtp_buffer_len );
+					net_ctx_send( 0 , sockets[0],  packed_rtp_buffer, packed_rtp_buffer_len );
 
 					// Clean up
 					FREENULL( (void **)&packed_payload );

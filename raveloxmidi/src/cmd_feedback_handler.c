@@ -53,12 +53,14 @@ net_response_t * cmd_feedback_handler( void *data )
 	fprintf(stderr, "appleseq=%u , ", feedback->apple_seq);
 	fprintf(stderr, "rtpseq=%u )\n", feedback->rtp_seq[1]);
 
-	ctx = net_ctx_find_by_ssrc( feedback->ssrc);
+	ctx = net_ctx_find_by_ssrc( feedback->ssrc );
 
 	if( ! ctx ) return NULL;
 
+	fprintf( stderr, "Context found ( %u, %u )\n", feedback->rtp_seq[1], ctx->seq );
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
+		fprintf( stderr, "Resetting journal\n" );
 		journal_reset( ctx->journal );
 	}
 

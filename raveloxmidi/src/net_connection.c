@@ -27,6 +27,9 @@
 
 #include <arpa/inet.h>
 
+#include <errno.h>
+extern int errno;
+
 #include "midi_journal.h"
 #include "net_connection.h"
 #include "rtp_packet.h"
@@ -44,7 +47,7 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->ssrc = 0;
 	ctx->send_ssrc = 0;
 	ctx->initiator = 0;
-	ctx->seq = 0x638F;
+	ctx->seq = 0x0000;
 	FREENULL( (void **)&(ctx->ip_address) );
 	journal_destroy( &(ctx->journal) );
 	
@@ -77,7 +80,7 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->ssrc = ssrc;
 	ctx->send_ssrc = send_ssrc;
 	ctx->initiator = initiator;
-	ctx->seq = 0x638F;
+	ctx->seq = seq;
 	ctx->port = port;
 	ctx->start = time( NULL );
 
@@ -93,7 +96,7 @@ static net_ctx_t * new_net_ctx( void )
 	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
 
 	memset( new_ctx, 0, sizeof( net_ctx_t ) );
-	new_ctx->seq = 0x638F;
+	new_ctx->seq = 0x0000;
 
 	journal_init( &journal );
 
@@ -194,29 +197,19 @@ void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_packet_t *note_packet 
 	
 	if( ! note_packet ) return;
 
-	ctx[ctx_id]->seq += 1;
-
 	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, note_packet );
 }
 
 void debug_ctx_journal_dump( uint8_t ctx_id )
 {
-	char *buffer = NULL;
-	size_t size = 0;
-
 	if( ctx_id > MAX_CTX - 1 ) return;
 
-	fprintf(stderr, "Journal has data (NULLTEST) -----: %u\n", journal_has_data( NULL ));
-	fprintf(stderr, "Journal has data ----------------: %u\n", journal_has_data( ctx[ctx_id]->journal ));
+	fprintf(stderr, "Journal has data (NULLTEST) -----: %s\n", ( journal_has_data( NULL ) ? "YES": "NO") );
+	fprintf(stderr, "Journal has data ----------------: %s\n", ( journal_has_data( ctx[ctx_id]->journal ) ? "YES" : "NO" ) );
 
 	if( ! journal_has_data( ctx[ctx_id]->journal ) ) return;
 
 	journal_dump( ctx[ctx_id]->journal );
-
-	journal_pack( ctx[ctx_id]->journal, &buffer, &size );
-	FREENULL( (void **)&buffer );
-
-	net_ctx_reset( ctx[ctx_id] );
 }
 
 void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journal_buffer_size)
@@ -255,11 +248,23 @@ void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)
 	rtp_packet->header.ssrc = ctx->send_ssrc;
 }
 
+void net_ctx_increment_seq( uint8_t ctx_id )
+{
+	net_ctx_t *ctx = NULL;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+	
+	if( ! ctx ) return;
+
+	ctx->seq += 1;
+}
+
 void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_t buffer_len )
 {
 	net_ctx_t *ctx = NULL;
 	struct sockaddr_in send_address;
-	size_t bytes_sent = 0;
+	ssize_t bytes_sent = 0;
+	uint16_t port;
 
 	if(  send_socket < 0 ) return;
 	if( ! buffer ) return;
@@ -270,13 +275,20 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 	if( ! ctx ) return;
 
 	debug_net_ctx_dump( ctx );
+	debug_ctx_journal_dump( ctx_id );
 
 	memset((char *)&send_address, 0, sizeof( send_address));
 	send_address.sin_family = AF_INET;
-	send_address.sin_port = htons( ctx->port + 1) ;
-	// send_address.sin_port = htons( ctx->port ) ;
+	port = ctx->port + 1;
+	send_address.sin_port = htons( port ) ;
 	inet_aton( ctx->ip_address, &send_address.sin_addr );
 
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
-	fprintf(stderr, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, ctx->port + 1 );
+	
+	if( bytes_sent < 0 )
+	{
+		fprintf( stderr, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, port , strerror( errno ));
+	} else {
+		fprintf(stderr, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
+	}
 }
