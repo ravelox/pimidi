@@ -33,6 +33,8 @@
 
 #include "dns_service_publisher.h"
 
+#include "raveloxmidi_config.h"
+
 #include "config.h"
 
 int main(int argc, char *argv[])
@@ -41,6 +43,9 @@ int main(int argc, char *argv[])
 	int ret = 0;
 
 	fprintf( stderr, "%s (%s)\n", PACKAGE, VERSION);
+
+	config_init( argc, argv);
+	config_dump();
 
 	if( net_socket_setup() != 0 )
 	{
@@ -71,6 +76,8 @@ int main(int argc, char *argv[])
 	net_ctx_destroy();
 
 	dns_service_publisher_stop();
+
+	config_destroy();
 
 	return 0;
 }
