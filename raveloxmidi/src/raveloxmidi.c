@@ -58,9 +58,9 @@ int main(int argc, char *argv[])
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	service_desc.name = "raveloxmidi";
+	service_desc.name = config_get("service.name");
 	service_desc.service = "_apple-midi._udp";
-	service_desc.port = 5004;
+	service_desc.port = atoi( config_get("network.rtpmidi.port") );
 
 	ret = dns_service_publisher_start( &service_desc );
 	
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	net_socket_loop( 5000 );
+	net_socket_loop( atoi( config_get("network.socket_interval") ) );
 
 	net_socket_destroy();
 	net_ctx_destroy();

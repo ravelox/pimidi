@@ -49,6 +49,8 @@ extern int errno;
 #include "midi_payload.h"
 #include "utils.h"
 
+#include "raveloxmidi_config.h"
+
 static int num_sockets;
 static int *sockets;
 static int net_socket_shutdown;
@@ -337,14 +339,13 @@ int net_socket_setup( void )
 
 	num_sockets = 0;
 
-	for( i = 5004 ; i <= 5006 ; i++ )
+	if(
+		net_socket_create( atoi( config_get("network.rtpmidi.port") ) ) ||
+		net_socket_create( atoi( config_get("network.rtsp.port") ) ) ||
+		net_socket_create( atoi( config_get("network.note.port") ) ) )
 	{
-		ret = net_socket_create( i );
-		if( ret != 0 )
-		{
-			fprintf(stderr, "Cannot create socket on port %u: %s\n", i, strerror( errno ) );
-			return -1;
-		}
+		fprintf(stderr, "Cannot create socket on port %u: %s\n", i, strerror( errno ) );
+		return -1;
 	}
 
 	return 0;

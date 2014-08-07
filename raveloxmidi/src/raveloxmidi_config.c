@@ -33,10 +33,22 @@ extern int errno;
 static int num_items = 0;
 static raveloxmidi_config_t **config_items = NULL;
 
+static void config_set_defaults( void )
+{
+	config_add_item("network.rtpmidi.port", "5004");
+	config_add_item("network.rtsp.port", "5005");
+	config_add_item("network.note.port", "5006");
+	config_add_item("network.socket_interval" , "5000" );
+	config_add_item("service.name", "raveloxmidi");
+}
+
 static void config_load_file( char *filename )
 {
 
 	FILE *config_file = NULL;
+	char config_line[ MAX_CONFIG_LINE + 1 ];
+	char *p1,*p2;
+	char *key, *value;
 
 	if( ! filename ) return;
 
@@ -50,6 +62,38 @@ static void config_load_file( char *filename )
 
 	while( 1 )
 	{
+		fgets( config_line , MAX_CONFIG_LINE, config_file );
+
+		if( feof( config_file) ) break;
+
+		/* Remove any trailing white space */
+		p2 = config_line + strlen( config_line ) - 1;
+		while( *p2 && isspace( *p2 ) )
+		{
+			*p2 = '\0';
+			p2--;
+		}
+
+		/* Remove leading white space */
+		p1 = config_line;
+		while( *p1 && isspace( *p1 ) ) p1++;
+
+		/* Ignore any line that's marked as a comment */
+		if( *p1 && *p1=='#' ) continue;
+
+		key = p1;
+		p2 = p1;
+
+		/* Find the first whitespace character */
+		while( *p2 && ! isspace(*p2) ) p2++;
+
+		if( *p2 ) *p2++='\0';
+
+		/* find the next non-whitespace and non '=' character */
+		while( *p2 && ( isspace( *p2 ) || *p2=='=' ))  p2++;
+		value = p2;
+
+		config_add_item( key, value );
 	}
 
 	if( config_file) fclose( config_file );
@@ -68,6 +112,8 @@ void config_init( int argc, char *argv[] )
 
 	num_items = 0 ;
 	config_items = NULL;
+
+	config_set_defaults();
 
 	while(1)
 	{
@@ -134,7 +180,7 @@ static raveloxmidi_config_t *config_get_item( char *key )
 
 	for( i=0; i < num_items ; i ++ )
 	{
-		if( strcasecmp( key, config_items[i]->key ) )
+		if( strcasecmp( key, config_items[i]->key ) == 0 )
 		{
 			return config_items[i];
 		}
@@ -147,7 +193,6 @@ void config_add_item(char *key, char *value )
 {
 	raveloxmidi_config_t *new_item, *found_item;
 
-	fprintf( stderr, "Adding key=%s\tvalue=%s\n", key, value );
 	found_item = config_get_item( key );
 	if( ! found_item )
 	{
@@ -157,7 +202,7 @@ void config_add_item(char *key, char *value )
 			new_item->key = (char *)strdup( key );
 			new_item->value = ( char *)strdup( value );
 
-			config_items = (raveloxmidi_config_t **)malloc(sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
+			config_items = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
 			if( config_items )
 			{
 				config_items[ num_items ] = new_item;
