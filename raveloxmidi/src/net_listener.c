@@ -100,6 +100,11 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_family = AF_INET;   
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
+	if (inet_aton( config_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
+		fprintf(stderr, "Invalid address: %s\n", config_get("network.bind_address") );
+		return errno;
+	}
+
 	socket_address.sin_port = htons(port);
 	if (bind(new_socket, (struct sockaddr *)&socket_address,
 		sizeof(struct sockaddr)) < 0)

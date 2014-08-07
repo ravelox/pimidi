@@ -35,6 +35,7 @@ static raveloxmidi_config_t **config_items = NULL;
 
 static void config_set_defaults( void )
 {
+	config_add_item("network.bind_address", "0.0.0.0");
 	config_add_item("network.rtpmidi.port", "5004");
 	config_add_item("network.rtsp.port", "5005");
 	config_add_item("network.note.port", "5006");
@@ -84,8 +85,8 @@ static void config_load_file( char *filename )
 		key = p1;
 		p2 = p1;
 
-		/* Find the first whitespace character */
-		while( *p2 && ! isspace(*p2) ) p2++;
+		/* Find the first whitespace character or '=' character */
+		while( *p2 && ! isspace(*p2) && *p2 != '=' ) p2++;
 
 		if( *p2 ) *p2++='\0';
 

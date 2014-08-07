@@ -54,3 +54,21 @@ This tells the receiving server that it doesn’t need to send journal events fo
 
 raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
 
+Configuration
+- - - - - - -
+raveloxmidi can be run with a -c parameter to specify a configuration file with the options listed below.
+Where the option isn't specified, a default value is used.
+
+network.bind_address
+	IP address that raveloxmidi listens on. Default is 0.0.0.0 ( meaning all interfaces ).
+network.rtpmidi.port
+	Main rtpMIDI listening port. Used in the zeroconf definition for the rtpMIDI service.
+	Default is 5004.
+network.rtsp.port
+	Additional RTSP listening port. Default is 5005.
+network.note.port
+	Listening port for accepting MIDI notes. Default is 5006.
+service.name
+	Name used in the zeroconf definition for the rtpMIDI service. Default is 'raveloxmidi'.
+network.socket_interval
+	Polling interval for the listening sockets. Default is 5000 microseconds.
