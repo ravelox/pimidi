@@ -34,8 +34,11 @@
 #include "dns_service_publisher.h"
 
 #include "raveloxmidi_config.h"
+#include "daemon.h"
 
 #include "config.h"
+
+static int running_as_daemon=0;
 
 int main(int argc, char *argv[])
 {
@@ -46,6 +49,14 @@ int main(int argc, char *argv[])
 
 	config_init( argc, argv);
 	config_dump();
+
+	logging_init();
+
+	if( strcasecmp( config_get("run_as_daemon") , "yes" ) == 0 )
+	{
+		running_as_daemon = 1;
+		daemon_start();
+	}
 
 	if( net_socket_setup() != 0 )
 	{
@@ -77,6 +88,12 @@ int main(int argc, char *argv[])
 
 	dns_service_publisher_stop();
 
+	if( running_as_daemon )
+	{
+		daemon_stop();
+	}
+
+	logging_stop();
 	config_destroy();
 
 	return 0;

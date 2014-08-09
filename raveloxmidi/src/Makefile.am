@@ -15,6 +15,8 @@ raveloxmidi_SOURCES = \
 	rtp_packet.c \
 	net_listener.c \
 	raveloxmidi_config.c \
+	daemon.c \
+	logging.c \
 	utils.c 
 
 raveloxmidi_LDADD	= @PTHREAD_LIBS@ ${AVAHI_LIBS}

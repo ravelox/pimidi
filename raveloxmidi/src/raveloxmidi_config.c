@@ -41,6 +41,9 @@ static void config_set_defaults( void )
 	config_add_item("network.note.port", "5006");
 	config_add_item("network.socket_interval" , "5000" );
 	config_add_item("service.name", "raveloxmidi");
+	config_add_item("run_as_daemon", "yes");
+	config_add_item("daemon.pid_file","/var/run/raveloxmidi.pid");
+	config_add_item("logging.syslog", "no");
 }
 
 static void config_load_file( char *filename )
@@ -106,6 +109,7 @@ void config_init( int argc, char *argv[] )
 		{"config",   required_argument, NULL, 'c'},
 		{"debug",    required_argument, NULL, 'd'},
 		{"nodaemon", required_argument, NULL, 'N'},
+		{"pid", required_argument, NULL, 'P'},
 		{0,0,0,0}
 	};
 	char c;
@@ -118,7 +122,7 @@ void config_init( int argc, char *argv[] )
 
 	while(1)
 	{
-		c = getopt_long( argc, argv, "c:d:N", long_options, NULL);
+		c = getopt_long( argc, argv, "c:d:NP:", long_options, NULL);
 
 		if( c == -1 ) break;
 
@@ -130,8 +134,10 @@ void config_init( int argc, char *argv[] )
 				config_add_item("debug", NULL);
 				break;
 			case 'N':
-				config_add_item("nodaemon", NULL);
+				config_add_item("run_as_daemon", "no");
 				break;
+			case 'P':
+				config_add_item("daemon.pid_file", optarg);
 		}
 	} 
 
