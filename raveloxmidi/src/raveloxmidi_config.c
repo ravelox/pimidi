@@ -29,6 +29,7 @@
 extern int errno;
 
 #include "raveloxmidi_config.h"
+#include "logging.h"
 
 static int num_items = 0;
 static raveloxmidi_config_t **config_items = NULL;
@@ -43,7 +44,9 @@ static void config_set_defaults( void )
 	config_add_item("service.name", "raveloxmidi");
 	config_add_item("run_as_daemon", "yes");
 	config_add_item("daemon.pid_file","/var/run/raveloxmidi.pid");
-	config_add_item("logging.syslog", "no");
+	config_add_item("logging.enabled", "yes");
+	config_add_item("logging.log_file", NULL);
+	config_add_item("logging.log_level", "normal");
 }
 
 static void config_load_file( char *filename )
@@ -122,7 +125,7 @@ void config_init( int argc, char *argv[] )
 
 	while(1)
 	{
-		c = getopt_long( argc, argv, "c:d:NP:", long_options, NULL);
+		c = getopt_long( argc, argv, "c:dNP:", long_options, NULL);
 
 		if( c == -1 ) break;
 
@@ -131,7 +134,8 @@ void config_init( int argc, char *argv[] )
 				config_add_item("config.file", optarg);
 				break;
 			case 'd':
-				config_add_item("debug", NULL);
+				config_add_item("logging.enabled", "yes");
+				config_add_item("logging.log_level", "debug");
 				break;
 			case 'N':
 				config_add_item("run_as_daemon", "no");
@@ -207,7 +211,12 @@ void config_add_item(char *key, char *value )
 		if( new_item )
 		{
 			new_item->key = (char *)strdup( key );
-			new_item->value = ( char *)strdup( value );
+			if( value )
+			{
+				new_item->value = ( char *)strdup( value );
+			} else {
+				new_item->value = NULL;
+			}
 
 			config_items = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
 			if( config_items )
@@ -218,7 +227,12 @@ void config_add_item(char *key, char *value )
 		}
 	} else {
 		if( found_item->value ) free(found_item->value);
-		found_item->value = ( char *)strdup( value );
+		if( value )
+		{
+			found_item->value = ( char *)strdup( value );
+		} else {
+			found_item->value = NULL;
+		}
 	}
 }
 

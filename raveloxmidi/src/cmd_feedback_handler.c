@@ -39,6 +39,8 @@ extern int errno;
 #include "net_listener.h"
 #include "midi_journal.h"
 
+#include "logging.h"
+
 net_response_t * cmd_feedback_handler( void *data )
 {
 	net_applemidi_feedback  *feedback;
@@ -48,19 +50,19 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	feedback = ( net_applemidi_feedback *) data;
 
-	fprintf(stderr, "FEEDBACK( ");
-	fprintf(stderr, "ssrc=0x%08x , ", feedback->ssrc);
-	fprintf(stderr, "appleseq=%u , ", feedback->apple_seq);
-	fprintf(stderr, "rtpseq=%u )\n", feedback->rtp_seq[1]);
+	logging_printf( LOGGING_DEBUG, "FEEDBACK( ");
+	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", feedback->ssrc);
+	logging_printf( LOGGING_DEBUG, "appleseq=%u , ", feedback->apple_seq);
+	logging_printf( LOGGING_DEBUG, "rtpseq=%u )\n", feedback->rtp_seq[1]);
 
 	ctx = net_ctx_find_by_ssrc( feedback->ssrc );
 
 	if( ! ctx ) return NULL;
 
-	fprintf( stderr, "Context found ( %u, %u )\n", feedback->rtp_seq[1], ctx->seq );
+	logging_printf( LOGGING_DEBUG, "Context found ( %u, %u )\n", feedback->rtp_seq[1], ctx->seq );
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
-		fprintf( stderr, "Resetting journal\n" );
+		logging_printf( LOGGING_DEBUG, "Resetting journal\n" );
 		journal_reset( ctx->journal );
 	}
 

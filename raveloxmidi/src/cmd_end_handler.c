@@ -37,6 +37,8 @@ extern int errno;
 #include "net_connection.h"
 #include "net_listener.h"
 
+#include "logging.h"
+
 net_response_t * cmd_end_handler( void *data )
 {
 	net_applemidi_inv *inv = NULL;
@@ -46,18 +48,18 @@ net_response_t * cmd_end_handler( void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	fprintf(stderr, "BYE( ");
+	logging_printf( LOGGING_DEBUG, "BYE( ");
 
-	fprintf(stderr, "name=<<%s>> , ", inv->name);
-	fprintf(stderr, "ssrc=0x%08x , ", inv->ssrc);
-	fprintf(stderr, "version = 0x%08x , ", inv->version);
-	fprintf(stderr, "initiator=0x%08x )\n", inv->initiator);
+	logging_printf( LOGGING_DEBUG, "name=<<%s>> , ", inv->name);
+	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", inv->ssrc);
+	logging_printf( LOGGING_DEBUG, "version = 0x%08x , ", inv->version);
+	logging_printf( LOGGING_DEBUG, "initiator=0x%08x )\n", inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
 	{
-		fprintf(stderr, "No existing connection found\n");
+		logging_printf( LOGGING_DEBUG, "No existing connection found\n");
 		return NULL;
 	}
 

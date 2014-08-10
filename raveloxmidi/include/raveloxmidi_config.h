@@ -11,7 +11,7 @@ void config_init( int argc, char *argv[] );
 void config_destroy( void );
 
 char *config_get( char *key );
-void config_add_item(char *key, char *value );
+void config_add_item(char *key, char *value);
 void config_dump( void );
 
 #define MAX_CONFIG_LINE	1024

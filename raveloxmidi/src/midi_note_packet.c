@@ -29,6 +29,8 @@
 #include "midi_note_packet.h"
 #include "utils.h"
 
+#include "logging.h"
+
 midi_note_packet_t * midi_note_packet_create( void )
 {
 	midi_note_packet_t *packet;
@@ -58,7 +60,7 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 
 	if( packet_len != sizeof( midi_note_packet_t ) )
 	{
-		fprintf(stderr, "Expecting %d, got %zd\n", sizeof( midi_note_packet_t ), packet_len );
+		logging_printf( LOGGING_DEBUG, "Expecting %d, got %zd\n", sizeof( midi_note_packet_t ), packet_len );
 		return -1;
 	}
 
@@ -103,9 +105,9 @@ void midi_note_packet_dump( midi_note_packet_t *note_packet )
 {
 	if(! note_packet ) return;
 
-	fprintf( stderr, "Note Packet( ");
-	fprintf( stderr, "Command=%d , ", note_packet->command );
-	fprintf( stderr, "Channel=%d , ", note_packet->channel );
-	fprintf( stderr, "Note=%d , ", note_packet->note );
-	fprintf( stderr, "Velocity=%d )\n", note_packet->velocity );
+	logging_printf( LOGGING_DEBUG, "Note Packet( ");
+	logging_printf( LOGGING_DEBUG, "Command=%d , ", note_packet->command );
+	logging_printf( LOGGING_DEBUG, "Channel=%d , ", note_packet->channel );
+	logging_printf( LOGGING_DEBUG, "Note=%d , ", note_packet->note );
+	logging_printf( LOGGING_DEBUG, "Velocity=%d )\n", note_packet->velocity );
 }

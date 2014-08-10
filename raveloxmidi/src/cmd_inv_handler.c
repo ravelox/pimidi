@@ -37,6 +37,8 @@ extern int errno;
 #include "net_connection.h"
 #include "net_listener.h"
 
+#include "logging.h"
+
 net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 {
 	net_applemidi_command *cmd = NULL;
@@ -49,23 +51,23 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	fprintf(stderr, "INV(%s:%u , ", ip_address, port );
+	logging_printf( LOGGING_DEBUG, "INV(%s:%u , ", ip_address, port );
 
-	fprintf(stderr, "name=%s , ", inv->name);
-	fprintf(stderr, "ssrc=0x%08x , ", inv->ssrc);
-	fprintf(stderr, "version=0x%08x , ", inv->version);
-	fprintf(stderr, "initiator=0x%08x )\n", inv->initiator);
+	logging_printf( LOGGING_DEBUG, "name=%s , ", inv->name);
+	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", inv->ssrc);
+	logging_printf( LOGGING_DEBUG, "version=0x%08x , ", inv->version);
+	logging_printf( LOGGING_DEBUG, "initiator=0x%08x )\n", inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
 	{
-		fprintf(stderr, "Registering new connection\n");
+		logging_printf( LOGGING_DEBUG, "Registering new connection\n");
 		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port );
 
 		if( ! ctx ) 
 		{
-			fprintf(stderr, "Error registering connection\n");
+			logging_printf( LOGGING_ERROR, "Error registering connection\n");
 		}
 	}
 
@@ -73,7 +75,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	if( ! cmd )
 	{
-		fprintf(stderr, "Unable to allocate memory for accept_inv command\n");
+		logging_printf( LOGGING_ERROR, "Unable to allocate memory for accept_inv command\n");
 		net_ctx_reset( ctx );
 		return NULL;
 	}
@@ -81,7 +83,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	accept_inv = new_net_applemidi_inv();
 	
 	if( ! accept_inv ) {
-		fprintf(stderr, "Unabled to allocate memory for accept_inv command data\n");
+		logging_printf( LOGGING_ERROR, "Unabled to allocate memory for accept_inv command data\n");
 		free( cmd );
 		net_ctx_reset( ctx );
 		return NULL;
@@ -102,7 +104,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			fprintf(stderr, "Unable to pack response to inv command\n");
+			logging_printf( LOGGING_ERROR, "Unable to pack response to inv command\n");
 			net_response_destroy( &response );
 		}
 	}

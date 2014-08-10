@@ -36,6 +36,7 @@
 #include "raveloxmidi_config.h"
 #include "daemon.h"
 
+#include "logging.h"
 #include "config.h"
 
 static int running_as_daemon=0;
@@ -45,12 +46,10 @@ int main(int argc, char *argv[])
 	dns_service_desc_t service_desc;
 	int ret = 0;
 
-	fprintf( stderr, "%s (%s)\n", PACKAGE, VERSION);
-
 	config_init( argc, argv);
-	config_dump();
 
 	logging_init();
+	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
 	if( strcasecmp( config_get("run_as_daemon") , "yes" ) == 0 )
 	{
@@ -60,13 +59,14 @@ int main(int argc, char *argv[])
 
 	if( net_socket_setup() != 0 )
 	{
-		fprintf(stderr, "Unable to create sockets\n");
+		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
 		exit(1);
 	}
 
 	net_ctx_init();
 
         signal( SIGINT , net_socket_loop_shutdown);
+        signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
 	service_desc.name = config_get("service.name");
@@ -77,11 +77,10 @@ int main(int argc, char *argv[])
 	
 	if( ret != 0 )
 	{
-		fprintf(stderr, "Unable to create publish thread\n");
-		exit(1);
+		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
+	} else {
+		net_socket_loop( atoi( config_get("network.socket_interval") ) );
 	}
-
-	net_socket_loop( atoi( config_get("network.socket_interval") ) );
 
 	net_socket_destroy();
 	net_ctx_destroy();

@@ -72,3 +72,13 @@ service.name
 	Name used in the zeroconf definition for the rtpMIDI service. Default is 'raveloxmidi'.
 network.socket_interval
 	Polling interval for the listening sockets. Default is 5000 microseconds.
+run_as_daemon
+	Specifies that raveloxmidi should run in the background. Default is yes.
+daemon.pid_file
+	If raveloxmidi is run in the background. The pid for the process is written to this file. Default is raveloxmidi.pid.
+logging.enabled
+	Set to yes to write output to a log file. Set to no to disable. Default is "yes".
+logging.log_file
+	Name of file to write logging to. Default is stderr.
+logging.log_level
+	Threshold for log events. Acceptable values are debug,info,normal,warning and error. Default is normal.

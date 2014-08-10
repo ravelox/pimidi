@@ -39,6 +39,7 @@
 #include <avahi-common/timeval.h>
 
 #include "dns_service_publisher.h"
+#include "logging.h"
 
 static AvahiEntryGroup *group = NULL;
 static AvahiThreadedPoll *threaded_poll = NULL;
@@ -58,7 +59,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
     switch (state) {
         case AVAHI_ENTRY_GROUP_ESTABLISHED :
             /* The entry group has been established successfully */
-            fprintf(stderr, "Service '%s' successfully established.\n", sd_name_copy);
+            logging_printf(LOGGING_INFO, "Service '%s' successfully established.\n", sd_name_copy);
             break;
 
         case AVAHI_ENTRY_GROUP_COLLISION : {
@@ -70,7 +71,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
             avahi_free(sd_name_copy);
             sd_name_copy = n;
 
-            fprintf(stderr, "Service name collision, renaming service to '%s'\n", sd_name_copy);
+            logging_printf(LOGGING_WARN, "Service name collision, renaming service to '%s'\n", sd_name_copy);
 
             /* And recreate the services */
             create_services(avahi_entry_group_get_client(g));
@@ -79,7 +80,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 
         case AVAHI_ENTRY_GROUP_FAILURE :
 
-            fprintf(stderr, "Entry group failure: %s\n", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(g))));
+            logging_printf(LOGGING_WARN, "Entry group failure: %s\n", avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(g))));
 
             /* Some kind of failure happened while we were registering our services */
             avahi_threaded_poll_quit(threaded_poll);
@@ -101,7 +102,7 @@ static void create_services(AvahiClient *c) {
 
     if (!group)
         if (!(group = avahi_entry_group_new(c, entry_group_callback, NULL))) {
-            fprintf(stderr, "avahi_entry_group_new() failed: %s\n", avahi_strerror(avahi_client_errno(c)));
+            logging_printf( LOGGING_ERROR, "avahi_entry_group_new() failed: %s\n", avahi_strerror(avahi_client_errno(c)));
             goto fail;
         }
 
@@ -109,7 +110,7 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        fprintf(stderr, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
+        logging_printf(LOGGING_INFO, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
@@ -119,13 +120,13 @@ static void create_services(AvahiClient *c) {
             if (ret == AVAHI_ERR_COLLISION)
                 goto collision;
 
-            fprintf(stderr, "Failed to add %s service: %s\n", sd_service_copy,avahi_strerror(ret));
+            logging_printf(LOGGING_ERROR, "Failed to add %s service: %s\n", sd_service_copy,avahi_strerror(ret));
             goto fail;
         }
 
         /* Tell the server to register the service */
         if ((ret = avahi_entry_group_commit(group)) < 0) {
-            fprintf(stderr, "Failed to commit entry group: %s\n", avahi_strerror(ret));
+            logging_printf(LOGGING_ERROR, "Failed to commit entry group: %s\n", avahi_strerror(ret));
             goto fail;
         }
     }
@@ -140,7 +141,7 @@ collision:
     avahi_free(sd_name_copy);
     sd_name_copy = n;
 
-    fprintf(stderr, "Service name collision, renaming service to '%s'\n", sd_name_copy );
+    logging_printf(LOGGING_WARN, "Service name collision, renaming service to '%s'\n", sd_name_copy );
 
     avahi_entry_group_reset(group);
 
@@ -166,7 +167,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 
         case AVAHI_CLIENT_FAILURE:
 
-            fprintf(stderr, "Client failure: %s\n", avahi_strerror(avahi_client_errno(c)));
+            logging_printf(LOGGING_ERROR, "Client failure: %s\n", avahi_strerror(avahi_client_errno(c)));
             avahi_threaded_poll_quit(threaded_poll);
 
             break;
@@ -225,7 +226,7 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 	if( ! service_desc ) return 1;
 
 	if( ! (threaded_poll = avahi_threaded_poll_new() ) ) {
-		fprintf(stderr, "Unable to create publisher thread\n");
+		logging_printf(LOGGING_ERROR, "Unable to create publisher thread\n");
 		return 1;
 	}
 
@@ -236,7 +237,7 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 
 	if (! client) {
-		fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
+		logging_printf(LOGGING_ERROR, "Failed to create client: %s\n", avahi_strerror(error));
 		dns_service_publisher_cleanup();
 		return 1;
 	}

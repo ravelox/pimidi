@@ -38,6 +38,8 @@ extern int errno;
 #include "net_connection.h"
 #include "net_listener.h"
 
+#include "logging.h"
+
 net_response_t * cmd_sync_handler( void *data )
 {
 	net_applemidi_command *cmd = NULL;
@@ -51,13 +53,13 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync = ( net_applemidi_sync *) data;
 
-	fprintf(stderr, "SYNC( ");
+	logging_printf( LOGGING_DEBUG, "SYNC( ");
 
-	fprintf(stderr, "ssrc=0x%08x , ", sync->ssrc);
-	fprintf(stderr, "count=0x%08x , ", sync->count);
-	fprintf(stderr, "timestamp1=0x%llu , ", sync->timestamp1);
-	fprintf(stderr, "timestamp2=0x%llu , ", sync->timestamp2);
-	fprintf(stderr, "timestamp3=0x%llu )\n", sync->timestamp3);
+	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", sync->ssrc);
+	logging_printf( LOGGING_DEBUG, "count=0x%08x , ", sync->count);
+	logging_printf( LOGGING_DEBUG, "timestamp1=0x%llu , ", sync->timestamp1);
+	logging_printf( LOGGING_DEBUG, "timestamp2=0x%llu , ", sync->timestamp2);
+	logging_printf( LOGGING_DEBUG, "timestamp3=0x%llu )\n", sync->timestamp3);
 
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
@@ -67,14 +69,14 @@ net_response_t * cmd_sync_handler( void *data )
 
 	if( ! cmd )
 	{
-		fprintf(stderr, "Unable to allocate memory for sync command\n");
+		logging_printf( LOGGING_ERROR, "Unable to allocate memory for sync command\n");
 		return NULL;
 	}
 
 	sync_resp = new_net_applemidi_sync();
 	
 	if( ! sync_resp ) {
-		fprintf(stderr, "Unabled to allocate memory for sync_resp command data\n");
+		logging_printf( LOGGING_ERROR, "Unabled to allocate memory for sync_resp command data\n");
 		free( cmd );
 		return NULL;
 	}
@@ -112,7 +114,7 @@ net_response_t * cmd_sync_handler( void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			fprintf(stderr, "Unable to pack response to sync command\n");
+			logging_printf( LOGGING_ERROR, "Unable to pack response to sync command\n");
 			net_response_destroy( &response );
 		}
 	}

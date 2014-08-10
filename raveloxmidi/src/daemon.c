@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 
 #include "raveloxmidi_config.h"
+#include "logging.h"
 
 extern int errno;
 
@@ -40,7 +41,7 @@ void daemon_start(void)
 	pid_file = config_get("daemon.pid_file");
 
         if ( ( pid = fork() )< 0 ) {
-                fprintf(stderr,"Can't fork:%s\n", strerror( errno ));
+                logging_printf( LOGGING_ERROR,"Can't fork:%s\n", strerror( errno ));
                 return;
         } else if ( pid != 0 ) {
                 /* Parent exiting */
@@ -49,12 +50,12 @@ void daemon_start(void)
 
         pid = setsid();
         if ( pid < 0 ) { 
-                fprintf(stderr,"Couldn't create session leader\n");
+                logging_printf( LOGGING_ERROR,"Couldn't create session leader\n");
                 _exit(1);
         }       
 
         if ( ( pid = fork() )< 0 ) {
-                fprintf(stderr,"Can't fork:%s\n", strerror( errno));
+                logging_printf( LOGGING_ERROR,"Can't fork:%s\n", strerror( errno));
                 _exit(1);
         } else if ( pid != 0 ) {
                 FILE *pidfile = fopen(pid_file, "w");
@@ -63,8 +64,8 @@ void daemon_start(void)
                         fprintf(pidfile, "%d\n", pid);
                         fclose(pidfile);
                 } else {
-                        fprintf(stderr, "Unable to write pid to %s:%s\n", pid_file, strerror( errno ));
-                        fprintf(stderr, "Pid = %d\n", pid);
+                        logging_printf( LOGGING_ERROR, "Unable to write pid to %s:%s\n", pid_file, strerror( errno ));
+                        logging_printf( LOGGING_ERROR, "Pid = %d\n", pid);
                 }       
                 /* Parent exiting */
                 _exit(0);
@@ -93,7 +94,7 @@ void daemon_stop(void)
 			ret = unlink( pid_file_name );
 			if( ret != 0 )
 			{
-				fprintf(stderr, "Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
+				logging_printf( LOGGING_ERROR, "Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
 			}
 		}
 	}

@@ -26,6 +26,8 @@
 
 #include <arpa/inet.h>
 
+#include "logging.h"
+
 uint64_t ntohll(const uint64_t value)
 {
 	enum { TYP_INIT, TYP_SMLE, TYP_BIGE };
@@ -178,7 +180,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 	size_t i = 0 ;
 	unsigned char c = 0 ;
 
-	fprintf(stderr, "hexdump(%p , %u)\n", buffer, len );
+	logging_printf(LOGGING_DEBUG, "hexdump(%p , %u)\n", buffer, len );
 	if( ! buffer ) return;
 	if( len <= 0 ) return;
 
@@ -186,13 +188,13 @@ void hex_dump( unsigned char *buffer, size_t len )
 	{
 		if( i % 8 == 0 )
 		{
-			fprintf( stderr, "\n");
+			logging_printf( LOGGING_DEBUG, "\n");
 		}
 		c = buffer[i];
-		fprintf( stderr, "%02x %c\t", c, isprint(c)  ? c : '.' );
+		logging_printf(LOGGING_DEBUG, "%02x %c\t", c, isprint(c)  ? c : '.' );
 	}
-	fprintf(stderr, "\n");
-	fprintf(stderr, "-- end hexdump\n");
+	logging_printf(LOGGING_DEBUG, "\n");
+	logging_printf(LOGGING_DEBUG, "-- end hexdump\n");
 }
 
 void FREENULL( void **ptr )

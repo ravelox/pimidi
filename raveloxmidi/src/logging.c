@@ -27,27 +27,146 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <pthread.h>
 
 #include "raveloxmidi_config.h"
+#include "logging.h"
 
 extern int errno;
 
-static int syslog_enabled = 0;
+static name_map_t loglevel_map[] = {
+	{ "DEBUG" , 0 },
+	{ "INFO", 1 },
+	{ "NORMAL", 2 },
+	{ "WARNING", 3 },
+	{ "ERROR", 4 },
+	{ NULL, -1}
+};
+
+static pthread_mutex_t	logging_mutex;
+
+static int logging_enabled = 0;
+static int logging_threshold = 3;
+static char *logging_file_name = NULL;
+
+int logging_name_to_value(name_map_t *map, const char *name)
+{
+	int value = -1;
+	int i = 0;
+
+	if( ! map ) return value;
+	if( ! name ) return value;
+
+	while( map[i].name != NULL )
+	{
+		if( strcasecmp(name, map[i].name) == 0)
+		{
+			value = map[i].value;
+			break;
+		}
+		i++;
+	}
+
+	return value;
+}
+
+char *logging_value_to_name(name_map_t *map, int value)
+{
+	char *name = NULL;
+	int i = 0;
+
+	if( ! map ) return NULL;
+	if( value < 0 ) return NULL;
+
+	while( map[i].name != NULL )
+	{
+		if( map[i].value == value )
+		{
+			name = map[i].name;
+			break;
+		}
+		i++;
+	}
+
+	return name;
+}
+
+void logging_printf(int level, const char *format, ...)
+{
+	FILE *logging_fp = NULL;
+	va_list ap;
+
+	pthread_mutex_lock( &logging_mutex );
+
+	if( logging_enabled == 0 )
+	{
+		goto logging_end;
+	}
+
+
+	if( level < logging_threshold )
+	{
+		goto logging_end;
+	}
+
+	if( logging_file_name )
+	{
+		logging_fp = fopen( logging_file_name , "a+" );
+		if( !logging_fp )
+		{
+			logging_fp = stderr;
+		}
+	} else {
+		logging_fp = stderr;
+	}
+
+	fprintf( logging_fp , "[%lu]\t%s: ", time( NULL ) , logging_value_to_name( loglevel_map, level ) );
+
+	va_start(ap, format);
+
+	vfprintf( logging_fp, format, ap );
+
+	va_end(ap);
+
+	if( logging_fp && logging_fp != stderr )
+	{
+		fclose( logging_fp );
+	}
+
+logging_end:
+	pthread_mutex_unlock( &logging_mutex );
+}
 
 void logging_init(void)
 {
-	if( strcasecmp( config_get("logging.syslog"), "yes" ) == 0 )
+	pthread_mutex_init( &logging_mutex, NULL );
+
+	pthread_mutex_lock( &logging_mutex );
+
+	if( strcasecmp( config_get("logging.enabled"), "yes" ) == 0 )
 	{
-		syslog_enabled = 1;
+		logging_threshold = logging_name_to_value( loglevel_map, config_get("logging.log_level") ) ;
+		logging_file_name = config_get("logging.log_file");
+		
+		logging_enabled = 1;
 	}
+
+	pthread_mutex_unlock( &logging_mutex );
 }
 
 void logging_stop(void)
 {
-	if( syslog_enabled = 1 )
+	pthread_mutex_lock( &logging_mutex);
+
+	if( logging_file_name )
 	{
-		/* Stop syslog */
+		free( logging_file_name );
+		logging_file_name = NULL;
 	}
 
-	syslog_enabled = 0;
+	logging_enabled = 0;
+	
+	pthread_mutex_unlock( &logging_mutex );
+
+	pthread_mutex_destroy( &logging_mutex );
 }

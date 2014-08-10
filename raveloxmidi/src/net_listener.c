@@ -50,6 +50,7 @@ extern int errno;
 #include "utils.h"
 
 #include "raveloxmidi_config.h"
+#include "logging.h"
 
 static int num_sockets;
 static int *sockets;
@@ -101,7 +102,7 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (inet_aton( config_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
-		fprintf(stderr, "Invalid address: %s\n", config_get("network.bind_address") );
+		logging_printf(LOGGING_ERROR, "Invalid address: %s\n", config_get("network.bind_address") );
 		return errno;
 	}
 
@@ -162,12 +163,12 @@ int net_socket_listener( void )
 					break;
 				}   
 
-				fprintf(stderr, "Socket error (%d) on socket (%d)\n", errno , sockets[i] );
+				logging_printf(LOGGING_ERROR, "Socket error (%d) on socket (%d)\n", errno , sockets[i] );
 				break;
 			}
 
 			ip_address = inet_ntoa(from_addr.sin_addr);	
-			fprintf( stderr, "Data (0x%02x) on socket(%d) from (%s)\n", packet[0], i,ip_address);
+			logging_printf( LOGGING_DEBUG, "Data (0x%02x) on socket(%d) from (%s)\n", packet[0], i,ip_address);
 
 			// Determine the packet type
 
@@ -333,15 +334,12 @@ int net_socket_loop( unsigned int interval )
 
 void net_socket_loop_shutdown(int signal)
 {
-	fprintf(stderr, "Received signal(%d) shutting down\n", signal);
+	logging_printf(LOGGING_INFO, "Received signal(%d) shutting down\n", signal);
 	set_shutdown_lock( 1 );
 }
 
 int net_socket_setup( void )
 {
-	int i;
-	int ret;
-
 	num_sockets = 0;
 
 	if(
@@ -349,7 +347,7 @@ int net_socket_setup( void )
 		net_socket_create( atoi( config_get("network.rtsp.port") ) ) ||
 		net_socket_create( atoi( config_get("network.note.port") ) ) )
 	{
-		fprintf(stderr, "Cannot create socket on port %u: %s\n", i, strerror( errno ) );
+		logging_printf(LOGGING_ERROR, "Cannot create socket: %s\n", strerror( errno ) );
 		return -1;
 	}
 

@@ -35,6 +35,8 @@ extern int errno;
 #include "rtp_packet.h"
 #include "utils.h"
 
+#include "logging.h"
+
 static net_ctx_t *ctx[ MAX_CTX ];
 
 void net_ctx_reset( net_ctx_t *ctx )
@@ -59,13 +61,13 @@ void debug_net_ctx_dump( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
 	
-	fprintf(stderr, "CTX( ");
-	fprintf(stderr, "Used=%d , ", ctx->used);
-	fprintf(stderr, "ssrc=%08x , ", ctx->ssrc);
-	fprintf(stderr, "send_ssrc=%08x , ", ctx->send_ssrc);
-	fprintf(stderr, "initiator=%08x , ", ctx->initiator);
-	fprintf(stderr, "seq=%08x (%08d) , ", ctx->seq, ctx->seq);
-	fprintf(stderr, "host=%s:%u )\n", ctx->ip_address, ctx->port);
+	logging_printf( LOGGING_DEBUG, "CTX( ");
+	logging_printf( LOGGING_DEBUG, "Used=%d , ", ctx->used);
+	logging_printf( LOGGING_DEBUG, "ssrc=%08x , ", ctx->ssrc);
+	logging_printf( LOGGING_DEBUG, "send_ssrc=%08x , ", ctx->send_ssrc);
+	logging_printf( LOGGING_DEBUG, "initiator=%08x , ", ctx->initiator);
+	logging_printf( LOGGING_DEBUG, "seq=%08x (%08d) , ", ctx->seq, ctx->seq);
+	logging_printf( LOGGING_DEBUG, "host=%s:%u )\n", ctx->ip_address, ctx->port);
 }
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
@@ -204,8 +206,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 {
 	if( ctx_id > MAX_CTX - 1 ) return;
 
-	fprintf(stderr, "Journal has data (NULLTEST) -----: %s\n", ( journal_has_data( NULL ) ? "YES": "NO") );
-	fprintf(stderr, "Journal has data ----------------: %s\n", ( journal_has_data( ctx[ctx_id]->journal ) ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "Journal has data: %s\n", ( journal_has_data( ctx[ctx_id]->journal ) ? "YES" : "NO" ) );
 
 	if( ! journal_has_data( ctx[ctx_id]->journal ) ) return;
 
@@ -287,8 +288,8 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 	
 	if( bytes_sent < 0 )
 	{
-		fprintf( stderr, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, port , strerror( errno ));
+		logging_printf( LOGGING_ERROR, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, port , strerror( errno ));
 	} else {
-		fprintf(stderr, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
+		logging_printf( LOGGING_DEBUG, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
 	}
 }

@@ -28,6 +28,8 @@
 #include "midi_journal.h"
 #include "utils.h"
 
+#include "logging.h"
+
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 
@@ -484,7 +486,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	if( ! journal ) return;
 
-	fprintf( stderr, "journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
 	if(  ! journal_has_data( journal ) ) return;
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
@@ -649,7 +651,7 @@ void midi_note_dump( midi_note_t *note )
 {
 	if( ! note ) return;
 
-	fprintf(stderr, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
+	logging_printf( LOGGING_DEBUG, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
 }
 
 void midi_note_reset( midi_note_t *note )
@@ -666,7 +668,7 @@ void chaptern_header_dump( chaptern_header_t *header )
 {
 	if( ! header ) return;
 
-	fprintf(stderr, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
+	logging_printf( LOGGING_DEBUG, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
 }
 
 void chaptern_header_reset( chaptern_header_t *header )
@@ -694,7 +696,7 @@ void chaptern_dump( chaptern_t *chaptern )
 	
 	for( i = chaptern->header->low; i <= chaptern->header->high ; i++ )
 	{
-		fprintf(stderr, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
+		logging_printf( LOGGING_DEBUG, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
 	}
 }
 
@@ -717,7 +719,7 @@ void channel_header_dump( channel_header_t *header )
 {
 	if( ! header ) return;
 
-	fprintf(stderr, "Channel #%d (Header: S=%d H=%d len=%u bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
+	logging_printf( LOGGING_DEBUG, "Channel #%d (Header: S=%d H=%d len=%u bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
 }
 
 void channel_header_reset( channel_header_t *header )
@@ -762,8 +764,8 @@ void journal_header_dump( journal_header_t *header )
 {
 	if( ! header ) return;
 
-	fprintf(stderr, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
-	fprintf(stderr, "Header Size = %u\n", sizeof( journal_header_t ) );
+	logging_printf( LOGGING_DEBUG, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
+	logging_printf( LOGGING_DEBUG, "Header Size = %u\n", sizeof( journal_header_t ) );
 }
 
 void journal_header_reset( journal_header_t *header )

@@ -27,6 +27,8 @@
 #include "midi_payload.h"
 #include "utils.h"
 
+#include "logging.h"
+
 void midi_payload_destroy( midi_payload_t **payload )
 {
 	if( ! payload ) return;
@@ -122,12 +124,12 @@ void payload_dump( midi_payload_t *payload )
 	if( ! payload ) return;
 	if( ! payload->header ) return;
 
-	fprintf( stderr, "MIDI Payload( ");
-	fprintf( stderr, "B=%d , ", payload->header->B);
-	fprintf( stderr, "J=%d , ", payload->header->J);
-	fprintf( stderr, "Z=%d , ", payload->header->Z);
-	fprintf( stderr, "P=%d , ", payload->header->P);
-	fprintf( stderr, "payloadlength=%u )\n", payload->header->len);
+	logging_printf( LOGGING_DEBUG, "MIDI Payload( ");
+	logging_printf( LOGGING_DEBUG, "B=%d , ", payload->header->B);
+	logging_printf( LOGGING_DEBUG, "J=%d , ", payload->header->J);
+	logging_printf( LOGGING_DEBUG, "Z=%d , ", payload->header->Z);
+	logging_printf( LOGGING_DEBUG, "P=%d , ", payload->header->P);
+	logging_printf( LOGGING_DEBUG, "payloadlength=%u )\n", payload->header->len);
 }
 
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
