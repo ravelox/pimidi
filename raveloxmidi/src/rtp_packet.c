@@ -121,18 +121,18 @@ void rtp_packet_dump( rtp_packet_t *packet )
 {
 	if( ! packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "RTP Packet( ");
-	logging_printf( LOGGING_DEBUG, "V=%u , ", packet->header.v);
-	logging_printf( LOGGING_DEBUG, "P=%u , ", packet->header.p);
-	logging_printf( LOGGING_DEBUG, "X=%u , ", packet->header.x);
-	logging_printf( LOGGING_DEBUG, "CC=%u , ", packet->header.cc);
-	logging_printf( LOGGING_DEBUG, "M=%u , ", packet->header.m);
-	logging_printf( LOGGING_DEBUG, "PT=%u , ", packet->header.pt);
-	logging_printf( LOGGING_DEBUG, "seq=%u , ", packet->header.seq);
-	logging_printf( LOGGING_DEBUG, "timestamp= 0x%08x , ", packet->header.timestamp );
-	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", packet->header.ssrc );
-	logging_printf( LOGGING_DEBUG, "payloadlength=%u , ", packet->payload_len);
-	logging_printf( LOGGING_DEBUG, "payload=%p )\n", packet->payload);
+	logging_printf( LOGGING_DEBUG, "RTP Packet( \n");
+	logging_printf( LOGGING_DEBUG, "\tV=%u\n", packet->header.v);
+	logging_printf( LOGGING_DEBUG, "\tP=%u\n", packet->header.p);
+	logging_printf( LOGGING_DEBUG, "\tX=%u\n", packet->header.x);
+	logging_printf( LOGGING_DEBUG, "\tCC=%u\n", packet->header.cc);
+	logging_printf( LOGGING_DEBUG, "\tM=%u\n", packet->header.m);
+	logging_printf( LOGGING_DEBUG, "\tPT=%u\n", packet->header.pt);
+	logging_printf( LOGGING_DEBUG, "\tseq=%u\n", packet->header.seq);
+	logging_printf( LOGGING_DEBUG, "\ttimestamp=0x%08x\n", packet->header.timestamp );
+	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", packet->header.ssrc );
+	logging_printf( LOGGING_DEBUG, "\tpayloadlength=%u\n", packet->payload_len);
+	logging_printf( LOGGING_DEBUG, "\tpayload=%p )\n", packet->payload);
 
 	return;
 }

@@ -61,13 +61,13 @@ void debug_net_ctx_dump( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
 	
-	logging_printf( LOGGING_DEBUG, "CTX( ");
-	logging_printf( LOGGING_DEBUG, "Used=%d , ", ctx->used);
-	logging_printf( LOGGING_DEBUG, "ssrc=%08x , ", ctx->ssrc);
-	logging_printf( LOGGING_DEBUG, "send_ssrc=%08x , ", ctx->send_ssrc);
-	logging_printf( LOGGING_DEBUG, "initiator=%08x , ", ctx->initiator);
-	logging_printf( LOGGING_DEBUG, "seq=%08x (%08d) , ", ctx->seq, ctx->seq);
-	logging_printf( LOGGING_DEBUG, "host=%s:%u )\n", ctx->ip_address, ctx->port);
+	logging_printf( LOGGING_DEBUG, "CTX(\n");
+	logging_printf( LOGGING_DEBUG, "\tUsed=%d\n", ctx->used);
+	logging_printf( LOGGING_DEBUG, "\tssrc=%08x\n", ctx->ssrc);
+	logging_printf( LOGGING_DEBUG, "\tsend_ssrc=%08x\n", ctx->send_ssrc);
+	logging_printf( LOGGING_DEBUG, "\tinitiator=%08x\n", ctx->initiator);
+	logging_printf( LOGGING_DEBUG, "\tseq=%08x (%08d)\n", ctx->seq, ctx->seq);
+	logging_printf( LOGGING_DEBUG, "\thost=%s:%u )\n", ctx->ip_address, ctx->port);
 }
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )

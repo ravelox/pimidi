@@ -53,13 +53,13 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync = ( net_applemidi_sync *) data;
 
-	logging_printf( LOGGING_DEBUG, "SYNC( ");
+	logging_printf( LOGGING_DEBUG, "SYNC( \n");
 
-	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", sync->ssrc);
-	logging_printf( LOGGING_DEBUG, "count=0x%08x , ", sync->count);
-	logging_printf( LOGGING_DEBUG, "timestamp1=0x%llu , ", sync->timestamp1);
-	logging_printf( LOGGING_DEBUG, "timestamp2=0x%llu , ", sync->timestamp2);
-	logging_printf( LOGGING_DEBUG, "timestamp3=0x%llu )\n", sync->timestamp3);
+	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", sync->ssrc);
+	logging_printf( LOGGING_DEBUG, "\tcount=0x%08x\n", sync->count);
+	logging_printf( LOGGING_DEBUG, "\ttimestamp1=0x%llu\n", sync->timestamp1);
+	logging_printf( LOGGING_DEBUG, "\ttimestamp2=0x%llu\n", sync->timestamp2);
+	logging_printf( LOGGING_DEBUG, "\ttimestamp3=0x%llu )\n", sync->timestamp3);
 
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 

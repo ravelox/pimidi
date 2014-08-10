@@ -105,9 +105,9 @@ void midi_note_packet_dump( midi_note_packet_t *note_packet )
 {
 	if(! note_packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "Note Packet( ");
-	logging_printf( LOGGING_DEBUG, "Command=%d , ", note_packet->command );
-	logging_printf( LOGGING_DEBUG, "Channel=%d , ", note_packet->channel );
-	logging_printf( LOGGING_DEBUG, "Note=%d , ", note_packet->note );
-	logging_printf( LOGGING_DEBUG, "Velocity=%d )\n", note_packet->velocity );
+	logging_printf( LOGGING_DEBUG, "Note Packet(\n");
+	logging_printf( LOGGING_DEBUG, "\tCommand=%d\n", note_packet->command );
+	logging_printf( LOGGING_DEBUG, "\tChannel=%d\n", note_packet->channel );
+	logging_printf( LOGGING_DEBUG, "\tNote=%d\n", note_packet->note );
+	logging_printf( LOGGING_DEBUG, "\tVelocity=%d )\n", note_packet->velocity );
 }

@@ -51,23 +51,23 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_DEBUG, "INV(%s:%u , ", ip_address, port );
+	logging_printf( LOGGING_DEBUG, "INV(%s:%u\n ", ip_address, port );
 
-	logging_printf( LOGGING_DEBUG, "name=%s , ", inv->name);
-	logging_printf( LOGGING_DEBUG, "ssrc=0x%08x , ", inv->ssrc);
-	logging_printf( LOGGING_DEBUG, "version=0x%08x , ", inv->version);
-	logging_printf( LOGGING_DEBUG, "initiator=0x%08x )\n", inv->initiator);
+	logging_printf( LOGGING_DEBUG, "\tname=%s\n", inv->name);
+	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", inv->ssrc);
+	logging_printf( LOGGING_DEBUG, "\tversion=0x%08x\n", inv->version);
+	logging_printf( LOGGING_DEBUG, "\tinitiator=0x%08x )\n", inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "Registering new connection\n");
+		logging_printf( LOGGING_DEBUG, "cmd_inv_hander: Registering new connection\n");
 		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port );
 
 		if( ! ctx ) 
 		{
-			logging_printf( LOGGING_ERROR, "Error registering connection\n");
+			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Error registering connection\n");
 		}
 	}
 

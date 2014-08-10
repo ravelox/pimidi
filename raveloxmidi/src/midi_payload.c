@@ -124,12 +124,12 @@ void payload_dump( midi_payload_t *payload )
 	if( ! payload ) return;
 	if( ! payload->header ) return;
 
-	logging_printf( LOGGING_DEBUG, "MIDI Payload( ");
-	logging_printf( LOGGING_DEBUG, "B=%d , ", payload->header->B);
-	logging_printf( LOGGING_DEBUG, "J=%d , ", payload->header->J);
-	logging_printf( LOGGING_DEBUG, "Z=%d , ", payload->header->Z);
-	logging_printf( LOGGING_DEBUG, "P=%d , ", payload->header->P);
-	logging_printf( LOGGING_DEBUG, "payloadlength=%u )\n", payload->header->len);
+	logging_printf( LOGGING_DEBUG, "MIDI Payload(\n");
+	logging_printf( LOGGING_DEBUG, "\tB=%d\n", payload->header->B);
+	logging_printf( LOGGING_DEBUG, "\tJ=%d\n", payload->header->J);
+	logging_printf( LOGGING_DEBUG, "\tZ=%d\n", payload->header->Z);
+	logging_printf( LOGGING_DEBUG, "\tP=%d\n", payload->header->P);
+	logging_printf( LOGGING_DEBUG, "\tpayloadlength=%u )\n", payload->header->len);
 }
 
 void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
