@@ -73,7 +73,6 @@ void daemon_start(void)
 
         freopen("/dev/null","r",stdin);
         freopen("/dev/null","w",stdout);
-        freopen("/dev/null","w",stderr);
 }
 
 void daemon_stop(void)
