@@ -59,6 +59,8 @@ Configuration
 raveloxmidi can be run with a -c parameter to specify a configuration file with the options listed below.
 Where the option isn't specified, a default value is used.
 
+For debugging, you can run raveloxmidi -N -d to keep raveloxmidi in the foreground and send debug-level output to stderr.
+
 network.bind_address
 	IP address that raveloxmidi listens on. Default is 0.0.0.0 ( meaning all interfaces ).
 network.rtpmidi.port
