@@ -4,6 +4,7 @@ Introduction
 raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events via rtpMIDI.
 
 The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads.
+Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on Windows talking to FL Studio 11.
 
 Except for the Avahi code, it’s all mine but I have leaned heavily on the following references:
 
