@@ -146,6 +146,11 @@ void config_init( int argc, char *argv[] )
 	} 
 
 	config_load_file( config_get("config.file") );
+
+	if( strcasecmp( config_get("logging.log_level"), "debug" ) == 0 )
+	{
+		config_dump();
+	}
 }
 
 void config_destroy( void )

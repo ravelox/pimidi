@@ -4,7 +4,6 @@ set -x
 
 rm -f Makefile
 
-libtoolize
 aclocal
 autoconf
 
