@@ -115,7 +115,7 @@ void config_init( int argc, char *argv[] )
 		{"pid", required_argument, NULL, 'P'},
 		{0,0,0,0}
 	};
-	char c;
+	int c;
 	uint8_t 
 
 	num_items = 0 ;
