@@ -112,7 +112,8 @@ void config_init( int argc, char *argv[] )
 		{"config",   required_argument, NULL, 'c'},
 		{"debug",    required_argument, NULL, 'd'},
 		{"nodaemon", required_argument, NULL, 'N'},
-		{"pid", required_argument, NULL, 'P'},
+		{"pidfile", required_argument, NULL, 'P'},
+		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
 	int c;
@@ -125,7 +126,7 @@ void config_init( int argc, char *argv[] )
 
 	while(1)
 	{
-		c = getopt_long( argc, argv, "c:dNP:", long_options, NULL);
+		c = getopt_long( argc, argv, "c:dhNP:", long_options, NULL);
 
 		if( c == -1 ) break;
 
@@ -137,6 +138,10 @@ void config_init( int argc, char *argv[] )
 				config_add_item("logging.enabled", "yes");
 				config_add_item("logging.log_level", "debug");
 				break;
+			/* This option exits */
+			case 'h':
+				config_usage();
+				exit(0);
 			case 'N':
 				config_add_item("run_as_daemon", "no");
 				break;
@@ -253,3 +258,17 @@ void config_dump( void )
 	}
 }
 
+void config_usage( void )
+{
+	fprintf( stderr, "Usage:\n");
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-N] [-P filename] [-h]\n");
+	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--nodaemon] [--pidfile filename] [--help]\n");
+	fprintf( stderr, "\n");
+	fprintf( stderr, "-c filename\tName of config file to use\n");
+	fprintf( stderr, "-d\t\tRun in debug mode\n");
+	fprintf( stderr, "-N\t\tDo not run in the background\n");
+	fprintf( stderr, "-P filename\tName of file to write background pid\n");
+	fprintf( stderr, "-h\t\tThis output\n");
+	fprintf( stderr, "\nThe following configuration file items are default:\n");
+	config_dump();
+}
