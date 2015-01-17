@@ -1,4 +1,0 @@
-To rebuild this distribution, first copy all ../*.c files to
-this directory, and change net_include.c to net_include.h.  Then,
-look at the ".changes" diffs to see what changes need to be
-made to net_globals.c.
