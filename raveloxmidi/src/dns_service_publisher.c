@@ -200,21 +200,25 @@ void dns_service_publisher_cleanup( void )
 	if( client)
 	{
 		avahi_client_free( client );
+		client = NULL;
 	}
 
 	if( sd_name_copy )
 	{
 		avahi_free( sd_name_copy );
+		sd_name_copy = NULL;
 	}
 
 	if( sd_service_copy )
 	{
 		avahi_free( sd_service_copy );
+		sd_service_copy = NULL;
 	}
 
 	if( threaded_poll )
 	{
 		avahi_threaded_poll_free( threaded_poll );
+		threaded_poll = NULL;
 	}
 }
 
