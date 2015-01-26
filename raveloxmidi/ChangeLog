@@ -1,4 +1,0 @@
-2007-12-14
-	milter will now run as a daemon
-	Added -P switch to write pid of daemon process to a file
-	Added -u switch to set uid for daemon process
