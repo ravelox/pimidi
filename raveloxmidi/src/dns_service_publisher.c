@@ -238,7 +238,6 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 
 	if (! client) {
 		logging_printf(LOGGING_ERROR, "Failed to create client: %s\n", avahi_strerror(error));
-		dns_service_publisher_cleanup();
 		return 1;
 	}
 
