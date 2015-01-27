@@ -40,6 +40,16 @@ void daemon_start(void)
 
 	pid_file = config_get("daemon.pid_file");
 
+	if( is_yes( config_get("security.check") ) )
+	{
+		/* Check that the pid file is valid as it's going to be unlinked at the end */
+		if( ! check_file_security( pid_file ) )
+		{
+			logging_printf( LOGGING_ERROR, "%s fails security check\n", pid_file);
+			_exit(1);
+		}
+	}
+
         if ( ( pid = fork() )< 0 ) {
                 logging_printf( LOGGING_ERROR,"Can't fork:%s\n", strerror( errno ));
                 return;

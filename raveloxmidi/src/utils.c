@@ -25,8 +25,12 @@
 #include <ctype.h>
 
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 #include "logging.h"
+
+extern int errno;
 
 uint64_t ntohll(const uint64_t value)
 {
@@ -204,4 +208,49 @@ void FREENULL( void **ptr )
 
 	free( *ptr );
 	*ptr = NULL;
+}
+
+int check_file_security( const char *filepath )
+{
+	struct stat buf;
+	int saved_errno = 0;
+
+	if( ! filepath ) return 0;
+	
+	if( stat( filepath, &buf ) != 0 )
+	{
+		if( errno == ENOENT )
+		{
+			return 1;
+		}
+		logging_printf(LOGGING_ERROR, "stat() error: %s\t%s\n", errno, filepath, strerror( errno) );
+		return 0;
+	}
+
+	if( ! S_ISREG( buf.st_mode ) || ( buf.st_mode & ( S_IXUSR | S_IXGRP | S_IXOTH) ) )
+	{
+		return 0;
+	}
+	
+	return 1;
+}
+
+int is_yes( const char *value )
+{
+	if( ! value ) return 0;
+	if( strcasecmp( value, "yes" ) == 0 ) return 1;
+	if( strcasecmp( value, "y" ) == 0 ) return 1;
+	if( strcasecmp( value, "1" ) == 0 ) return 1;
+
+	return 0;
+}
+
+int is_no( const char *value )
+{
+	if( ! value ) return 0;
+	if( strcasecmp( value, "no" ) == 0 ) return 1;
+	if( strcasecmp( value, "n" ) == 0 ) return 1;
+	if( strcasecmp( value, "0" ) == 0 ) return 1;
+
+	return 0;
 }

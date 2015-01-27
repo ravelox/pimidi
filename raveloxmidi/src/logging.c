@@ -143,10 +143,10 @@ void logging_init(void)
 
 	pthread_mutex_lock( &logging_mutex );
 
-	if( strcasecmp( config_get("logging.enabled"), "yes" ) == 0 )
+	if( is_yes( config_get("logging.enabled") ) )
 	{
 		logging_threshold = logging_name_to_value( loglevel_map, config_get("logging.log_level") ) ;
-		logging_file_name = config_get("logging.log_file");
+		logging_file_name = strdup( config_get("logging.log_file") );
 		
 		logging_enabled = 1;
 	}

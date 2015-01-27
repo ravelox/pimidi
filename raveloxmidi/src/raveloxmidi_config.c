@@ -47,6 +47,7 @@ static void config_set_defaults( void )
 	config_add_item("logging.enabled", "yes");
 	config_add_item("logging.log_file", NULL);
 	config_add_item("logging.log_level", "normal");
+	config_add_item("security.check", "yes");
 }
 
 static void config_load_file( char *filename )
@@ -167,12 +168,15 @@ void config_destroy( void )
 
 	for( i = 0 ; i < num_items ; i++ )
 	{
-		if( config_items[i]->value ) free( config_items[i]->value );
+		if( config_items[i]->value )  free( config_items[i]->value );
 		if( config_items[i]->key ) free( config_items[i]->key );
 		if( config_items[i] ) free( config_items[i] );
 	}
 
 	if( config_items ) free( config_items );
+
+	num_items = 0;
+	config_items = NULL;
 }
 
 /* Public version */

@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
-	if( strcasecmp( config_get("run_as_daemon") , "yes" ) == 0 )
+	if( is_yes( config_get("run_as_daemon") ) )
 	{
 		running_as_daemon = 1;
 		daemon_start();
