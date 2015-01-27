@@ -85,3 +85,5 @@ logging.log_file
 	Name of file to write logging to. Default is stderr.
 logging.log_level
 	Threshold for log events. Acceptable values are debug,info,normal,warning and error. Default is normal.
+security.check
+	If set to yes, it is not possible to write the daemon pid to a file with executable permissions. Default is yes.
