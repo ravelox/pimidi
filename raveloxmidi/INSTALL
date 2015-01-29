@@ -1,0 +1,25 @@
+Installation
+============
+
+Building
+--------
+From a fresh git clone, you should do the following:
+
+1. cd raveloxmidi
+2. sh ./autogen.sh
+3. ./configure
+4. make
+5. sudo make install
+
+Required packages
+-----------------
+
+autoconf-2.59+
+automake-1.9+
+pkgconfig-0.21
+
+avahi-devel
+
+avahi (or avahi-server + avahi-client)
+
+NOTE: avahi-daemon MUST be running for raveloxmidi to register its zeroconf name.
