@@ -139,6 +139,8 @@ logging_end:
 
 void logging_init(void)
 {
+	char *name = NULL;
+
 	pthread_mutex_init( &logging_mutex, NULL );
 
 	pthread_mutex_lock( &logging_mutex );
@@ -146,7 +148,11 @@ void logging_init(void)
 	if( is_yes( config_get("logging.enabled") ) )
 	{
 		logging_threshold = logging_name_to_value( loglevel_map, config_get("logging.log_level") ) ;
-		logging_file_name = strdup( config_get("logging.log_file") );
+		name = config_get("logging.log_file") ;
+		if( name )
+		{
+			logging_file_name = strdup( name );
+		}
 		
 		logging_enabled = 1;
 	}
