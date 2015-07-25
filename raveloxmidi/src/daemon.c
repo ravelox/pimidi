@@ -37,6 +37,7 @@ void daemon_start(void)
 {
         pid_t pid;
 	char *pid_file;
+	FILE *reopen_file = NULL;
 
 	pid_file = config_get("daemon.pid_file");
 
@@ -81,8 +82,9 @@ void daemon_start(void)
                 _exit(0);
         }       
 
-        freopen("/dev/null","r",stdin);
-        freopen("/dev/null","w",stdout);
+        reopen_file = freopen("/dev/null","r",stdin);
+        reopen_file = freopen("/dev/null","w",stdout);
+	reopen_file = NULL;
 }
 
 void daemon_stop(void)

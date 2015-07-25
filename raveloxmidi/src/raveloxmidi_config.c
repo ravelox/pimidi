@@ -70,7 +70,8 @@ static void config_load_file( char *filename )
 
 	while( 1 )
 	{
-		fgets( config_line , MAX_CONFIG_LINE, config_file );
+		char *return_value = NULL;
+		return_value = fgets( config_line , MAX_CONFIG_LINE, config_file );
 
 		if( feof( config_file) ) break;
 
