@@ -1,0 +1,74 @@
+.TH raveloxmidi "@VERSION@"
+.SH NAME
+raveloxmidi - RTP MIDI NoteOn/NoteOff proxy
+.SH SYNOPSIS
+.B raveloxmidi
+[-c filename] [-d] [-N] [-P filename] [-h]
+
+.B raveloxmidi
+[--config filename] [--debug] [--nodaemon] [--pidfile filename] [--help]
+.SH DESCRIPTION
+.BR raveloxmidi
+provides a RTP MIDI proxy to send MIDI NoteOn and NoteOff events to a remote MIDI device.
+.SH OPTIONS
+.TP
+.B -c filename
+Name of configuration file to use. If no configuration file is provided, some defaults are assumed. See below for details.
+.TP
+.B -d
+Run in debug mode. This will provide debug-level output to either stdout or the configured log file.
+.TP
+.B -N
+Do not run as a daemon.
+.TP
+.B -P pidfile
+File to store the pid of the running process. Default is
+.B raveloxmidi.pid in the current directory.
+.TP
+.B -h
+Display help information including default values for some parameters.
+.SH NOTES
+The available options for the configuration file are as follows:
+.TP
+.B network.bind_address
+Address to bind the listening sockets ( default is 0.0.0.0 )
+.TP
+.B network.rtpmidi.port
+Port to listen on for RTP MIDI events from remote clients ( default is 5004 )
+.TP
+.B network.rtsp.port
+Port to listen on for RTSP events from remote clients ( default is 5005 )
+.TP
+.B network.note.port
+Port to listen on for local MIDI notes ( default is 5006 )
+network.note.port = 5006
+.TP
+.B network.socket_interval
+Polling interval (in microseconds) to listen for network events ( default is 5000 )
+.TP
+.B service.name
+Label to prepend to mDNS service name "_apple-midi._udp". ( default is raveloxmidi )
+.TP
+.B run_as_daemon
+Run the binary in the background. Can be yes or no. ( default is yes ).
+.TP
+.B daemon.pid_file
+Name of file to write pid of background process. ( Default is raveloxmidi.pid ).
+.TP
+.B logging.enabled
+Write logging events to stdout or a named file. Can be yes or no. ( default is yes ).
+.TP
+.B logging.log_file
+Name of file to write logging events. If no filename is supplied, logging events will go to stdout. ( default is null ).
+.TP
+.B logging.log_level
+Level of logging events to be written if enabled. Can be 
+.B DEBUG, INFO, NORMAL, WARNING or ERROR
+( default is NORMAL )
+.TP
+.B security.check
+Enables or disables rudimentary check on the named pid file to prevent the daemon.pid_file option being used to overwrite executable files. Can be yes or no. ( default is yes ).
+.fi
+.SH AUTHOR
+.B raveloxmidi
+was developed by Dave Kelly (c) 2014
