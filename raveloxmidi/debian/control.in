@@ -1,0 +1,9 @@
+Package: @PACKAGE@
+Version: @VERSION@-1
+Section: base
+Priority: optional
+Architecture: i386
+Depends: libavahi-client3
+Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
+Description: raveloxmidi
+ Simple rtpMIDI proxy for NoteOn/NoteOff events
