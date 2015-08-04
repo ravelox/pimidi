@@ -29,9 +29,18 @@ Building packages
 
 To build a .deb package, from a fresh clone:
 
-1. cd raveloxmid
+1. cd raveloxmidi
 2. sh ./autogen.sh
 3. ./configure
 4. make deb
 
 A build/ directory will be created containing the .deb package
+
+
+To build a .rpm package, from a fresh clone:
+
+1. cd raveloxmidi
+2. sh ./autogen.sh
+3 ./configure
+4. make dist
+5 rpmbuild -ta /path/to/dist.tar.gz
