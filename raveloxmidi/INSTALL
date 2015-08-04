@@ -23,3 +23,15 @@ avahi-devel
 avahi (or avahi-server + avahi-client)
 
 NOTE: avahi-daemon MUST be running for raveloxmidi to register its zeroconf name.
+
+Building packages
+-----------------
+
+To build a .deb package, from a fresh clone:
+
+1. cd raveloxmid
+2. sh ./autogen.sh
+3. ./configure
+4. make deb
+
+A build/ directory will be created containing the .deb package

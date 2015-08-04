@@ -14,4 +14,4 @@ AC_SYS_LARGEFILE
 ACX_PTHREAD([],[])
 PKG_CHECK_MODULES(AVAHI, [avahi-client] )
 
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 debian/control pkgscripts/build_deb)
+AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 DEBIAN/control pkgscripts/build_deb)

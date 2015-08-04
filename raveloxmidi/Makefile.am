@@ -1,7 +1,7 @@
 SUBDIRS = src man
 
 CPPFLAGS = '-g -Wall -I ./include'
-EXTRA_DIST = include LICENSE debian/control
+EXTRA_DIST = include LICENSE DEBIAN/control
 
 ACLOCAL_AMFLAGS = -I m4
 
