@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#
+# Define the local build directory
+#
+BUILDDIR=../build/@PACKAGE@_@VERSION@
+
+#
+# Use the automake installer to install the files in the local build directory
+#
+DESTDIR=${BUILDDIR} make install
+
+#
+# Copy the debian control file
+#
+cp -R debian/control ${BUILDDIR}/
+
+#
+# Make the debian packate
+#
+cd build
+dpkg-deb --build @PACKAGE@_@VERSION@-1
