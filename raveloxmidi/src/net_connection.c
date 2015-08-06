@@ -290,14 +290,14 @@ void net_ctx_increment_seq( uint8_t ctx_id )
 	ctx->seq += 1;
 }
 
-void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_t buffer_len )
+void net_ctx_send( uint8_t ctx_id, unsigned char *buffer, size_t buffer_len )
 {
 	net_ctx_t *ctx = NULL;
 	struct sockaddr_in send_address;
 	ssize_t bytes_sent = 0;
 	uint16_t port;
+	int send_socket;
 
-	if(  send_socket < 0 ) return;
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
 
@@ -308,6 +308,14 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 	debug_net_ctx_dump( ctx );
 	debug_ctx_journal_dump( ctx_id );
 
+	send_socket = socket( AF_INET, SOCK_DGRAM, IPPROTO_UDP );
+
+	if( send_socket < 0 )
+	{
+		logging_printf( LOGGING_ERROR, "Unable to create sending socket to %s:%u\n%s\n", ctx->ip_address, port, strerror( errno ) );
+		return;
+	}
+
 	memset((char *)&send_address, 0, sizeof( send_address));
 	send_address.sin_family = AF_INET;
 	port = ctx->port + 1;
@@ -315,11 +323,13 @@ void net_ctx_send( uint8_t ctx_id, int send_socket, unsigned char *buffer, size_
 	inet_aton( ctx->ip_address, &send_address.sin_addr );
 
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
+
+	close( send_socket );
 	
 	if( bytes_sent < 0 )
 	{
 		logging_printf( LOGGING_ERROR, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, port , strerror( errno ));
 	} else {
-		logging_printf( LOGGING_DEBUG, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
+		logging_printf( LOGGING_NORMAL, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
 	}
 }

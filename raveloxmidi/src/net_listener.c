@@ -257,38 +257,33 @@ int net_socket_listener( void )
 					memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
 					memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
 
+					// Build the RTP packet
+					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					{
+						rtp_packet = rtp_packet_create();
+						net_ctx_increment_seq( ctx_id );
+						net_ctx_update_rtp_fields( ctx_id , rtp_packet );
+	
+						// Add the MIDI data to the RTP packet
+						rtp_packet->payload_len = packed_payload_len + packed_journal_len;
+						rtp_packet->payload = packed_rtp_payload;
+
+						rtp_packet_dump( rtp_packet );
+
+						// Pack the RTP data
+						rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
+
+						net_ctx_send( ctx_id , packed_rtp_buffer, packed_rtp_buffer_len );
+
+						FREENULL( (void **)&packed_rtp_buffer );
+						rtp_packet_destroy( &rtp_packet );
+					}
+
 					// Do some cleanup
+					FREENULL( (void **)&packed_rtp_payload );
 					FREENULL( (void **)&packed_payload );
 					FREENULL( (void **)&packed_journal );
 					midi_payload_destroy( &midi_payload );
-
-					// Build the RTP packet
-					rtp_packet = rtp_packet_create();
-					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
-					{
-						net_ctx_increment_seq( ctx_id );
-						net_ctx_update_rtp_fields( ctx_id , rtp_packet );
-					}
-	
-					// Add the MIDI data to the RTP packet
-					rtp_packet->payload_len = packed_payload_len + packed_journal_len;
-					rtp_packet->payload = packed_rtp_payload;
-					rtp_packet_dump( rtp_packet );
-
-					// Pack the RTP data
-					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
-
-					// Send the RTP packet to each of the open connections
-					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
-					{
-						net_ctx_send( ctx_id , sockets[0],  packed_rtp_buffer, packed_rtp_buffer_len );
-					}
-
-					// Clean up
-					FREENULL( (void **)&packed_payload );
-					FREENULL( (void **)&packed_rtp_payload );
-					FREENULL( (void **)&packed_rtp_buffer );
-					rtp_packet_destroy( &rtp_packet );
 
 					ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
 
