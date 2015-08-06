@@ -41,6 +41,7 @@ static void config_set_defaults( void )
 	config_add_item("network.rtsp.port", "5005");
 	config_add_item("network.note.port", "5006");
 	config_add_item("network.socket_interval" , "5000" );
+	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
 	config_add_item("run_as_daemon", "yes");
 	config_add_item("daemon.pid_file","raveloxmidi.pid");
@@ -133,6 +134,9 @@ void config_init( int argc, char *argv[] )
 		if( c == -1 ) break;
 
 		switch(c) {
+			/* If an argument is missing */
+			case '?':
+				exit(0);
 			case 'c':
 				config_add_item("config.file", optarg);
 				break;

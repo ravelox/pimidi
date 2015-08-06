@@ -1,5 +1,5 @@
 AC_INIT()
-AM_INIT_AUTOMAKE(raveloxmidi, 0.1.1)
+AM_INIT_AUTOMAKE(raveloxmidi, 0.2.0)
 AC_CONFIG_HEADERS([config.h])
 
 AM_MAINTAINER_MODE

@@ -35,4 +35,6 @@ int net_socket_loop( unsigned int interval );
 void net_socket_loop_shutdown(int signal);
 int net_socket_setup( void );
 
+extern uint8_t _max_ctx;
+
 #endif

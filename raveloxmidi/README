@@ -42,7 +42,7 @@ Channel: 4 bits ( 0 - 15 )
 Note: 8 bits ( -127 to 127 )
 Velocity: 8 bits ( 0 to 127 )
 
-When raveloxmidi receives the note packet, it will send that MIDI command to any  active connections in the connection table. NOTE: The initial implementation will only send to the first connection.
+When raveloxmidi receives the note packet, it will send that MIDI command to any  active connections in the connection table. 
 
 The rtpMIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn and NoteOff events, only Chapter N journal entries are stored.
 
@@ -71,6 +71,8 @@ network.rtsp.port
 	Additional RTSP listening port. Default is 5005.
 network.note.port
 	Listening port for accepting MIDI notes. Default is 5006.
+network.max_connections
+	Maximum number of incoming connections that can be stored. Default is 8.
 service.name
 	Name used in the zeroconf definition for the rtpMIDI service. Default is 'raveloxmidi'.
 network.socket_interval

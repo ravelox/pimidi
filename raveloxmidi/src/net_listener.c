@@ -84,6 +84,7 @@ void net_response_destroy( net_response_t **response )
 	}
 
 	free( *response );
+	*response = NULL;
 }
 
 int net_socket_create( unsigned int port )
@@ -240,6 +241,8 @@ int net_socket_listener( void )
 
 				if( midi_payload )
 				{
+					uint8_t ctx_id = 0;
+
 					payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 
 					if( packed_journal_len > 0 )
@@ -261,10 +264,11 @@ int net_socket_listener( void )
 
 					// Build the RTP packet
 					rtp_packet = rtp_packet_create();
-					rtp_packet_dump( rtp_packet );
-					net_ctx_increment_seq( 0 );
-					net_ctx_update_rtp_fields( 0 , rtp_packet );
-					rtp_packet_dump( rtp_packet );
+					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					{
+						net_ctx_increment_seq( ctx_id );
+						net_ctx_update_rtp_fields( ctx_id , rtp_packet );
+					}
 	
 					// Add the MIDI data to the RTP packet
 					rtp_packet->payload_len = packed_payload_len + packed_journal_len;
@@ -274,8 +278,11 @@ int net_socket_listener( void )
 					// Pack the RTP data
 					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-					// Send the RTP packet
-					net_ctx_send( 0 , sockets[0],  packed_rtp_buffer, packed_rtp_buffer_len );
+					// Send the RTP packet to each of the open connections
+					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					{
+						net_ctx_send( ctx_id , sockets[0],  packed_rtp_buffer, packed_rtp_buffer_len );
+					}
 
 					// Clean up
 					FREENULL( (void **)&packed_payload );
@@ -284,7 +291,11 @@ int net_socket_listener( void )
 					rtp_packet_destroy( &rtp_packet );
 
 					ret = midi_note_packet_unpack( &note_packet, packet + 1 , recv_len - 1);
-					net_ctx_add_journal_note( 0 , note_packet );
+
+					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					{
+						net_ctx_add_journal_note( ctx_id , note_packet );
+					}
 				}
 
 				midi_note_packet_destroy( &note_packet );

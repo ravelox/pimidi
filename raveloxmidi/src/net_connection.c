@@ -35,9 +35,11 @@ extern int errno;
 #include "rtp_packet.h"
 #include "utils.h"
 
+#include "raveloxmidi_config.h"
 #include "logging.h"
 
-static net_ctx_t *ctx[ MAX_CTX ];
+static net_ctx_t **ctx;
+uint8_t _max_ctx = 0;
 
 void net_ctx_reset( net_ctx_t *ctx )
 {
@@ -112,7 +114,14 @@ void net_ctx_init( void )
 {
 	uint8_t i;
 
-	for( i = 0 ; i < MAX_CTX ; i++ )
+	_max_ctx = atoi( config_get("network.max_connections") );
+
+	if( _max_ctx > 255 ) _max_ctx = 255;
+	if( _max_ctx == 0 ) _max_ctx = 1;
+
+	ctx = (net_ctx_t **)malloc( sizeof( net_ctx_t * ) * _max_ctx );
+
+	for( i = 0 ; i < _max_ctx ; i++ )
 	{
 		ctx[ i ] = new_net_ctx();
 	}
@@ -123,7 +132,7 @@ void net_ctx_destroy( void )
 {
 	uint8_t i;
 
-	for( i = 0 ; i < MAX_CTX ; i++ )
+	for( i = 0 ; i < _max_ctx ; i++ )
 	{
 		if( ctx[ i ] )
 		{
@@ -133,11 +142,13 @@ void net_ctx_destroy( void )
 			ctx[i] = NULL;
 		}
 	}
+	free( ctx );
+	ctx = NULL;
 }
 
 net_ctx_t * net_ctx_find_by_id( uint8_t id )
 {
-	if( id < MAX_CTX )
+	if( id < _max_ctx )
 	{
 		if( ctx[id] )
 		{
@@ -154,7 +165,7 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 {
 	uint8_t i;
 
-	for( i = 0 ; i < MAX_CTX ; i++ )
+	for( i = 0 ; i < _max_ctx ; i++ )
 	{
 		if( ctx[i] )
 		{
@@ -175,7 +186,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 {
 	uint8_t i;
 
-	for( i = 0 ; i < MAX_CTX ; i++ )
+	for( i = 0 ; i < _max_ctx ; i++ )
 	{
 		if( ctx[i] )
 		{
@@ -190,27 +201,40 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 		}
 	}
 	
+	logging_printf( LOGGING_WARN, "No free connection slots available\n");
 	return NULL;
 }
 
 void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_packet_t *note_packet )
 {
-	if( ctx_id > MAX_CTX - 1 ) return;
+	net_ctx_t *ctx = NULL;
+
+	if( ctx_id > _max_ctx - 1 ) return;
 	
 	if( ! note_packet ) return;
 
-	midi_journal_add_note( ctx[ctx_id]->journal, ctx[ctx_id]->seq, note_packet );
+	ctx = net_ctx_find_by_id( ctx_id );
+
+	if( ! ctx) return;
+
+	midi_journal_add_note( ctx->journal, ctx->seq, note_packet );
 }
 
 void debug_ctx_journal_dump( uint8_t ctx_id )
 {
-	if( ctx_id > MAX_CTX - 1 ) return;
+	net_ctx_t *ctx = NULL;
 
-	logging_printf( LOGGING_DEBUG, "Journal has data: %s\n", ( journal_has_data( ctx[ctx_id]->journal ) ? "YES" : "NO" ) );
+	if( ctx_id > _max_ctx - 1 ) return;
 
-	if( ! journal_has_data( ctx[ctx_id]->journal ) ) return;
+	ctx = net_ctx_find_by_id( ctx_id );
 
-	journal_dump( ctx[ctx_id]->journal );
+	if( ! ctx) return;
+
+	logging_printf( LOGGING_DEBUG, "Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
+
+	if( ! journal_has_data( ctx->journal ) ) return;
+
+	journal_dump( ctx->journal );
 }
 
 void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journal_buffer_size)
@@ -229,9 +253,15 @@ void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journa
 	
 void net_ctx_journal_reset( uint8_t ctx_id )
 {
-	if( ctx_id > MAX_CTX - 1) return;
+	net_ctx_t *ctx = NULL;
 
-	journal_reset( ctx[ctx_id]->journal);
+	if( ctx_id > _max_ctx - 1) return;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+
+	if( ! ctx) return;
+
+	journal_reset( ctx->journal);
 }
 
 void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet)

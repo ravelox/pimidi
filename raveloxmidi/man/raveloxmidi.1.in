@@ -46,6 +46,9 @@ network.note.port = 5006
 .B network.socket_interval
 Polling interval (in microseconds) to listen for network events ( default is 5000 )
 .TP
+.B network.max_connections
+Number of connections that can be made to @PACKAGE@. Maximum is 255. Minimum is 1. ( default is 8 ).
+.TP
 .B service.name
 Label to prepend to mDNS service name "_apple-midi._udp". ( default is raveloxmidi )
 .TP

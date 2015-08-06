@@ -25,7 +25,8 @@
 #include "rtp_packet.h"
 #include "midi_journal.h"
 
-#define MAX_CTX 10
+// Maximum number of connection entries in the connection table
+#define MAX_CTX 8
 
 typedef struct net_ctx_t {
 	uint8_t		used;
