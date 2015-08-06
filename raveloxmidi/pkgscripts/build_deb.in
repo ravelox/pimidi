@@ -21,4 +21,5 @@ cp -R DEBIAN/control ${BUILDDIR}/DEBIAN
 #
 cd build
 dpkg-deb --build @PACKAGE@_@VERSION@-1
+rm -Rf "@PACKAGE@_@VERSION@-1/"
 cd ..
