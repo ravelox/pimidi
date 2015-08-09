@@ -330,6 +330,6 @@ void net_ctx_send( uint8_t ctx_id, unsigned char *buffer, size_t buffer_len )
 	{
 		logging_printf( LOGGING_ERROR, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, port , strerror( errno ));
 	} else {
-		logging_printf( LOGGING_NORMAL, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
+		logging_printf( LOGGING_DEBUG, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, port );
 	}
 }
