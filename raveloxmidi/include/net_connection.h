@@ -44,6 +44,7 @@ void net_ctx_reset( net_ctx_t *ctx );
 void debug_net_ctx_dump( net_ctx_t *ctx );
 void net_ctx_init( void );
 void net_ctx_destroy( void );
+int net_ctx_is_used( uint8_t id );
 net_ctx_t * net_ctx_find_by_id( uint8_t id );
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );

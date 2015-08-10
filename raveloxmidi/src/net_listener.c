@@ -260,8 +260,11 @@ int net_socket_listener( void )
 					// Build the RTP packet
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
 					{
+
 						rtp_packet = rtp_packet_create();
 						net_ctx_increment_seq( ctx_id );
+
+						// Transfer the connection details to the RTP packet
 						net_ctx_update_rtp_fields( ctx_id , rtp_packet );
 	
 						// Add the MIDI data to the RTP packet
@@ -289,6 +292,9 @@ int net_socket_listener( void )
 
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
 					{
+						// Check that the connection id is active
+						if( ! net_ctx_is_used( ctx_id ) ) continue;
+
 						net_ctx_add_journal_note( ctx_id , note_packet );
 					}
 				}

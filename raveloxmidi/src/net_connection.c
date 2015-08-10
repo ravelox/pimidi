@@ -146,6 +146,12 @@ void net_ctx_destroy( void )
 	ctx = NULL;
 }
 
+int net_ctx_is_used( uint8_t id )
+{
+	if( id < _max_ctx ) return( ctx[id]->used > 0 );
+	return 0;
+}
+
 net_ctx_t * net_ctx_find_by_id( uint8_t id )
 {
 	if( id < _max_ctx )
