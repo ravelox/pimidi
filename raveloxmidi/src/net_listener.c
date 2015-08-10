@@ -261,6 +261,9 @@ int net_socket_listener( void )
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
 					{
 
+						// Check that the connection id is active
+						if( ! net_ctx_is_used( ctx_id ) ) continue;
+
 						rtp_packet = rtp_packet_create();
 						net_ctx_increment_seq( ctx_id );
 
