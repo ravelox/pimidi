@@ -2,7 +2,7 @@ Package: @PACKAGE@
 Version: @VERSION@-1
 Section: base
 Priority: optional
-Architecture: i386
+Architecture: @DEB_ARCH@
 Depends: libavahi-client3
 Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
 Description: raveloxmidi
