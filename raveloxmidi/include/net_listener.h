@@ -37,4 +37,6 @@ int net_socket_setup( void );
 
 extern uint8_t _max_ctx;
 
+/* Indicate which socket should be the data port */
+#define DATA_PORT 1
 #endif

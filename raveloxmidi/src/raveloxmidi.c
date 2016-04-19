@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
 	service_desc.name = config_get("service.name");
 	service_desc.service = "_apple-midi._udp";
-	service_desc.port = atoi( config_get("network.rtpmidi.port") );
+	service_desc.port = atoi( config_get("network.control.port") );
 
 	ret = dns_service_publisher_start( &service_desc );
 	

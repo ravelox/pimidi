@@ -169,7 +169,7 @@ int net_socket_listener( void )
 			}
 
 			ip_address = inet_ntoa(from_addr.sin_addr);	
-			logging_printf( LOGGING_DEBUG, "Data (0x%02x) on socket(%d) from (%s)\n", packet[0], i,ip_address);
+			logging_printf( LOGGING_DEBUG, "Data (0x%02x) on socket(%d) from (%s:%u)\n", packet[0], i,ip_address, ntohs( from_addr.sin_port ));
 
 			// Determine the packet type
 
@@ -205,7 +205,9 @@ int net_socket_listener( void )
 
 				if( response )
 				{
-					sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+					size_t bytes_written = 0;
+					bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+					logging_printf( LOGGING_DEBUG, "%u bytes written on socket(%d) to (%s:%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));	
 					net_response_destroy( &response );
 				}
 
@@ -279,7 +281,7 @@ int net_socket_listener( void )
 						// Pack the RTP data
 						rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-						net_ctx_send( ctx_id , packed_rtp_buffer, packed_rtp_buffer_len );
+						net_ctx_send( sockets[ DATA_PORT ], ctx_id , packed_rtp_buffer, packed_rtp_buffer_len );
 
 						FREENULL( (void **)&packed_rtp_buffer );
 						rtp_packet_destroy( &rtp_packet );
@@ -358,8 +360,8 @@ int net_socket_setup( void )
 	num_sockets = 0;
 
 	if(
-		net_socket_create( atoi( config_get("network.rtpmidi.port") ) ) ||
-		net_socket_create( atoi( config_get("network.rtsp.port") ) ) ||
+		net_socket_create( atoi( config_get("network.control.port") ) ) ||
+		net_socket_create( atoi( config_get("network.data.port") ) ) ||
 		net_socket_create( atoi( config_get("network.note.port") ) ) )
 	{
 		logging_printf(LOGGING_ERROR, "Cannot create socket: %s\n", strerror( errno ) );

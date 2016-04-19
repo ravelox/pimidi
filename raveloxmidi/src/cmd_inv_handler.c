@@ -62,6 +62,10 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
+	/* See https://en.wikipedia.org/wiki/RTP-MIDI#Apple.27s_session_protocol */
+
+	/* If no context is found, this is a new connection */
+	/* We assumer that the current port is the control port */
 	if( ! ctx )
 	{
 		logging_printf( LOGGING_DEBUG, "cmd_inv_hander: Registering new connection\n");
@@ -71,6 +75,9 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		{
 			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Error registering connection\n");
 		}
+	/* Otherwise, we assume that the current port is the data port */
+	} else {
+		ctx->data_port = port;
 	}
 
 	cmd = new_net_applemidi_command( NET_APPLEMIDI_CMD_ACCEPT );
