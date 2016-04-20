@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "utils.h"
 #include "raveloxmidi_config.h"
 #include "logging.h"
 

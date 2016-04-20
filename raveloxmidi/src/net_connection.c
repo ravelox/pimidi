@@ -119,7 +119,6 @@ void net_ctx_init( void )
 
 	_max_ctx = atoi( config_get("network.max_connections") );
 
-	if( _max_ctx > 255 ) _max_ctx = 255;
 	if( _max_ctx == 0 ) _max_ctx = 1;
 
 	ctx = (net_ctx_t **)malloc( sizeof( net_ctx_t * ) * _max_ctx );
@@ -304,7 +303,6 @@ void net_ctx_send( int send_socket, uint8_t ctx_id, unsigned char *buffer, size_
 	net_ctx_t *ctx = NULL;
 	struct sockaddr_in send_address;
 	ssize_t bytes_sent = 0;
-	int from_port;
 
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;

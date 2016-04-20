@@ -213,7 +213,6 @@ void FREENULL( void **ptr )
 int check_file_security( const char *filepath )
 {
 	struct stat buf;
-	int saved_errno = 0;
 
 	if( ! filepath ) return 0;
 	
