@@ -1,7 +1,7 @@
 Introduction
 - - - - - - -
 
-raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events via rtpMIDI.
+raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events from the local machine via RTP MIDI.
 
 The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads.
 Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on Windows talking to FL Studio 11.
@@ -11,11 +11,13 @@ Except for the Avahi code, it’s all mine but I have leaned heavily on the foll
 RTP MIDI: An RTP Payload Format for MIDI ( http://www.eecs.berkeley.edu/~lazzaro/rtpmidi/index.html )
 The RTP MIDI dissector in wireshark. Written by Tobias Erichsen ( http://www.tobias-erichsen.de )
 
+Note: Where possible, I've tried to use RTP MIDI to mean the protocol and rtpMIDI to mean the software written by Tobias Erichsen. Some mistakes may be present but,
+in most cases, I am referring to the protocol
 
 Description
 - - - - - - 
 
-There are a number of stages in the general rtpMIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn’t documented.
+There are a number of stages in the general RTP MIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn’t documented.
 
 Stage 1 - SIP
 - - - - - - - 
@@ -44,7 +46,7 @@ Velocity: 8 bits ( 0 to 127 )
 
 When raveloxmidi receives the note packet, it will send that MIDI command to any  active connections in the connection table. 
 
-The rtpMIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn and NoteOff events, only Chapter N journal entries are stored.
+The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn and NoteOff events, only Chapter N journal entries are stored.
 
 Stage 3 - Feedback
 - - - - - - - - - 
@@ -64,17 +66,17 @@ For debugging, you can run raveloxmidi -N -d to keep raveloxmidi in the foregrou
 
 network.bind_address
 	IP address that raveloxmidi listens on. Default is 0.0.0.0 ( meaning all interfaces ).
-network.rtpmidi.port
-	Main rtpMIDI listening port. Used in the zeroconf definition for the rtpMIDI service.
+network.control.port
+	Main RTP MIDI listening port for new connections and shutdowns. Used in the zeroconf definition for the RTP MIDI service.
 	Default is 5004.
-network.rtsp.port
-	Additional RTSP listening port. Default is 5005.
+network.data.port
+	Listening port for all other data in the conversation. Default is 5005.
 network.note.port
 	Listening port for accepting MIDI notes. Default is 5006.
 network.max_connections
 	Maximum number of incoming connections that can be stored. Default is 8.
 service.name
-	Name used in the zeroconf definition for the rtpMIDI service. Default is 'raveloxmidi'.
+	Name used in the zeroconf definition for the RTP MIDI service. Default is 'raveloxmidi'.
 network.socket_interval
 	Polling interval for the listening sockets. Default is 5000 microseconds.
 run_as_daemon
