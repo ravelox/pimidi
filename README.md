@@ -1,4 +1,4 @@
-See http://projects.ravelox.com/blog for the reason I'm doing this.
+See http://www.raveloxprojects.com/blog/?cat=5 for the reason I'm doing this.
 
 The original reason for writing this was to send NoteOn/NoteOff MIDI events from
 a self-built drum pad interface through a Raspberry Pi to Logic Pro X on OS X.
