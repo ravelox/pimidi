@@ -13,7 +13,7 @@ AC_PROG_INSTALL
 AC_SYS_LARGEFILE
 
 ACX_PTHREAD([],[])
-PKG_CHECK_MODULES(AVAHI, [avahi-client] )
+PKG_CHECK_MODULES(AVAHI, avahi-client )
 
 DEB_ARCH="`dpkg --print-architecture`"
 AC_SUBST(DEB_ARCH)
