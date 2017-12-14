@@ -49,6 +49,7 @@ static void config_set_defaults( void )
 	config_add_item("logging.log_file", NULL);
 	config_add_item("logging.log_level", "normal");
 	config_add_item("security.check", "yes");
+	config_add_item("readonly","no");
 }
 
 static void config_load_file( char *filename )
@@ -113,9 +114,10 @@ void config_init( int argc, char *argv[] )
 {
 	static struct option long_options[] = {
 		{"config",   required_argument, NULL, 'c'},
-		{"debug",    required_argument, NULL, 'd'},
-		{"nodaemon", required_argument, NULL, 'N'},
+		{"debug",    no_argument, NULL, 'd'},
+		{"nodaemon", no_argument, NULL, 'N'},
 		{"pidfile", required_argument, NULL, 'P'},
+		{"readonly", no_argument, NULL, 'R'},
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
@@ -129,7 +131,7 @@ void config_init( int argc, char *argv[] )
 
 	while(1)
 	{
-		c = getopt_long( argc, argv, "c:dhNP:", long_options, NULL);
+		c = getopt_long( argc, argv, "c:dhNP:R", long_options, NULL);
 
 		if( c == -1 ) break;
 
@@ -153,6 +155,10 @@ void config_init( int argc, char *argv[] )
 				break;
 			case 'P':
 				config_add_item("daemon.pid_file", optarg);
+				break;
+			case 'R':
+				config_add_item("readonly", "yes");
+				break;
 		}
 	} 
 

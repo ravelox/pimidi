@@ -70,15 +70,21 @@ void daemon_start(void)
                 logging_printf( LOGGING_ERROR,"Can't fork:%s\n", strerror( errno));
                 _exit(1);
         } else if ( pid != 0 ) {
-                FILE *pidfile = fopen(pid_file, "w");
+                FILE *pidfile = NULL;
 
-                if( pidfile != NULL ) {
-                        fprintf(pidfile, "%d\n", pid);
-                        fclose(pidfile);
-                } else {
-                        logging_printf( LOGGING_ERROR, "Unable to write pid to %s:%s\n", pid_file, strerror( errno ));
-                        logging_printf( LOGGING_ERROR, "Pid = %d\n", pid);
-                }       
+		// Disable writing a pid file if readonly option is set
+		if( is_no( config_get("readonly") ) )
+		{
+			pidfile = fopen(pid_file, "w");
+
+			if( pidfile != NULL ) {
+				fprintf(pidfile, "%d\n", pid);
+				fclose(pidfile);
+			} else {
+				logging_printf( LOGGING_ERROR, "Unable to write pid to %s:%s\n", pid_file, strerror( errno ));
+				logging_printf( LOGGING_ERROR, "Pid = %d\n", pid);
+			}       
+		}
                 /* Parent exiting */
                 _exit(0);
         }       

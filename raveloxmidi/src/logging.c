@@ -149,11 +149,19 @@ void logging_init(void)
 	if( is_yes( config_get("logging.enabled") ) )
 	{
 		logging_threshold = logging_name_to_value( loglevel_map, config_get("logging.log_level") ) ;
-		name = config_get("logging.log_file") ;
-		if( name )
+
+		// Disable logging to a file if readonly option is set
+		if( is_no( config_get("readonly") ) )
 		{
-			logging_file_name = strdup( name );
+			name = config_get("logging.log_file") ;
+			if( name )
+			{
+				logging_file_name = strdup( name );
+			}
+		} else {
+			logging_file_name = NULL;
 		}
+		
 		
 		logging_enabled = 1;
 	}
