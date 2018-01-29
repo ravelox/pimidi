@@ -41,14 +41,16 @@ typedef struct midi_payload_t {
 } midi_payload_t;
 
 void midi_payload_destroy( midi_payload_t **payload );
-void payload_reset( midi_payload_t **payload );
+void midi_payload_reset( midi_payload_t *payload );
 midi_payload_t * midi_payload_create( void );
-void payload_toggle_b( midi_payload_t *payload );
-void payload_toggle_j( midi_payload_t *payload );
-void payload_toggle_z( midi_payload_t *payload );
-void payload_toggle_p( midi_payload_t *payload );
-void payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , uint16_t buffer_size);
-void payload_dump( midi_payload_t *payload );
-void payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
+void midi_payload_toggle_b( midi_payload_t *payload );
+void midi_payload_toggle_j( midi_payload_t *payload );
+void midi_payload_toggle_z( midi_payload_t *payload );
+void midi_payload_toggle_p( midi_payload_t *payload );
+void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , uint16_t buffer_size);
+void midi_payload_header_dump( midi_payload_header_t *header );
+void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
+void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_size);
+void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **commands, size_t *num_commands );
 
 #endif

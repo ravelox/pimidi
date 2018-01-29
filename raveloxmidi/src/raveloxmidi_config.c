@@ -122,9 +122,6 @@ void config_init( int argc, char *argv[] )
 		{0,0,0,0}
 	};
 	int c;
-	uint8_t 
-
-	num_items = 0 ;
 	config_items = NULL;
 
 	config_set_defaults();

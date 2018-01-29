@@ -53,7 +53,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_DEBUG, "INV(%s:%u\n ", ip_address, port );
+	logging_printf( LOGGING_DEBUG, "INV(%s:%u\n", ip_address, port );
 
 	logging_printf( LOGGING_DEBUG, "\tname=%s\n", inv->name);
 	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", inv->ssrc);

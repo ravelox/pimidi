@@ -46,8 +46,9 @@ typedef struct rtp_packet_t {
 #define RTP_DYNAMIC_PAYLOAD_97	97
 
 rtp_packet_t * rtp_packet_create( void );
-int rtp_packet_destroy( rtp_packet_t **packet );
+void rtp_packet_destroy( rtp_packet_t **packet );
 int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len );
+void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *rtp_packet );
 void rtp_packet_dump( rtp_packet_t *packet );
 
 #endif

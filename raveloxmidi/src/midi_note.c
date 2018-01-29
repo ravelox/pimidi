@@ -29,9 +29,6 @@
 
 #include "logging.h"
 
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-
 void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
 {
 	char *p = NULL;

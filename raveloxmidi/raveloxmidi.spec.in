@@ -14,8 +14,8 @@ Simple rtpMIDI NoteOn/NoteOff proxy
 %setup -q
 
 %build
-%configure --sysconfdir=%{_sysconfdir}/@PACKAGE@ 
-make
+%configure --sysconfdir=%{_sysconfdir}/@PACKAGE@
+make 
 
 %install
 rm -rf $RPM_BUILD_ROOT

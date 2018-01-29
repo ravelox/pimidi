@@ -18,36 +18,52 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CHAPTER_N_JOURNAL_H
-#define CHAPTER_N_JOURNAL_H
+#ifndef CHAPTER_C_JOURNAL_H
+#define CHAPTER_C_JOURNAL_H
 
-#define MAX_CHAPTERN_NOTES	127
-#define MAX_OFFBITS		16
+#ifndef CHAPTER_C
+#define CHAPTER_C	0x40
+#endif
 
-typedef struct chaptern_header_t {
-	unsigned char	B:1;
+typedef struct chapterc_header_t {
+	unsigned char	S:1;
 	unsigned char	len:7;
-	unsigned char	low:4;
-	unsigned char	high:4;
-} chaptern_header_t;
-#define CHAPTERN_HEADER_PACKED_SIZE	2
+} chapterc_header_t;
+#define CHAPTERC_HEADER_PACKED_SIZE	1
 
-typedef struct chaptern_t {
-	chaptern_header_t	*header;
-	uint16_t		num_notes;
-	midi_note_t 		*notes[MAX_CHAPTERN_NOTES];
-	char			*offbits;
-} chaptern_t;
+typedef struct alt_controller_t {
+	unsigned char 	T:1;
+	unsigned char 	alt:6;
+} alt_controller_t;
 
-void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size );
-void chaptern_header_destroy( chaptern_header_t **header );
-chaptern_header_t * chaptern_header_create( void );
-void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size );
-chaptern_t * chaptern_create( void );
-void chaptern_destroy( chaptern_t **chaptern );
-void chaptern_header_dump( chaptern_header_t *header );
-void chaptern_header_reset( chaptern_header_t *header );
-void chaptern_dump( chaptern_t *chaptern );
-void chaptern_reset( chaptern_t *chaptern );
+typedef struct controller_log_t {
+	unsigned char	S:1;
+	unsigned char	num:7;
+	unsigned char	A:1;
+	union valuealt {
+		alt_controller_t	alt_controller;
+		unsigned char		value:7;
+	} valuealt;
+} controller_log_t;
+
+#define CHAPTER_C_PACKED_SIZE 2
+
+#define MAX_CONTROLLER_LOGS	127
+typedef struct chapterc_t {
+	chapterc_header_t	*header;
+	unsigned char		num_controllers;
+	controller_log_t	controller_log[ MAX_CONTROLLER_LOGS ];
+} chapterc_t;
+
+void chapterc_header_pack( chapterc_header_t *header , unsigned char **packed , size_t *size );
+void chapterc_header_destroy( chapterc_header_t **header );
+chapterc_header_t * chapterc_header_create( void );
+void chapterc_pack( chapterc_t *chapterc, unsigned char **packed, size_t *size );
+chapterc_t * chapterc_create( void );
+void chapterc_destroy( chapterc_t **chapterc );
+void chapterc_header_dump( chapterc_header_t *header );
+void chapterc_header_reset( chapterc_header_t *header );
+void chapterc_dump( chapterc_t *chapterc );
+void chapterc_reset( chapterc_t *chapterc );
 
 #endif

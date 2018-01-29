@@ -46,6 +46,7 @@ extern int errno;
 
 #include "midi_note_packet.h"
 #include "rtp_packet.h"
+#include "midi_command.h"
 #include "midi_payload.h"
 #include "utils.h"
 
@@ -147,7 +148,7 @@ int net_socket_listener( void )
 	char *ip_address = NULL;
 
 	net_applemidi_command *command;
-	int ret;
+	int ret = 0;
 
 	from_len = sizeof( struct sockaddr );
 	for( i = 0 ; i < num_sockets ; i++ )
@@ -169,9 +170,7 @@ int net_socket_listener( void )
 			}
 
 			ip_address = inet_ntoa(from_addr.sin_addr);	
-			logging_printf( LOGGING_DEBUG, "Data (0x%02x) on socket(%d) from (%s:%u)\n", packet[0], i,ip_address, ntohs( from_addr.sin_port ));
-
-			// Determine the packet type
+			logging_printf( LOGGING_DEBUG, "%u bytes of data on socket(%d) from (%s:%u) [First byte: %02x]\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
 
 			// Apple MIDI command
 			if( packet[0] == 0xff )
@@ -212,10 +211,8 @@ int net_socket_listener( void )
 				}
 
 				net_applemidi_cmd_destroy( &command );
-			}
-
-			// MIDI note from sending device
-			if( packet[0] == 0xaa )
+			} else if( packet[0] == 0xaa )
+			// MIDI note on internal socket
 			{
 				rtp_packet_t *rtp_packet = NULL;
 				unsigned char *packed_rtp_buffer = NULL;
@@ -245,14 +242,14 @@ int net_socket_listener( void )
 				{
 					uint8_t ctx_id = 0;
 
-					payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
+					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 
 					if( packed_journal_len > 0 )
 					{
-						payload_toggle_j( midi_payload );
+						midi_payload_toggle_j( midi_payload );
 					}
 					
-					payload_pack( midi_payload, &packed_payload, &packed_payload_len );
+					midi_payload_pack( midi_payload, &packed_payload, &packed_payload_len );
 
 					// Join the packed MIDI payload and the journal together
 					packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
@@ -305,6 +302,31 @@ int net_socket_listener( void )
 				}
 
 				midi_note_packet_destroy( &note_packet );
+			} else {
+			// RTP MIDI
+				rtp_packet_t *rtp_packet = NULL;
+				midi_payload_t *midi_payload=NULL;
+				midi_command_t *midi_commands=NULL;
+				size_t num_midi_commands;
+
+				rtp_packet = rtp_packet_create();
+				rtp_packet_unpack( packet, recv_len, rtp_packet );
+				rtp_packet_dump( rtp_packet );
+
+				midi_payload_unpack( &midi_payload, rtp_packet->payload, recv_len );
+				midi_payload_header_dump( midi_payload->header );
+
+				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
+
+				if( midi_payload ) midi_payload_destroy( &midi_payload );
+
+				for( ; num_midi_commands > 0 ; num_midi_commands-- )
+				{
+					midi_command_reset( &(midi_commands[num_midi_commands - 1] ) );
+				}
+				free( midi_commands );
+
+				rtp_packet_destroy( &rtp_packet );
 			}
 		}
 	}

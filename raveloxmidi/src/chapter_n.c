@@ -29,9 +29,6 @@
 
 #include "logging.h"
 
-#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
-#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
-
 void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
