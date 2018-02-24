@@ -99,15 +99,14 @@ void midi_command_map( midi_command_t *command, char **description, enum midi_me
 
 	for( i = 0; midi_message_map[i].message != 0x00; i++ )
 	{
-		if( (command->status & 0xf0) && (midi_message_map[i].message == command->status ) )
+		logging_printf(LOGGING_DEBUG, "MIDI Command Map: status_0f=%u,match=%u,map_message=0x%02X,command_status=0x%02X\n", command->status && 0xf0, midi_message_map[i].message == command->status, midi_message_map[i].message, command->status);
+		if( command->status & 0xf0 )
 		{
-			break;
+			if( midi_message_map[i].message == command->status ) break;
+			continue;
 		}
 
-		if( command->status & midi_message_map[i].message )
-		{
-			break;
-		}
+		if( command->status & midi_message_map[i].message ) break;
 	}
 
 	if( midi_message_map[i].message != 0x00 )
@@ -124,9 +123,8 @@ void midi_command_dump( midi_command_t *command )
 
 	if( ! command ) return;
 
-	logging_printf(LOGGING_DEBUG, "MIDI Command: 0x%02X\n", command->status );
 	midi_command_map( command, &description, &message_type );
-	logging_printf(LOGGING_DEBUG, "Description : %s\n", description );
+	logging_printf(LOGGING_DEBUG, "MIDI Command: status=0x%02X,description=\"%s\"\n", command->status, description );
 }
 
 

@@ -50,16 +50,17 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	feedback = ( net_applemidi_feedback *) data;
 
-	logging_printf( LOGGING_DEBUG, "FEEDBACK( \n");
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", feedback->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tappleseq=%u\n", feedback->apple_seq);
-	logging_printf( LOGGING_DEBUG, "\trtpseq=%u )\n", feedback->rtp_seq[1]);
+	logging_printf( LOGGING_DEBUG, "FEEDBACK(ssrc=0x%08x,appleseq=%u,rtpseq=%u)\n", feedback->ssrc, feedback->apple_seq, feedback->rtp_seq[1]);
 
 	ctx = net_ctx_find_by_ssrc( feedback->ssrc );
 
-	if( ! ctx ) return NULL;
+	if( ! ctx )
+	{
+		logging_printf(LOGGING_DEBUG,"cmd_feedback_handler: No context found (search=%u)\n", feedback->rtp_seq[1]);
+		return NULL;
+	}
 
-	logging_printf( LOGGING_DEBUG, "Context found ( %u, %u )\n", feedback->rtp_seq[1], ctx->seq );
+	logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
 		logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Resetting journal\n" );

@@ -125,12 +125,8 @@ void midi_payload_header_dump( midi_payload_header_t *header )
 {
 	if( ! header ) return;
 
-	logging_printf( LOGGING_DEBUG, "MIDI Payload(\n");
-	logging_printf( LOGGING_DEBUG, "\tB=%d\n", header->B);
-	logging_printf( LOGGING_DEBUG, "\tJ=%d\n", header->J);
-	logging_printf( LOGGING_DEBUG, "\tZ=%d\n", header->Z);
-	logging_printf( LOGGING_DEBUG, "\tP=%d\n", header->P);
-	logging_printf( LOGGING_DEBUG, "\tpayloadlength=%u )\n", header->len);
+	logging_printf( LOGGING_DEBUG, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
+		header->B, header->J,header->Z, header->P, header->len);
 }
 
 void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size)
@@ -212,7 +208,7 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 	temp_len = ( *p & 0x0f );
 	current_len--;
 
-	/* If the B flag is set, get the next octect */
+	/* If the B flag is set, get the next octet */
 	if( (*payload)->header->B )
 	{
 		p++;
@@ -221,11 +217,10 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 		temp_len += *p;
 	}
 
-	/* Check that there's enough buffer for the defined length */
 	(*payload)->header->len = temp_len;
 	p++;
 
-
+	/* Check that there's enough buffer for the defined length */
 	if( current_len < temp_len ) 
 	{
 		logging_printf(LOGGING_ERROR, "midi_payload_unpack: Insufficent buffer data : current_len=%zu temp_len=%u\n", current_len, temp_len );
@@ -270,7 +265,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 	
 	do 
 	{
-		logging_printf( LOGGING_DEBUG, "Current Len: %zu\n", current_len );
+		logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: current_len=%zu\n", current_len );
 		current_delta = 0;
 		/* If the Z flag == 0 then no delta time is present for the first midi command */
 		if( ( payload->header->Z == 0 ) && ( *num_commands == 0 ) )
@@ -280,11 +275,12 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			// Get the delta
 			do
 			{
-				data_byte = *(p++);
+				data_byte = *p;
 				current_delta << 8;
 				current_delta += ( data_byte & 0x7f );
+				p++;
 				current_len--;
-			} while ( ( data_byte & 0x80 ) || current_len > 0 );
+			} while ( ( data_byte & 0x80 ) && current_len > 0 );
 		}
 
 		(*num_commands)++;
@@ -297,14 +293,14 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 		c->delta = current_delta;
 		if( current_len > 0 )
 		{
-			data_byte = *(p++);
+			data_byte = *p;
+			p++;
 			current_len--;
-
 			c->status = data_byte;
 		}
 
 		midi_command_map( c , &command_description, &message_type );
-		logging_printf( LOGGING_DEBUG, "midi command(%u): delta=%zu command=%s\n", *num_commands, c->delta, command_description);
+		logging_printf( LOGGING_DEBUG, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, c->delta, command_description);
 
 		switch( message_type )
 		{
@@ -330,6 +326,13 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 					current_len -= 1;
 					p+=1;
 				}
+				break;
+			case MIDI_SYSEX:
+				do {
+					data_byte = *p;
+					p++;
+					current_len--;
+				} while( ( current_len > 0 ) && (data_byte != MIDI_END_SYSEX ) );
 				break;
 		}
 		

@@ -233,7 +233,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	if( ! journal ) return;
 
-	logging_printf( LOGGING_DEBUG, "journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "journal_pack: journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
 	if(  ! journal_has_data( journal ) ) return;
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
@@ -398,7 +398,7 @@ void channel_header_dump( channel_header_t *header )
 {
 	if( ! header ) return;
 
-	logging_printf( LOGGING_DEBUG, "Channel #%d (Header: S=%d H=%d len=%u bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
+	logging_printf( LOGGING_DEBUG, "Channel #%d (Header: S=%d,H=%d,len=%u,bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
 }
 
 void channel_header_reset( channel_header_t *header )

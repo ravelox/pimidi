@@ -53,12 +53,8 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_DEBUG, "INV(%s:%u\n", ip_address, port );
-
-	logging_printf( LOGGING_DEBUG, "\tname=%s\n", inv->name);
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", inv->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tversion=0x%08x\n", inv->version);
-	logging_printf( LOGGING_DEBUG, "\tinitiator=0x%08x )\n", inv->initiator);
+	logging_printf( LOGGING_DEBUG, "INV(host=%s,port=%u,name=\"%s\",ssrc=0x%08x,version=0x%08x,initiator=0x%08x)\n",
+		ip_address, port, inv->name, inv->ssrc, inv->version, inv->initiator);
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
@@ -84,7 +80,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "Unable to allocate memory for accept_inv command\n");
+		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command\n");
 		net_ctx_reset( ctx );
 		return NULL;
 	}
@@ -92,7 +88,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	accept_inv = new_net_applemidi_inv();
 	
 	if( ! accept_inv ) {
-		logging_printf( LOGGING_ERROR, "Unabled to allocate memory for accept_inv command data\n");
+		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
 		net_ctx_reset( ctx );
 		return NULL;
@@ -119,7 +115,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "Unable to pack response to inv command\n");
+			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to pack response to inv command\n");
 			net_response_destroy( &response );
 		}
 	}

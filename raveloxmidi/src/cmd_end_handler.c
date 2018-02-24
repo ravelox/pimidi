@@ -48,12 +48,7 @@ net_response_t * cmd_end_handler( void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_DEBUG, "BYE( \n");
-	logging_printf( LOGGING_DEBUG, "\tname=<<%s>>\n", inv->name);
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", inv->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tversion = 0x%08x\n", inv->version);
-	logging_printf( LOGGING_DEBUG, "\tinitiator=0x%08x )\n", inv->initiator);
-
+	logging_printf( LOGGING_DEBUG, "BYE(name=\"%s\",ssrc=0x%08x,version=0x%08x,initiator=0x%08x)\n", inv->name, inv->ssrc, inv->version, inv->initiator);
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	if( ! ctx )
