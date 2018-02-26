@@ -104,7 +104,7 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (inet_aton( config_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "Invalid address: %s\n", config_get("network.bind_address") );
+		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_get("network.bind_address") );
 		return errno;
 	}
 
@@ -165,12 +165,12 @@ int net_socket_listener( void )
 					break;
 				}   
 
-				logging_printf(LOGGING_ERROR, "Socket error (%d) on socket (%d)\n", errno , sockets[i] );
+				logging_printf(LOGGING_ERROR, "net_socket_listener: Socket error (%d) on socket (%d)\n", errno , sockets[i] );
 				break;
 			}
 
 			ip_address = inet_ntoa(from_addr.sin_addr);	
-			logging_printf( LOGGING_DEBUG, "%u bytes of data on socket(%d) from (%s:%u) [First byte: %02x]\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
+			logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
 
 			// Apple MIDI command
 			if( packet[0] == 0xff )
@@ -206,7 +206,7 @@ int net_socket_listener( void )
 				{
 					size_t bytes_written = 0;
 					bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
-					logging_printf( LOGGING_DEBUG, "%u bytes written on socket(%d) to (%s:%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));	
+					logging_printf( LOGGING_DEBUG, "net_socket_listener: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));	
 					net_response_destroy( &response );
 				}
 
@@ -307,7 +307,7 @@ int net_socket_listener( void )
 				rtp_packet_t *rtp_packet = NULL;
 				midi_payload_t *midi_payload=NULL;
 				midi_command_t *midi_commands=NULL;
-				size_t num_midi_commands;
+				size_t num_midi_commands=0;
 
 				rtp_packet = rtp_packet_create();
 				rtp_packet_unpack( packet, recv_len, rtp_packet );
@@ -373,7 +373,7 @@ int net_socket_loop( unsigned int interval )
 
 void net_socket_loop_shutdown(int signal)
 {
-	logging_printf(LOGGING_INFO, "Received signal(%d) shutting down\n", signal);
+	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
 	set_shutdown_lock( 1 );
 }
 
@@ -386,7 +386,7 @@ int net_socket_setup( void )
 		net_socket_create( atoi( config_get("network.data.port") ) ) ||
 		net_socket_create( atoi( config_get("network.note.port") ) ) )
 	{
-		logging_printf(LOGGING_ERROR, "Cannot create socket: %s\n", strerror( errno ) );
+		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
 		return -1;
 	}
 

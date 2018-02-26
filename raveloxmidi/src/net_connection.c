@@ -66,13 +66,8 @@ void debug_net_ctx_dump( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
 	
-	logging_printf( LOGGING_DEBUG, "CTX(\n");
-	logging_printf( LOGGING_DEBUG, "\tUsed=%d\n", ctx->used);
-	logging_printf( LOGGING_DEBUG, "\tssrc=%08x\n", ctx->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tsend_ssrc=%08x\n", ctx->send_ssrc);
-	logging_printf( LOGGING_DEBUG, "\tinitiator=%08x\n", ctx->initiator);
-	logging_printf( LOGGING_DEBUG, "\tseq=%08x (%08d)\n", ctx->seq, ctx->seq);
-	logging_printf( LOGGING_DEBUG, "\thost=%s (control=%u data=%u))\n", ctx->ip_address, ctx->control_port, ctx->data_port);
+	logging_printf( LOGGING_DEBUG, "CTX(used=%d,ssrc=0x%08x,send_ssrc=0x%08x,initiator=0x%08x,seq=0x%08x,host=%s,control=%u,data=%u)\n",
+		ctx->used, ctx->ssrc, ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port);
 }
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
@@ -209,7 +204,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 		}
 	}
 	
-	logging_printf( LOGGING_WARN, "No free connection slots available\n");
+	logging_printf( LOGGING_WARN, "net_ctx_register: No free connection slots available\n");
 	return NULL;
 }
 
@@ -238,7 +233,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 
 	if( ! ctx) return;
 
-	logging_printf( LOGGING_DEBUG, "Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "debug_ctx_journal_dump: Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
 
 	if( ! journal_has_data( ctx->journal ) ) return;
 
@@ -325,8 +320,8 @@ void net_ctx_send( int send_socket, uint8_t ctx_id, unsigned char *buffer, size_
 
 	if( bytes_sent < 0 )
 	{
-		logging_printf( LOGGING_ERROR, "Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, ctx->data_port , strerror( errno ));
+		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, ctx->data_port , strerror( errno ));
 	} else {
-		logging_printf( LOGGING_DEBUG, "Sent %u bytes to %s:%u\n", bytes_sent, ctx->ip_address, ctx->data_port );
+		logging_printf( LOGGING_DEBUG, "net_ctx_send: write( bytes=%u,host=%s,port=%u)\n", bytes_sent, ctx->ip_address, ctx->data_port );
 	}
 }

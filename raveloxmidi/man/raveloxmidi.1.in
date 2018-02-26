@@ -3,10 +3,10 @@
 raveloxmidi - RTP MIDI NoteOn/NoteOff proxy
 .SH SYNOPSIS
 .B raveloxmidi
-[-c filename] [-d] [-N] [-P filename] [-h]
+[-c filename] [-d] [-N] [-P filename] [-R] [-h]
 
 .B raveloxmidi
-[--config filename] [--debug] [--nodaemon] [--pidfile filename] [--help]
+[--config filename] [--debug] [--nodaemon] [--pidfile filename] [--readonly] [--help]
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn and NoteOff events to a remote MIDI device.
@@ -24,6 +24,9 @@ Do not run as a daemon.
 .B -P pidfile
 File to store the pid of the running process. Default is
 .B raveloxmidi.pid in the current directory.
+.TP
+.B -R
+Enable readonly mode. This doesn't write anything to disk.
 .TP
 .B -h
 Display help information including default values for some parameters.

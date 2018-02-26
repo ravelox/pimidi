@@ -159,18 +159,8 @@ void rtp_packet_dump( rtp_packet_t *packet )
 {
 	if( ! packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "RTP Packet( \n");
-	logging_printf( LOGGING_DEBUG, "\tV=%u\n", packet->header.v);
-	logging_printf( LOGGING_DEBUG, "\tP=%u\n", packet->header.p);
-	logging_printf( LOGGING_DEBUG, "\tX=%u\n", packet->header.x);
-	logging_printf( LOGGING_DEBUG, "\tCC=%u\n", packet->header.cc);
-	logging_printf( LOGGING_DEBUG, "\tM=%u\n", packet->header.m);
-	logging_printf( LOGGING_DEBUG, "\tPT=%u\n", packet->header.pt);
-	logging_printf( LOGGING_DEBUG, "\tseq=%u\n", packet->header.seq);
-	logging_printf( LOGGING_DEBUG, "\ttimestamp=0x%08x\n", packet->header.timestamp );
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", packet->header.ssrc );
-	logging_printf( LOGGING_DEBUG, "\tpayloadlength=%u\n", packet->payload_len);
-	logging_printf( LOGGING_DEBUG, "\tpayload=%p )\n", packet->payload);
-
+	logging_printf( LOGGING_DEBUG, "RTP Packet(v=%u,p=%u,x=%u,cc=%u,m=%u,pt=%u,seq=%u,timestamp=0x%08x,ssrc=0x%08x,payload_length=%u,payload=%p)\n",
+		packet->header.v, packet->header.p, packet->header.p, packet->header.x, packet->header.cc, packet->header.m, packet->header.pt,
+		packet->header.seq, packet->header.seq, packet->header.timestamp, packet->header.ssrc, packet->payload_len, packet->payload);
 	return;
 }
