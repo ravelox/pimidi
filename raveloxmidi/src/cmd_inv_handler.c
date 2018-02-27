@@ -76,7 +76,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ctx->data_port = port;
 	}
 
-	cmd = new_net_applemidi_command( NET_APPLEMIDI_CMD_ACCEPT );
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_ACCEPT );
 
 	if( ! cmd )
 	{
@@ -85,7 +85,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		return NULL;
 	}
 
-	accept_inv = new_net_applemidi_inv();
+	accept_inv = net_applemidi_inv_create();
 	
 	if( ! accept_inv ) {
 		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command data\n");
@@ -107,7 +107,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	cmd->data = accept_inv;
 
-	response = new_net_response();
+	response = net_response_create();
 
 	if( response )
 	{

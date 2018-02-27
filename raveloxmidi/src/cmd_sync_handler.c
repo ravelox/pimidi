@@ -60,7 +60,7 @@ net_response_t * cmd_sync_handler( void *data )
 
 	if( ! ctx ) return NULL;
 
-	cmd = new_net_applemidi_command( NET_APPLEMIDI_CMD_SYNC );
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
 	if( ! cmd )
 	{
@@ -68,7 +68,7 @@ net_response_t * cmd_sync_handler( void *data )
 		return NULL;
 	}
 
-	sync_resp = new_net_applemidi_sync();
+	sync_resp = net_applemidi_sync_create();
 	
 	if( ! sync_resp ) {
 		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync_resp command data\n");
@@ -101,7 +101,7 @@ net_response_t * cmd_sync_handler( void *data )
 
 	cmd->data = sync_resp;
 
-	response = new_net_response();
+	response = net_response_create();
 
 	if( response )
 	{

@@ -59,7 +59,7 @@ static int net_socket_shutdown;
 
 static pthread_mutex_t shutdown_lock;
 
-net_response_t * new_net_response( void )
+net_response_t * net_response_create( void )
 {
 	net_response_t *response = NULL;
 
@@ -319,13 +319,17 @@ int net_socket_listener( void )
 				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
 
 				// Clean up
-				if( midi_payload ) midi_payload_destroy( &midi_payload );
+				midi_payload_destroy( &midi_payload );
 				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
 				{
 					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
 				}
 				free( midi_commands );
 				rtp_packet_destroy( &rtp_packet );
+
+				// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
+				command = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_FEEDBACK );
+				net_applemidi_cmd_destroy( &command );
 			}
 		}
 	}

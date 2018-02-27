@@ -87,7 +87,7 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 	}
 }
 
-net_applemidi_inv * new_net_applemidi_inv( void )
+net_applemidi_inv * net_applemidi_inv_create( void )
 {
 	net_applemidi_inv *inv = NULL;
 
@@ -104,7 +104,7 @@ net_applemidi_inv * new_net_applemidi_inv( void )
 	return inv;
 }
 
-net_applemidi_sync * new_net_applemidi_sync( void )
+net_applemidi_sync * net_applemidi_sync_create( void )
 {
 	net_applemidi_sync *sync = NULL;
 
@@ -207,7 +207,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
-		net_applemidi_inv *inv = new_net_applemidi_inv();
+		net_applemidi_inv *inv = net_applemidi_inv_create();
 		if( ! inv )
 		{
 			free( *command_buffer );
@@ -460,7 +460,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 	return NET_APPLEMIDI_DONE;
 }
 
-net_applemidi_command * new_net_applemidi_command( uint16_t command )
+net_applemidi_command * net_applemidi_cmd_create( uint16_t command )
 {
 	net_applemidi_command *new_command;
 

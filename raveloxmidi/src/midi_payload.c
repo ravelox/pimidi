@@ -256,6 +256,14 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 	enum midi_message_type_t message_type;
 	size_t index, sysex_len;
 	unsigned char *sysex_start_byte = NULL;
+	
+	// Sec 3.2 of RFC6295
+	// As we note above, the first channel command in the MIDI list MUST
+   	// include a status octet.  However, the corresponding command in the
+   	//original MIDI source data stream might not have a status octet (in
+   	// this case, the source would be coding the command using running
+   	// status)
+	unsigned char running_status = 0;
 
 	*commands = NULL;
 	*num_commands = 0;
@@ -267,6 +275,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 
 	p = payload->buffer;
 	current_len = payload->header->len;
+
+	hex_dump( p, current_len );
 	
 	do 
 	{
@@ -297,12 +307,19 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 		index = (*num_commands) - 1;
 
 		(*commands)[index].delta = current_delta;
+		
+		// Get the status byte. If bit 7 is not set, use the running status
 		if( current_len > 0 )
 		{
 			data_byte = *p;
-			p++;
-			current_len--;
-			(*commands)[index].status = data_byte;
+
+			if( data_byte & 0x80 )
+			{
+				running_status = data_byte;
+				p++;
+				current_len--;
+			}
+			(*commands)[index].status = running_status;
 		}
 
 		midi_command_map( &((*commands)[index]) , &command_description, &message_type );

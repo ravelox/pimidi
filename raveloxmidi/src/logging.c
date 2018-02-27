@@ -49,6 +49,7 @@ static pthread_mutex_t	logging_mutex;
 static int logging_enabled = 0;
 static int logging_threshold = 3;
 static char *logging_file_name = NULL;
+static unsigned char prefix_disabled = 0;
 
 int logging_name_to_value(name_map_t *map, const char *name)
 {
@@ -92,6 +93,20 @@ char *logging_value_to_name(name_map_t *map, int value)
 	return name;
 }
 
+void logging_prefix_disable( void )
+{
+	pthread_mutex_lock( &logging_mutex );
+	prefix_disabled = 1;
+	pthread_mutex_unlock( &logging_mutex );
+}
+
+void logging_prefix_enable( void )
+{
+	pthread_mutex_lock( &logging_mutex );
+	prefix_disabled = 0;
+	pthread_mutex_unlock( &logging_mutex );
+}
+
 void logging_printf(int level, const char *format, ...)
 {
 	FILE *logging_fp = NULL;
@@ -121,7 +136,10 @@ void logging_printf(int level, const char *format, ...)
 		logging_fp = stderr;
 	}
 
-	fprintf( logging_fp , "[%lu]\t%s: ", time( NULL ) , logging_value_to_name( loglevel_map, level ) );
+	if( ! prefix_disabled )
+	{
+		fprintf( logging_fp , "[%lu]\t%s: ", time( NULL ) , logging_value_to_name( loglevel_map, level ) );
+	}
 
 	va_start(ap, format);
 
