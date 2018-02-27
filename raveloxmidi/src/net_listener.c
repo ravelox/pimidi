@@ -320,9 +320,10 @@ int net_socket_listener( void )
 
 				if( midi_payload ) midi_payload_destroy( &midi_payload );
 
-				for( ; num_midi_commands > 0 ; num_midi_commands-- )
+				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
 				{
-					midi_command_reset( &(midi_commands[num_midi_commands - 1] ) );
+					logging_printf( LOGGING_DEBUG, "net_listener: %u\n", num_midi_commands );
+					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
 				}
 				free( midi_commands );
 

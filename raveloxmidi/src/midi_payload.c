@@ -35,7 +35,10 @@ void midi_payload_destroy( midi_payload_t **payload )
 	if( ! payload ) return;
 	if( ! *payload ) return;
 
-	(*payload)->buffer = NULL;
+	if( (*payload)->buffer )
+	{
+		FREENULL( (void **)&((*payload)->buffer) );
+	}
 
 	if( (*payload)->header )
 	{
@@ -231,6 +234,7 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 	if( ! (*payload)->buffer ) goto midi_payload_unpack_error;
 
 	memcpy( (*payload)->buffer, p, temp_len );
+	midi_payload_header_dump( (*payload)->header );
 
 	goto midi_payload_unpack_success;
 
@@ -247,10 +251,10 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 	unsigned char *p;
 	size_t current_len;
 	uint64_t current_delta;
-	midi_command_t *c;
 	unsigned char data_byte;
 	char *command_description;
 	enum midi_message_type_t message_type;
+	size_t index;
 
 	*commands = NULL;
 	*num_commands = 0;
@@ -285,22 +289,23 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 
 		(*num_commands)++;
 
-		*commands = (midi_command_t * ) realloc( *commands, sizeof( midi_command_t * ) * *num_commands );
+		midi_command_t *temp_commands = (midi_command_t * ) realloc( *commands, sizeof(midi_command_t) * (*num_commands) );
 
-		c = midi_command_create();
-		commands[ *num_commands - 1 ] = c;
+		if( ! temp_commands ) break;
+		*commands = temp_commands;
+		index = (*num_commands) - 1;
 
-		c->delta = current_delta;
+		(*commands)[index].delta = current_delta;
 		if( current_len > 0 )
 		{
 			data_byte = *p;
 			p++;
 			current_len--;
-			c->status = data_byte;
+			(*commands)[index].status = data_byte;
 		}
 
-		midi_command_map( c , &command_description, &message_type );
-		logging_printf( LOGGING_DEBUG, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, c->delta, command_description);
+		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
+		logging_printf( LOGGING_DEBUG, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, (*commands)[index].delta, command_description);
 
 		switch( message_type )
 		{
@@ -311,8 +316,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_PITCH_BEND:
 				if( current_len >= 2 )
 				{
-					c->data = ( unsigned char * ) malloc( 2 );
-					memcpy( c->data, p, 2 );
+					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
+					memcpy( (*commands)[index].data, p, 2 );
 					current_len -= 2;
 					p+=2;
 				}
@@ -321,8 +326,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_CHANNEL_PRESSURE:
 				if( current_len >= 1 )
 				{
-					c->data = ( unsigned char * ) malloc( 1 );
-					memcpy( c->data, p, 1);
+					(*commands)[index].data = ( unsigned char * ) malloc( 1 );
+					memcpy( (*commands)[index].data, p, 1);
 					current_len -= 1;
 					p+=1;
 				}
@@ -345,7 +350,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_PITCH_BEND:
 			case MIDI_PROGRAM_CHANGE:
 			case MIDI_CHANNEL_PRESSURE:
-				logging_printf( LOGGING_DEBUG, "\tChannel: %u\n", c->status & 0x0f );
+				logging_printf( LOGGING_DEBUG, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
 				break;
 		}
 

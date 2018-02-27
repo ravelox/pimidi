@@ -64,7 +64,9 @@ midi_command_t *midi_command_create(void)
 
 	if( ! new_command ) return NULL;
 
-	midi_command_reset( new_command );
+	new_command->delta = 0;
+	new_command->status = 0;
+	new_command->data = NULL;
 
 	return new_command;
 }
@@ -99,7 +101,6 @@ void midi_command_map( midi_command_t *command, char **description, enum midi_me
 
 	for( i = 0; midi_message_map[i].message != 0x00; i++ )
 	{
-		logging_printf(LOGGING_DEBUG, "MIDI Command Map: status_0f=%u,match=%u,map_message=0x%02X,command_status=0x%02X\n", command->status && 0xf0, midi_message_map[i].message == command->status, midi_message_map[i].message, command->status);
 		if( command->status & 0xf0 )
 		{
 			if( midi_message_map[i].message == command->status ) break;
