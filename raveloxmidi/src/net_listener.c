@@ -303,7 +303,7 @@ int net_socket_listener( void )
 
 				midi_note_packet_destroy( &note_packet );
 			} else {
-			// RTP MIDI
+			// RTP MIDI inbound from remote socket
 				rtp_packet_t *rtp_packet = NULL;
 				midi_payload_t *midi_payload=NULL;
 				midi_command_t *midi_commands=NULL;
@@ -314,19 +314,17 @@ int net_socket_listener( void )
 				rtp_packet_dump( rtp_packet );
 
 				midi_payload_unpack( &midi_payload, rtp_packet->payload, recv_len );
-				midi_payload_header_dump( midi_payload->header );
 
+				// Read all the commands in the packet into an array
 				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
 
+				// Clean up
 				if( midi_payload ) midi_payload_destroy( &midi_payload );
-
 				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
 				{
-					logging_printf( LOGGING_DEBUG, "net_listener: %u\n", num_midi_commands );
 					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
 				}
 				free( midi_commands );
-
 				rtp_packet_destroy( &rtp_packet );
 			}
 		}

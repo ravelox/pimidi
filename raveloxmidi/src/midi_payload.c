@@ -128,7 +128,7 @@ void midi_payload_header_dump( midi_payload_header_t *header )
 {
 	if( ! header ) return;
 
-	logging_printf( LOGGING_DEBUG, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
+	logging_printf( LOGGING_INFO, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
 		header->B, header->J,header->Z, header->P, header->len);
 }
 
@@ -254,7 +254,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 	unsigned char data_byte;
 	char *command_description;
 	enum midi_message_type_t message_type;
-	size_t index;
+	size_t index, sysex_len;
+	unsigned char *sysex_start_byte = NULL;
 
 	*commands = NULL;
 	*num_commands = 0;
@@ -305,7 +306,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 		}
 
 		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
-		logging_printf( LOGGING_DEBUG, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, (*commands)[index].delta, command_description);
+		logging_printf( LOGGING_INFO, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, (*commands)[index].delta, command_description);
 
 		switch( message_type )
 		{
@@ -314,30 +315,52 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_POLY_PRESSURE:
 			case MIDI_CONTROL_CHANGE:
 			case MIDI_PITCH_BEND:
+			case MIDI_SONG_POSITION:
 				if( current_len >= 2 )
 				{
 					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
-					memcpy( (*commands)[index].data, p, 2 );
+					if( (*commands)[index].data )
+					{
+						memcpy( (*commands)[index].data, p, 2 );
+					}
 					current_len -= 2;
 					p+=2;
 				}
 				break;
 			case MIDI_PROGRAM_CHANGE:
 			case MIDI_CHANNEL_PRESSURE:
+			case MIDI_TIME_CODE_QF:
+			case MIDI_SONG_SELECT:
 				if( current_len >= 1 )
 				{
-					(*commands)[index].data = ( unsigned char * ) malloc( 1 );
-					memcpy( (*commands)[index].data, p, 1);
+					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
+					memset( (*commands)[index].data, 0, 2 );
+					if( (*commands)[index].data )
+					{
+						memcpy( (*commands)[index].data, p, 1);
+					}
 					current_len -= 1;
 					p+=1;
 				}
 				break;
 			case MIDI_SYSEX:
+				// Read until the end of the SYSEX block
+				sysex_start_byte = p;
+				sysex_len = 0;
 				do {
 					data_byte = *p;
+					sysex_len++;
 					p++;
 					current_len--;
 				} while( ( current_len > 0 ) && (data_byte != MIDI_END_SYSEX ) );
+				if( sysex_len > 0 )
+				{
+					(*commands)[index].data = (unsigned char *) malloc( sysex_len );
+					if( (*commands)[index].data ) 
+					{
+						memcpy( (*commands)[index].data, sysex_start_byte, sysex_len );
+					}
+				}
 				break;
 		}
 		
@@ -350,7 +373,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_PITCH_BEND:
 			case MIDI_PROGRAM_CHANGE:
 			case MIDI_CHANNEL_PRESSURE:
-				logging_printf( LOGGING_DEBUG, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
+				logging_printf( LOGGING_INFO, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
 				break;
 		}
 

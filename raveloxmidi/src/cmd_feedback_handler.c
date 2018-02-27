@@ -50,7 +50,7 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	feedback = ( net_applemidi_feedback *) data;
 
-	logging_printf( LOGGING_DEBUG, "FEEDBACK(ssrc=0x%08x,appleseq=%u,rtpseq=%u)\n", feedback->ssrc, feedback->apple_seq, feedback->rtp_seq[1]);
+	logging_printf( LOGGING_INFO, "FEEDBACK(ssrc=0x%08x,appleseq=%u,rtpseq=%u)\n", feedback->ssrc, feedback->apple_seq, feedback->rtp_seq[1]);
 
 	ctx = net_ctx_find_by_ssrc( feedback->ssrc );
 
