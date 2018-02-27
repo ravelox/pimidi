@@ -308,6 +308,7 @@ int net_socket_listener( void )
 				midi_payload_t *midi_payload=NULL;
 				midi_command_t *midi_commands=NULL;
 				size_t num_midi_commands=0;
+				net_response_t *response = NULL;
 
 				rtp_packet = rtp_packet_create();
 				rtp_packet_unpack( packet, recv_len, rtp_packet );
@@ -318,6 +319,17 @@ int net_socket_listener( void )
 				// Read all the commands in the packet into an array
 				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
 
+				// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
+				response = cmd_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
+                                if( response )
+                                {
+                                        size_t bytes_written = 0;
+                                        bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+                                        logging_printf( LOGGING_DEBUG, "net_socket_listener: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));
+                                        net_response_destroy( &response );
+                                }
+
+
 				// Clean up
 				midi_payload_destroy( &midi_payload );
 				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
@@ -327,9 +339,6 @@ int net_socket_listener( void )
 				free( midi_commands );
 				rtp_packet_destroy( &rtp_packet );
 
-				// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
-				command = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_FEEDBACK );
-				net_applemidi_cmd_destroy( &command );
 			}
 		}
 	}

@@ -22,5 +22,6 @@
 #define CMD_feedback_HANDLER_H
 
 net_response_t * cmd_feedback_handler( void *data );
+net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq );
 
 #endif

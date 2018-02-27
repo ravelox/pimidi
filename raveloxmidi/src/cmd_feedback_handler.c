@@ -69,3 +69,39 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	return NULL;
 }
+
+net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
+{
+	net_applemidi_command *cmd = NULL;
+	net_applemidi_feedback *feedback = NULL;
+	net_response_t *response = NULL;
+
+	feedback = net_applemidi_feedback_create();
+
+	if( ! feedback ) return NULL;
+
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_FEEDBACK );
+
+	if( ! cmd )
+	{
+		free( feedback );
+		return NULL;
+	}
+	
+	feedback->ssrc = ssrc;
+	feedback->rtp_seq[1] = rtp_seq;
+
+	cmd->data = feedback;
+
+	response = net_response_create();
+	if( response )
+	{
+		int ret = 0;
+		ret = net_applemidi_pack( cmd, &(response->buffer), &(response->len) );
+	}
+
+	free( feedback);
+	net_applemidi_cmd_destroy( &cmd );
+
+	return response;
+}

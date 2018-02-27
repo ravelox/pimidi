@@ -291,7 +291,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			do
 			{
 				data_byte = *p;
-				current_delta << 8;
+				current_delta <<= 8;
 				current_delta += ( data_byte & 0x7f );
 				p++;
 				current_len--;
@@ -378,6 +378,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 						memcpy( (*commands)[index].data, sysex_start_byte, sysex_len );
 					}
 				}
+				break;
+			default:
 				break;
 		}
 		

@@ -118,6 +118,20 @@ net_applemidi_sync * net_applemidi_sync_create( void )
 	return sync;
 }
 
+net_applemidi_feedback * net_applemidi_feedback_create( void )
+{
+	net_applemidi_feedback *feedback = NULL;
+	
+	feedback = (net_applemidi_feedback *) malloc( sizeof( net_applemidi_feedback ) );
+
+	if( feedback )
+	{
+		memset( feedback , 0, sizeof( net_applemidi_feedback ) );
+	}
+
+	return feedback;
+}
+
 int net_applemidi_cmd_destroy( net_applemidi_command **command )
 {
 	if( ! *command )
