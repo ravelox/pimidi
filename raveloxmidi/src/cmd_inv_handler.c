@@ -53,9 +53,6 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_INFO, "INV(host=%s,port=%u,name=\"%s\",ssrc=0x%08x,version=0x%08x,initiator=0x%08x)\n",
-		ip_address, port, inv->name, inv->ssrc, inv->version, inv->initiator);
-
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	/* See https://en.wikipedia.org/wiki/RTP-MIDI#Apple.27s_session_protocol */

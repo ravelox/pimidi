@@ -53,9 +53,6 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync = ( net_applemidi_sync *) data;
 
-	logging_printf( LOGGING_INFO, "SYNC(ssrc=0x%08x,count=0x%08x,timestamp1=0x%016llx,timestamp2=0x%016llu,timestamp3=0x%016llx)\n",
-		sync->ssrc, sync->count, sync->timestamp1, sync->timestamp2, sync->timestamp3 );
-
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
 	if( ! ctx ) return NULL;

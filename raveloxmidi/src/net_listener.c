@@ -178,6 +178,7 @@ int net_socket_listener( void )
 				net_response_t *response = NULL;
 
 				ret = net_applemidi_unpack( &command, packet, recv_len );
+				net_applemidi_command_dump( command );
 
 				switch( command->command )
 				{
