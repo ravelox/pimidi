@@ -95,13 +95,15 @@ void midi_command_reset( midi_command_t *command )
 void midi_command_map( midi_command_t *command, char **description, enum midi_message_type_t *message_type)
 {
 	uint32_t i;
+	uint8_t command_mask = 0xf0;
+	uint8_t current_command = 0;
 
 	*description = "Unknown";
 	*message_type = MIDI_NULL;
 
 	for( i = 0; midi_message_map[i].message != 0x00; i++ )
 	{
-		if( command->status & 0xf0 )
+		if( command->status >= 0xf0 )
 		{
 			if( midi_message_map[i].message == command->status ) break;
 			continue;
