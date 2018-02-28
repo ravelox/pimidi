@@ -100,7 +100,6 @@ net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
 		ret = net_applemidi_pack( cmd, &(response->buffer), &(response->len) );
 	}
 
-	free( feedback);
 	net_applemidi_cmd_destroy( &cmd );
 
 	return response;

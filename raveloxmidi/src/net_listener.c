@@ -325,7 +325,7 @@ int net_socket_listener( void )
                                 {
                                         size_t bytes_written = 0;
                                         bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
-                                        logging_printf( LOGGING_DEBUG, "net_socket_listener: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));
+                                        logging_printf( LOGGING_DEBUG, "net_socket_listener: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));
                                         net_response_destroy( &response );
                                 }
 
