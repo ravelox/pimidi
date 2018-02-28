@@ -95,9 +95,6 @@ void midi_command_reset( midi_command_t *command )
 void midi_command_map( midi_command_t *command, char **description, enum midi_message_type_t *message_type)
 {
 	uint32_t i;
-	uint8_t command_mask = 0xf0;
-	uint8_t current_command = 0;
-
 	*description = "Unknown";
 	*message_type = MIDI_NULL;
 
