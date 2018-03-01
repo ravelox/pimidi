@@ -6,7 +6,7 @@ raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events from the lo
 The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads.
 Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on Windows talking to FL Studio 11.
 
-Except for the Avahi code, it’s all mine but I have leaned heavily on the following references:
+Except for the Avahi code, it's all mine but I have leaned heavily on the following references:
 
 RTP MIDI: An RTP Payload Format for MIDI ( http://www.eecs.berkeley.edu/~lazzaro/rtpmidi/index.html )
 The RTP MIDI dissector in wireshark. Written by Tobias Erichsen ( http://www.tobias-erichsen.de )
@@ -17,7 +17,7 @@ in most cases, I am referring to the protocol
 Description
 - - - - - - 
 
-There are a number of stages in the general RTP MIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn’t documented.
+There are a number of stages in the general RTP MIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn't documented.
 
 Stage 1 - SIP
 - - - - - - - 
@@ -53,9 +53,14 @@ Stage 3 - Feedback
 
 The Apple MIDI implementation sends a feedback packet (RS) from the connecting server. This packet contains a RTP sequence number to indicate that the connecting server is acknowledging that it has received packets with a sequence number up to and including that particular value.
 
-This tells the receiving server that it doesn’t need to send journal events for any packets with a sequence number lower than that value.
+This tells the receiving server that it doesn't need to send journal events for any packets with a sequence number lower than that value.
 
 raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
+
+Inbound MIDI commands 
+- - - - - - - - - - -
+
+raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet.
 
 Configuration
 - - - - - - -
@@ -91,3 +96,7 @@ logging.log_level
 	Threshold for log events. Acceptable values are debug,info,normal,warning and error. Default is normal.
 security.check
 	If set to yes, it is not possible to write the daemon pid to a file with executable permissions. Default is yes.
+inbound_midi
+        Name of file to write inbound MIDI events to. This file is governed by the security check option. Default is /dev/sequencer
+file_mode
+        File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0700.

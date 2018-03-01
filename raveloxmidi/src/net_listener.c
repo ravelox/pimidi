@@ -343,13 +343,14 @@ int net_socket_listener( void )
 
 						if( raw_buffer )
 						{
+							size_t bytes_written = 0;
 							raw_buffer[0]=midi_commands[midi_command_index].status;
 							if( midi_commands[midi_command_index].data_len > 0 )
 							{
 								memcpy( raw_buffer + 1, midi_commands[midi_command_index].data, midi_commands[midi_command_index].data_len );
 							}
 
-							write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+							bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
 							free( raw_buffer );
 						}
 					}
@@ -436,7 +437,8 @@ int net_socket_setup( void )
 	} else if( ! check_file_security( inbound_midi_filename ) ) {
 		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
 	} else {
-		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT );
+		long file_mode_param = strtol( config_get("file_mode") , NULL, 8 );
+		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT , (mode_t)file_mode_param);
 		
 		if( inbound_midi_fd < 0 )
 		{
