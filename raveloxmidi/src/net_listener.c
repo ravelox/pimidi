@@ -56,6 +56,7 @@ extern int errno;
 static int num_sockets;
 static int *sockets;
 static int net_socket_shutdown;
+static int inbound_midi_fd = -1;
 
 static pthread_mutex_t shutdown_lock;
 
@@ -134,6 +135,8 @@ int net_socket_destroy( void )
 	}
 
 	free(sockets);
+
+	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
 
 	return 0;
 }
@@ -310,6 +313,7 @@ int net_socket_listener( void )
 				midi_command_t *midi_commands=NULL;
 				size_t num_midi_commands=0;
 				net_response_t *response = NULL;
+				size_t midi_command_index = 0;
 
 				rtp_packet = rtp_packet_create();
 				rtp_packet_unpack( packet, recv_len, rtp_packet );
@@ -330,6 +334,26 @@ int net_socket_listener( void )
                                         net_response_destroy( &response );
                                 }
 
+				// If an inbound midi file is defined, write the MIDI commands to it
+				if( inbound_midi_fd >= 0 )
+				{
+					for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
+					{
+						unsigned char *raw_buffer = (unsigned char *)malloc( 2 + midi_commands[midi_command_index].data_len );
+
+						if( raw_buffer )
+						{
+							raw_buffer[0]=midi_commands[midi_command_index].status;
+							if( midi_commands[midi_command_index].data_len > 0 )
+							{
+								memcpy( raw_buffer + 1, midi_commands[midi_command_index].data, midi_commands[midi_command_index].data_len );
+							}
+
+							write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+							free( raw_buffer );
+						}
+					}
+				}
 
 				// Clean up
 				midi_payload_destroy( &midi_payload );
@@ -339,7 +363,6 @@ int net_socket_listener( void )
 				}
 				free( midi_commands );
 				rtp_packet_destroy( &rtp_packet );
-
 			}
 		}
 	}
@@ -393,6 +416,7 @@ void net_socket_loop_shutdown(int signal)
 int net_socket_setup( void )
 {
 	num_sockets = 0;
+	char *inbound_midi_filename = NULL;
 
 	if(
 		net_socket_create( atoi( config_get("network.control.port") ) ) ||
@@ -401,6 +425,24 @@ int net_socket_setup( void )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
 		return -1;
+	}
+
+	// If a file name is defined, open up the file handle to write inbound MIDI events
+	inbound_midi_filename = config_get("inbound_midi");
+
+	if( ! inbound_midi_filename )
+	{
+		logging_printf(LOGGING_WARN, "net_socket_setup: No filename defined for inbound_midi\n");
+	} else if( ! check_file_security( inbound_midi_filename ) ) {
+		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
+	} else {
+		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT );
+		
+		if( inbound_midi_fd < 0 )
+		{
+			logging_printf(LOGGING_WARN, "net_socket_setup: Unable to open %s : %s\n", inbound_midi_filename, strerror( errno ) );
+			inbound_midi_fd = -1;
+		}
 	}
 
 	return 0;

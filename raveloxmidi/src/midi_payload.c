@@ -308,7 +308,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 		index = (*num_commands) - 1;
 
 		(*commands)[index].delta = current_delta;
-		
+		(*commands)[index].data_len = 0;
+
 		// Get the status byte. If bit 7 is not set, use the running status
 		if( current_len > 0 )
 		{
@@ -340,6 +341,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 					if( (*commands)[index].data )
 					{
 						memcpy( (*commands)[index].data, p, 2 );
+						(*commands)[index].data_len = 2;
 					}
 					current_len -= 2;
 					p+=2;
@@ -356,6 +358,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 					if( (*commands)[index].data )
 					{
 						memcpy( (*commands)[index].data, p, 1);
+						(*commands)[index].data_len = 1;
 					}
 					current_len -= 1;
 					p+=1;
@@ -377,6 +380,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 					if( (*commands)[index].data ) 
 					{
 						memcpy( (*commands)[index].data, sysex_start_byte, sysex_len );
+						(*commands)[index].data_len = sysex_len;
 					}
 				}
 				break;

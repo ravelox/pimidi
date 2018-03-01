@@ -175,6 +175,8 @@ void logging_init(void)
 			if( name )
 			{
 				logging_file_name = strdup( name );
+			} else {
+				logging_file_name = NULL;
 			}
 		} else {
 			logging_file_name = NULL;

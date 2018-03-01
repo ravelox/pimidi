@@ -50,6 +50,7 @@ static void config_set_defaults( void )
 	config_add_item("logging.log_level", "normal");
 	config_add_item("security.check", "yes");
 	config_add_item("readonly","no");
+	config_add_item("inbound_midi","/dev/sequencer");
 }
 
 static void config_load_file( char *filename )

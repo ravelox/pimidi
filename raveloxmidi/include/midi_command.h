@@ -66,6 +66,7 @@ typedef struct midi_command_t {
 		system_message_t	system_message;
 		unsigned char		status;
 	};
+	size_t data_len;
 	unsigned char *data;
 } midi_command_t;
 

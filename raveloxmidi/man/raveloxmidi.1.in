@@ -77,7 +77,11 @@ Level of logging events to be written if enabled. Can be
 .TP
 .B security.check
 Enables or disables rudimentary check on the named pid file to prevent the daemon.pid_file option being used to overwrite executable files. Can be yes or no. ( default is yes ).
+.TP
+.B inbound_midi
+Name of file to write inbound MIDI events to. This file is governed by the security check option. Default is
+.B /dev/sequencer
 .fi
 .SH AUTHOR
 .B raveloxmidi
-was developed by Dave Kelly (c) 2014
+is developed by Dave Kelly (c) 2014
