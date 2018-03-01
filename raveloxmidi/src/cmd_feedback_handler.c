@@ -50,16 +50,15 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	feedback = ( net_applemidi_feedback *) data;
 
-	logging_printf( LOGGING_DEBUG, "FEEDBACK( \n");
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", feedback->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tappleseq=%u\n", feedback->apple_seq);
-	logging_printf( LOGGING_DEBUG, "\trtpseq=%u )\n", feedback->rtp_seq[1]);
-
 	ctx = net_ctx_find_by_ssrc( feedback->ssrc );
 
-	if( ! ctx ) return NULL;
+	if( ! ctx )
+	{
+		logging_printf(LOGGING_DEBUG,"cmd_feedback_handler: No context found (search=%u)\n", feedback->rtp_seq[1]);
+		return NULL;
+	}
 
-	logging_printf( LOGGING_DEBUG, "Context found ( %u, %u )\n", feedback->rtp_seq[1], ctx->seq );
+	logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
 		logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Resetting journal\n" );
@@ -67,4 +66,39 @@ net_response_t * cmd_feedback_handler( void *data )
 	}
 
 	return NULL;
+}
+
+net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
+{
+	net_applemidi_command *cmd = NULL;
+	net_applemidi_feedback *feedback = NULL;
+	net_response_t *response = NULL;
+
+	feedback = net_applemidi_feedback_create();
+
+	if( ! feedback ) return NULL;
+
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_FEEDBACK );
+
+	if( ! cmd )
+	{
+		free( feedback );
+		return NULL;
+	}
+	
+	feedback->ssrc = ssrc;
+	feedback->rtp_seq[1] = rtp_seq;
+
+	cmd->data = feedback;
+
+	response = net_response_create();
+	if( response )
+	{
+		int ret = 0;
+		ret = net_applemidi_pack( cmd, &(response->buffer), &(response->len) );
+	}
+
+	net_applemidi_cmd_destroy( &cmd );
+
+	return response;
 }

@@ -78,11 +78,12 @@ typedef struct net_applemidi_bitrate {
 } net_applemidi_bitrate;
 
 void net_applemidi_command_dump( net_applemidi_command *command);
-net_applemidi_inv * new_net_applemidi_inv( void );
-net_applemidi_sync * new_net_applemidi_sync( void );
+net_applemidi_inv * net_applemidi_inv_create( void );
+net_applemidi_sync * net_applemidi_sync_create( void );
+net_applemidi_feedback * net_applemidi_feedback_create( void );
 int net_applemidi_cmd_destroy( net_applemidi_command **command );
 int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char *in_buffer, size_t in_buffer_len);
 int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **out_buffer, size_t *out_buffer_len );
-net_applemidi_command * new_net_applemidi_command( uint16_t command );
+net_applemidi_command * net_applemidi_cmd_create( uint16_t command );
 
 #endif

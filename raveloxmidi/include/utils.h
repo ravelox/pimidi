@@ -35,4 +35,7 @@ int check_file_security( const char *filepath );
 int is_yes( const char *value );
 int is_no( const char *value );
 
+#define MAX(a,b) ( (a) > (b) ? (a) : (b) )
+#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+
 #endif

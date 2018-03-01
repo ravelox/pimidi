@@ -60,7 +60,7 @@ int midi_note_packet_unpack( midi_note_packet_t **midi_note, unsigned char *pack
 
 	if( packet_len != sizeof( midi_note_packet_t ) )
 	{
-		logging_printf( LOGGING_DEBUG, "Expecting %d, got %zd\n", sizeof( midi_note_packet_t ), packet_len );
+		logging_printf( LOGGING_DEBUG, "midi_note_packet_unpack: Expecting %d, got %zd\n", sizeof( midi_note_packet_t ), packet_len );
 		return -1;
 	}
 
@@ -105,9 +105,6 @@ void midi_note_packet_dump( midi_note_packet_t *note_packet )
 {
 	if(! note_packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "Note Packet(\n");
-	logging_printf( LOGGING_DEBUG, "\tCommand=%d\n", note_packet->command );
-	logging_printf( LOGGING_DEBUG, "\tChannel=%d\n", note_packet->channel );
-	logging_printf( LOGGING_DEBUG, "\tNote=%d\n", note_packet->note );
-	logging_printf( LOGGING_DEBUG, "\tVelocity=%d )\n", note_packet->velocity );
+	logging_printf( LOGGING_DEBUG, "Note Packet(command=%d,channel=%d,note=%d,velocity=%d)\n",
+		note_packet->command, note_packet->channel, note_packet->note, note_packet->velocity);
 }

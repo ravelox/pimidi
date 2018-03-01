@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2014 Dave Kelly
+   Copyright (C) 2018 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,37 +18,23 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef RTP_PACKET_H
-#define RTP_PACKET_H
+#ifndef MIDI_NOTE_H
+#define MIDI_NOTE_H
 
 #include "midi_note_packet.h"
 
-typedef struct rtp_packet_header_t {
-	unsigned	v:2;
-	unsigned	p:1;
-	unsigned	x:1;
-	unsigned	cc:4;
-	unsigned	m:1;
-	unsigned	pt:7;
-	uint16_t	seq;
-	uint32_t	timestamp;
-	uint32_t	ssrc;
-} rtp_packet_header_t;
+typedef struct midi_note_t {
+	unsigned char	S:1;
+	unsigned char	num:7;
+	unsigned char	Y:1;
+	unsigned char	velocity:7;
+} midi_note_t;
+#define MIDI_NOTE_PACKED_SIZE	2
 
-typedef struct rtp_packet_t {
-	rtp_packet_header_t header;
-	size_t payload_len;
-	void *payload;
-} rtp_packet_t;
-
-#define RTP_VERSION 2
-
-#define RTP_DYNAMIC_PAYLOAD_97	97
-
-rtp_packet_t * rtp_packet_create( void );
-void rtp_packet_destroy( rtp_packet_t **packet );
-int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len );
-void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *rtp_packet );
-void rtp_packet_dump( rtp_packet_t *packet );
+void midi_note_pack( midi_note_t *note , char **packed , size_t *size );
+void midi_note_destroy( midi_note_t **note );
+midi_note_t * midi_note_create( void );
+void midi_note_dump( midi_note_t *note );
+void midi_note_reset( midi_note_t *note );
 
 #endif

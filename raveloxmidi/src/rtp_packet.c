@@ -53,18 +53,19 @@ rtp_packet_t * rtp_packet_create( void )
 	return new;
 }
 
-int rtp_packet_destroy( rtp_packet_t **packet )
+void rtp_packet_destroy( rtp_packet_t **packet )
 {
+	if( ! packet ) return ;
+	if( ! *packet ) return ;
 
-	if( ! packet ) return 1;
-	if( ! *packet ) return 1;
-
+	if( (*packet)->payload ) {
+		free( (*packet)->payload );
+	}
 	(*packet)->payload = NULL;
 	(*packet)->payload_len = 0;
-	FREENULL( (void **)packet);
-	return 0;
-}
 
+	FREENULL( (void **)packet);
+}
 
 int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )
 {
@@ -117,22 +118,49 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 	return 0;
 }
 
+void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *rtp_packet )
+{
+	uint16_t temp_header;
+	unsigned char *p;
+	size_t current_buffer_len;
+
+	if( ! buffer ) return;
+
+	p = buffer;
+	current_buffer_len = buffer_len;
+
+	get_uint16(  &temp_header, &p, &current_buffer_len );
+
+	/* Unpack header */
+	rtp_packet->header.v = ( temp_header >> 8 ) >> 6;
+	rtp_packet->header.p = ( temp_header >> 8 ) >> 5;
+	rtp_packet->header.x = ( temp_header >> 8 ) >> 4;
+	rtp_packet->header.cc = ( temp_header >> 8 ) & 0x0f;
+	rtp_packet->header.m = ( temp_header & 0x80 ) >> 7;
+	rtp_packet->header.pt = ( temp_header & 0x7f ); 
+
+	/* Get remaining header fields */
+	get_uint16( &(rtp_packet->header.seq), &p, &current_buffer_len );
+	get_uint32( &(rtp_packet->header.timestamp), &p, &current_buffer_len );
+	get_uint32( &(rtp_packet->header.ssrc), &p, &current_buffer_len );	
+
+	/* Get the payload */
+	rtp_packet->payload = NULL;
+	rtp_packet->payload_len = 0;
+	if( current_buffer_len > 0 )
+	{
+		rtp_packet->payload = ( unsigned char * ) malloc( current_buffer_len );
+		rtp_packet->payload_len = current_buffer_len;
+		memcpy( rtp_packet->payload, p, current_buffer_len );
+	}
+}
+
 void rtp_packet_dump( rtp_packet_t *packet )
 {
 	if( ! packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "RTP Packet( \n");
-	logging_printf( LOGGING_DEBUG, "\tV=%u\n", packet->header.v);
-	logging_printf( LOGGING_DEBUG, "\tP=%u\n", packet->header.p);
-	logging_printf( LOGGING_DEBUG, "\tX=%u\n", packet->header.x);
-	logging_printf( LOGGING_DEBUG, "\tCC=%u\n", packet->header.cc);
-	logging_printf( LOGGING_DEBUG, "\tM=%u\n", packet->header.m);
-	logging_printf( LOGGING_DEBUG, "\tPT=%u\n", packet->header.pt);
-	logging_printf( LOGGING_DEBUG, "\tseq=%u\n", packet->header.seq);
-	logging_printf( LOGGING_DEBUG, "\ttimestamp=0x%08x\n", packet->header.timestamp );
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", packet->header.ssrc );
-	logging_printf( LOGGING_DEBUG, "\tpayloadlength=%u\n", packet->payload_len);
-	logging_printf( LOGGING_DEBUG, "\tpayload=%p )\n", packet->payload);
-
+	logging_printf( LOGGING_DEBUG, "RTP Packet(v=%u,p=%u,x=%u,cc=%u,m=%u,pt=%u,seq=%u,timestamp=0x%08x,ssrc=0x%08x,payload_length=%u,payload=%p)\n",
+		packet->header.v, packet->header.p, packet->header.x, packet->header.cc, packet->header.m, packet->header.pt,
+		packet->header.seq, packet->header.timestamp, packet->header.ssrc, packet->payload_len, packet->payload);
 	return;
 }

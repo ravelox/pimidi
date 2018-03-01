@@ -184,6 +184,8 @@ void hex_dump( unsigned char *buffer, size_t len )
 	size_t i = 0 ;
 	unsigned char c = 0 ;
 
+	logging_prefix_disable();
+
 	logging_printf(LOGGING_DEBUG, "hexdump(%p , %u)\n", buffer, len );
 	if( ! buffer ) return;
 	if( len <= 0 ) return;
@@ -199,6 +201,8 @@ void hex_dump( unsigned char *buffer, size_t len )
 	}
 	logging_printf(LOGGING_DEBUG, "\n");
 	logging_printf(LOGGING_DEBUG, "-- end hexdump\n");
+
+	logging_prefix_enable();
 }
 
 void FREENULL( void **ptr )

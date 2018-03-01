@@ -1,3 +1,14 @@
+WARNING
+
+THIS IS THE EXPERIMENTAL BRANCH
+
+THE CODE IN THIS BRANCH SHOULD BE CONSIDERED UNSTABLE
+IT IS PRONE TO SEGMENTATION VIOLATIONS AND SOME FEATURES WILL NOT BE FULLY-AVAILABLE
+
+IF YOU WANT A STABLE BRANCH, SWITCH TO MASTER
+
+END WARNING
+
 See http://www.raveloxprojects.com/blog/?cat=5 for the reason I'm doing this.
 
 The original reason for writing this was to send NoteOn/NoteOff MIDI events from

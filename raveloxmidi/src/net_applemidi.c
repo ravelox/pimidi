@@ -39,25 +39,25 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 	switch( command->command )
 	{
 		case NET_APPLEMIDI_CMD_INV:
-			logging_printf(LOGGING_DEBUG,"Command: IN\n");
+			logging_printf(LOGGING_INFO,"Command: IN\n");
 			break;
 		case NET_APPLEMIDI_CMD_END:
-			logging_printf(LOGGING_DEBUG,"Command: BY\n");
+			logging_printf(LOGGING_INFO,"Command: BY\n");
 			break;
 		case NET_APPLEMIDI_CMD_ACCEPT:
-			logging_printf(LOGGING_DEBUG,"Command: OK\n");
+			logging_printf(LOGGING_INFO,"Command: OK\n");
 			break;
 		case NET_APPLEMIDI_CMD_REJECT:
-			logging_printf(LOGGING_DEBUG,"Command: NO\n");
+			logging_printf(LOGGING_INFO,"Command: NO\n");
 			break;
 		case NET_APPLEMIDI_CMD_FEEDBACK:
-			logging_printf(LOGGING_DEBUG,"Command: RS\n");
+			logging_printf(LOGGING_INFO,"Command: RS\n");
 			break;
 		case NET_APPLEMIDI_CMD_BITRATE:
-			logging_printf(LOGGING_DEBUG,"Command: RL\n");
+			logging_printf(LOGGING_INFO,"Command: RL\n");
 			break;
 		case NET_APPLEMIDI_CMD_SYNC:
-			logging_printf(LOGGING_DEBUG,"Command: CK\n");
+			logging_printf(LOGGING_INFO,"Command: CK\n");
 			break;
 	}
 
@@ -65,39 +65,37 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 	{
 		net_applemidi_inv	*inv_data;
 		inv_data = (net_applemidi_inv *)command->data;
-		logging_printf(LOGGING_DEBUG,"inv_data:\n");
-		logging_printf(LOGGING_DEBUG,"\tVersion  : %u\n", inv_data->version);
-		logging_printf(LOGGING_DEBUG,"\tInitiator: 0x%08x\n", inv_data->initiator);
-		logging_printf(LOGGING_DEBUG,"\tSSRC     : 0x%08x\n", inv_data->ssrc);
-		logging_printf(LOGGING_DEBUG,"\tName     : %s\n", inv_data->name);
+		logging_printf(LOGGING_INFO,"inv_data(version=%u,initiator=0x%08x,ssrc=0x%08x,name=\"%s\"\n",
+			inv_data->version, inv_data->initiator,inv_data->ssrc,inv_data->name);
+	}
+
+	if( command->command == NET_APPLEMIDI_CMD_END )
+	{
+		net_applemidi_inv	*end_data;
+		end_data = (net_applemidi_inv *)command->data;
+		logging_printf(LOGGING_INFO,"end_data(version=%u,initiator=0x%08x,ssrc=0x%08x,name=\"%s\"\n",
+			end_data->version, end_data->initiator,end_data->ssrc,end_data->name);
 	}
 
 	if( command->command == NET_APPLEMIDI_CMD_SYNC )
 	{
 		net_applemidi_sync	*sync_data;
 		sync_data = (net_applemidi_sync *)command->data;
-		logging_printf(LOGGING_DEBUG,"sync_data:\n");
-		logging_printf(LOGGING_DEBUG,"\tSSRC	   : 0x%08x\n", sync_data->ssrc);
-		logging_printf(LOGGING_DEBUG,"\tCount	   : %d\n", sync_data->count);
-		logging_printf(LOGGING_DEBUG,"\tPadding    : 0x%02x%02x%02x\n",
-			sync_data->padding[0], sync_data->padding[1], sync_data->padding[2] );
-		logging_printf(LOGGING_DEBUG,"\tTimestamp 1: 0x%016llx\n", sync_data->timestamp1 );
-		logging_printf(LOGGING_DEBUG,"\tTimestamp 2: 0x%016llx\n", sync_data->timestamp2 );
-		logging_printf(LOGGING_DEBUG,"\tTimestamp 3: 0x%016llx\n", sync_data->timestamp3 );
+		logging_printf(LOGGING_INFO,"sync_data(ssrc=0x%08x,count=%d,padding=0x%02x%02x%02x,timestamp1=0x%016llx,timestamp2=0x%016llx,timestamp3=0x%016llx)\n",
+			sync_data->ssrc, sync_data->count, sync_data->padding[0], sync_data->padding[1], sync_data->padding[2],
+			sync_data->timestamp1, sync_data->timestamp2, sync_data->timestamp3);
 	}
 
 	if( command->command == NET_APPLEMIDI_CMD_FEEDBACK )
 	{
 		net_applemidi_feedback	*feedback_data;
 		feedback_data = (net_applemidi_feedback *)command->data;
-		logging_printf(LOGGING_DEBUG,"feedback_data:\n");
-		logging_printf(LOGGING_DEBUG,"\tSSRC	     : 0x%08x\n", feedback_data->ssrc);
-		logging_printf(LOGGING_DEBUG,"\tApple seq num: %u\n", feedback_data->apple_seq);
-		logging_printf(LOGGING_DEBUG,"\tRTP seq num  : %u\n", feedback_data->rtp_seq[1]);
+		logging_printf(LOGGING_INFO,"feedback_data(ssrc=0x%08x,apple_seq=%u,rtp_seq=%u)\n",
+			feedback_data->ssrc, feedback_data->apple_seq, feedback_data->rtp_seq[1]);
 	}
 }
 
-net_applemidi_inv * new_net_applemidi_inv( void )
+net_applemidi_inv * net_applemidi_inv_create( void )
 {
 	net_applemidi_inv *inv = NULL;
 
@@ -114,7 +112,7 @@ net_applemidi_inv * new_net_applemidi_inv( void )
 	return inv;
 }
 
-net_applemidi_sync * new_net_applemidi_sync( void )
+net_applemidi_sync * net_applemidi_sync_create( void )
 {
 	net_applemidi_sync *sync = NULL;
 
@@ -126,6 +124,20 @@ net_applemidi_sync * new_net_applemidi_sync( void )
 	}
 
 	return sync;
+}
+
+net_applemidi_feedback * net_applemidi_feedback_create( void )
+{
+	net_applemidi_feedback *feedback = NULL;
+	
+	feedback = (net_applemidi_feedback *) malloc( sizeof( net_applemidi_feedback ) );
+
+	if( feedback )
+	{
+		memset( feedback , 0, sizeof( net_applemidi_feedback ) );
+	}
+
+	return feedback;
 }
 
 int net_applemidi_cmd_destroy( net_applemidi_command **command )
@@ -217,7 +229,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
-		net_applemidi_inv *inv = new_net_applemidi_inv();
+		net_applemidi_inv *inv = net_applemidi_inv_create();
 		if( ! inv )
 		{
 			free( *command_buffer );
@@ -470,7 +482,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 	return NET_APPLEMIDI_DONE;
 }
 
-net_applemidi_command * new_net_applemidi_command( uint16_t command )
+net_applemidi_command * net_applemidi_cmd_create( uint16_t command )
 {
 	net_applemidi_command *new_command;
 

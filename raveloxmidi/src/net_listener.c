@@ -46,6 +46,7 @@ extern int errno;
 
 #include "midi_note_packet.h"
 #include "rtp_packet.h"
+#include "midi_command.h"
 #include "midi_payload.h"
 #include "utils.h"
 
@@ -55,10 +56,11 @@ extern int errno;
 static int num_sockets;
 static int *sockets;
 static int net_socket_shutdown;
+static int inbound_midi_fd = -1;
 
 static pthread_mutex_t shutdown_lock;
 
-net_response_t * new_net_response( void )
+net_response_t * net_response_create( void )
 {
 	net_response_t *response = NULL;
 
@@ -103,7 +105,7 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if (inet_aton( config_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "Invalid address: %s\n", config_get("network.bind_address") );
+		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_get("network.bind_address") );
 		return errno;
 	}
 
@@ -134,6 +136,8 @@ int net_socket_destroy( void )
 
 	free(sockets);
 
+	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
+
 	return 0;
 }
 
@@ -147,7 +151,7 @@ int net_socket_listener( void )
 	char *ip_address = NULL;
 
 	net_applemidi_command *command;
-	int ret;
+	int ret = 0;
 
 	from_len = sizeof( struct sockaddr );
 	for( i = 0 ; i < num_sockets ; i++ )
@@ -164,14 +168,12 @@ int net_socket_listener( void )
 					break;
 				}   
 
-				logging_printf(LOGGING_ERROR, "Socket error (%d) on socket (%d)\n", errno , sockets[i] );
+				logging_printf(LOGGING_ERROR, "net_socket_listener: Socket error (%d) on socket (%d)\n", errno , sockets[i] );
 				break;
 			}
 
 			ip_address = inet_ntoa(from_addr.sin_addr);	
-			logging_printf( LOGGING_DEBUG, "Data (0x%02x) on socket(%d) from (%s:%u)\n", packet[0], i,ip_address, ntohs( from_addr.sin_port ));
-
-			// Determine the packet type
+			logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
 
 			// Apple MIDI command
 			if( packet[0] == 0xff )
@@ -179,6 +181,7 @@ int net_socket_listener( void )
 				net_response_t *response = NULL;
 
 				ret = net_applemidi_unpack( &command, packet, recv_len );
+				net_applemidi_command_dump( command );
 
 				switch( command->command )
 				{
@@ -207,15 +210,13 @@ int net_socket_listener( void )
 				{
 					size_t bytes_written = 0;
 					bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
-					logging_printf( LOGGING_DEBUG, "%u bytes written on socket(%d) to (%s:%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));	
+					logging_printf( LOGGING_DEBUG, "net_socket_listener: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));	
 					net_response_destroy( &response );
 				}
 
 				net_applemidi_cmd_destroy( &command );
-			}
-
-			// MIDI note from sending device
-			if( packet[0] == 0xaa )
+			} else if( packet[0] == 0xaa )
+			// MIDI note on internal socket
 			{
 				rtp_packet_t *rtp_packet = NULL;
 				unsigned char *packed_rtp_buffer = NULL;
@@ -245,14 +246,14 @@ int net_socket_listener( void )
 				{
 					uint8_t ctx_id = 0;
 
-					payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
+					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 
 					if( packed_journal_len > 0 )
 					{
-						payload_toggle_j( midi_payload );
+						midi_payload_toggle_j( midi_payload );
 					}
 					
-					payload_pack( midi_payload, &packed_payload, &packed_payload_len );
+					midi_payload_pack( midi_payload, &packed_payload, &packed_payload_len );
 
 					// Join the packed MIDI payload and the journal together
 					packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
@@ -305,6 +306,63 @@ int net_socket_listener( void )
 				}
 
 				midi_note_packet_destroy( &note_packet );
+			} else {
+			// RTP MIDI inbound from remote socket
+				rtp_packet_t *rtp_packet = NULL;
+				midi_payload_t *midi_payload=NULL;
+				midi_command_t *midi_commands=NULL;
+				size_t num_midi_commands=0;
+				net_response_t *response = NULL;
+				size_t midi_command_index = 0;
+
+				rtp_packet = rtp_packet_create();
+				rtp_packet_unpack( packet, recv_len, rtp_packet );
+				rtp_packet_dump( rtp_packet );
+
+				midi_payload_unpack( &midi_payload, rtp_packet->payload, recv_len );
+
+				// Read all the commands in the packet into an array
+				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
+
+				// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
+				response = cmd_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
+                                if( response )
+                                {
+                                        size_t bytes_written = 0;
+                                        bytes_written = sendto( sockets[i], response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+                                        logging_printf( LOGGING_DEBUG, "net_socket_listener: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, i,ip_address, ntohs( from_addr.sin_port ));
+                                        net_response_destroy( &response );
+                                }
+
+				// If an inbound midi file is defined, write the MIDI commands to it
+				if( inbound_midi_fd >= 0 )
+				{
+					for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
+					{
+						unsigned char *raw_buffer = (unsigned char *)malloc( 2 + midi_commands[midi_command_index].data_len );
+
+						if( raw_buffer )
+						{
+							raw_buffer[0]=midi_commands[midi_command_index].status;
+							if( midi_commands[midi_command_index].data_len > 0 )
+							{
+								memcpy( raw_buffer + 1, midi_commands[midi_command_index].data, midi_commands[midi_command_index].data_len );
+							}
+
+							write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+							free( raw_buffer );
+						}
+					}
+				}
+
+				// Clean up
+				midi_payload_destroy( &midi_payload );
+				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
+				{
+					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
+				}
+				free( midi_commands );
+				rtp_packet_destroy( &rtp_packet );
 			}
 		}
 	}
@@ -351,21 +409,40 @@ int net_socket_loop( unsigned int interval )
 
 void net_socket_loop_shutdown(int signal)
 {
-	logging_printf(LOGGING_INFO, "Received signal(%d) shutting down\n", signal);
+	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
 	set_shutdown_lock( 1 );
 }
 
 int net_socket_setup( void )
 {
 	num_sockets = 0;
+	char *inbound_midi_filename = NULL;
 
 	if(
 		net_socket_create( atoi( config_get("network.control.port") ) ) ||
 		net_socket_create( atoi( config_get("network.data.port") ) ) ||
 		net_socket_create( atoi( config_get("network.note.port") ) ) )
 	{
-		logging_printf(LOGGING_ERROR, "Cannot create socket: %s\n", strerror( errno ) );
+		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
 		return -1;
+	}
+
+	// If a file name is defined, open up the file handle to write inbound MIDI events
+	inbound_midi_filename = config_get("inbound_midi");
+
+	if( ! inbound_midi_filename )
+	{
+		logging_printf(LOGGING_WARN, "net_socket_setup: No filename defined for inbound_midi\n");
+	} else if( ! check_file_security( inbound_midi_filename ) ) {
+		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
+	} else {
+		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT );
+		
+		if( inbound_midi_fd < 0 )
+		{
+			logging_printf(LOGGING_WARN, "net_socket_setup: Unable to open %s : %s\n", inbound_midi_filename, strerror( errno ) );
+			inbound_midi_fd = -1;
+		}
 	}
 
 	return 0;

@@ -53,30 +53,22 @@ net_response_t * cmd_sync_handler( void *data )
 
 	sync = ( net_applemidi_sync *) data;
 
-	logging_printf( LOGGING_DEBUG, "SYNC( \n");
-
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", sync->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tcount=0x%08x\n", sync->count);
-	logging_printf( LOGGING_DEBUG, "\ttimestamp1=0x%llu\n", sync->timestamp1);
-	logging_printf( LOGGING_DEBUG, "\ttimestamp2=0x%llu\n", sync->timestamp2);
-	logging_printf( LOGGING_DEBUG, "\ttimestamp3=0x%llu )\n", sync->timestamp3);
-
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
 	if( ! ctx ) return NULL;
 
-	cmd = new_net_applemidi_command( NET_APPLEMIDI_CMD_SYNC );
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "Unable to allocate memory for sync command\n");
+		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync command\n");
 		return NULL;
 	}
 
-	sync_resp = new_net_applemidi_sync();
+	sync_resp = net_applemidi_sync_create();
 	
 	if( ! sync_resp ) {
-		logging_printf( LOGGING_ERROR, "Unabled to allocate memory for sync_resp command data\n");
+		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync_resp command data\n");
 		free( cmd );
 		return NULL;
 	}
@@ -106,7 +98,7 @@ net_response_t * cmd_sync_handler( void *data )
 
 	cmd->data = sync_resp;
 
-	response = new_net_response();
+	response = net_response_create();
 
 	if( response )
 	{
@@ -114,7 +106,7 @@ net_response_t * cmd_sync_handler( void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "Unable to pack response to sync command\n");
+			logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to pack response to sync command\n");
 			net_response_destroy( &response );
 		}
 	}

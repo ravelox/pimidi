@@ -53,13 +53,6 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	inv = ( net_applemidi_inv *) data;
 
-	logging_printf( LOGGING_DEBUG, "INV(%s:%u\n ", ip_address, port );
-
-	logging_printf( LOGGING_DEBUG, "\tname=%s\n", inv->name);
-	logging_printf( LOGGING_DEBUG, "\tssrc=0x%08x\n", inv->ssrc);
-	logging_printf( LOGGING_DEBUG, "\tversion=0x%08x\n", inv->version);
-	logging_printf( LOGGING_DEBUG, "\tinitiator=0x%08x )\n", inv->initiator);
-
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 
 	/* See https://en.wikipedia.org/wiki/RTP-MIDI#Apple.27s_session_protocol */
@@ -80,19 +73,19 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ctx->data_port = port;
 	}
 
-	cmd = new_net_applemidi_command( NET_APPLEMIDI_CMD_ACCEPT );
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_ACCEPT );
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "Unable to allocate memory for accept_inv command\n");
+		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command\n");
 		net_ctx_reset( ctx );
 		return NULL;
 	}
 
-	accept_inv = new_net_applemidi_inv();
+	accept_inv = net_applemidi_inv_create();
 	
 	if( ! accept_inv ) {
-		logging_printf( LOGGING_ERROR, "Unabled to allocate memory for accept_inv command data\n");
+		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
 		net_ctx_reset( ctx );
 		return NULL;
@@ -111,7 +104,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 
 	cmd->data = accept_inv;
 
-	response = new_net_response();
+	response = net_response_create();
 
 	if( response )
 	{
@@ -119,7 +112,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "Unable to pack response to inv command\n");
+			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to pack response to inv command\n");
 			net_response_destroy( &response );
 		}
 	}

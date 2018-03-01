@@ -3,10 +3,10 @@
 raveloxmidi - RTP MIDI NoteOn/NoteOff proxy
 .SH SYNOPSIS
 .B raveloxmidi
-[-c filename] [-d] [-N] [-P filename] [-h]
+[-c filename] [-d|-I] [-N] [-P filename] [-R] [-h]
 
 .B raveloxmidi
-[--config filename] [--debug] [--nodaemon] [--pidfile filename] [--help]
+[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help]
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn and NoteOff events to a remote MIDI device.
@@ -18,12 +18,18 @@ Name of configuration file to use. If no configuration file is provided, some de
 .B -d
 Run in debug mode. This will provide debug-level output to either stdout or the configured log file.
 .TP
+.B -I
+Run in info mode. This will provide info-level output to either stdout or the configured log file.
+.TP
 .B -N
 Do not run as a daemon.
 .TP
 .B -P pidfile
 File to store the pid of the running process. Default is
 .B raveloxmidi.pid in the current directory.
+.TP
+.B -R
+Enable readonly mode. This doesn't write anything to disk.
 .TP
 .B -h
 Display help information including default values for some parameters.
@@ -71,7 +77,11 @@ Level of logging events to be written if enabled. Can be
 .TP
 .B security.check
 Enables or disables rudimentary check on the named pid file to prevent the daemon.pid_file option being used to overwrite executable files. Can be yes or no. ( default is yes ).
+.TP
+.B inbound_midi
+Name of file to write inbound MIDI events to. This file is governed by the security check option. Default is
+.B /dev/sequencer
 .fi
 .SH AUTHOR
 .B raveloxmidi
-was developed by Dave Kelly (c) 2014
+is developed by Dave Kelly (c) 2014
