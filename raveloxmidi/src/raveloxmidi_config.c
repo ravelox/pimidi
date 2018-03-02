@@ -79,6 +79,12 @@ static void config_load_file( char *filename )
 
 		if( feof( config_file) ) break;
 
+		if( ! return_value )
+		{
+			logging_printf( LOGGING_ERROR, "config_load_file: Unable to read config (file=\"%s\")\n", filename );
+			break;
+		}
+
 		/* Remove any trailing white space */
 		p2 = config_line + strlen( config_line ) - 1;
 		while( *p2 && isspace( *p2 ) )

@@ -384,7 +384,15 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 					}
 				}
 				break;
-			default:
+			case MIDI_TUNE_REQUEST:
+			case MIDI_END_SYSEX:
+			case MIDI_TIMING_CLOCK:
+			case MIDI_START:
+			case MIDI_CONTINUE:
+			case MIDI_STOP:
+			case MIDI_ACTIVE_SENSING:
+			case MIDI_RESET:
+			case MIDI_NULL:
 				break;
 		}
 		
@@ -398,6 +406,20 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 			case MIDI_PROGRAM_CHANGE:
 			case MIDI_CHANNEL_PRESSURE:
 				logging_printf( LOGGING_INFO, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
+				break;
+			case MIDI_SYSEX:
+			case MIDI_TIME_CODE_QF:
+			case MIDI_SONG_POSITION:
+			case MIDI_SONG_SELECT:
+			case MIDI_TUNE_REQUEST:
+			case MIDI_END_SYSEX:
+			case MIDI_TIMING_CLOCK:
+			case MIDI_START:
+			case MIDI_CONTINUE:
+			case MIDI_STOP:
+			case MIDI_ACTIVE_SENSING:
+			case MIDI_RESET:
+			case MIDI_NULL:
 				break;
 		}
 

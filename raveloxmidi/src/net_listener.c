@@ -351,6 +351,7 @@ int net_socket_listener( void )
 							}
 
 							bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+							logging_printf( LOGGING_DEBUG, "net_socket_listener: inbound MIDI write(bytes=%u)\n", bytes_written );
 							free( raw_buffer );
 						}
 					}

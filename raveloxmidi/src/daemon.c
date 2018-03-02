@@ -81,8 +81,7 @@ void daemon_start(void)
 				fprintf(pidfile, "%d\n", pid);
 				fclose(pidfile);
 			} else {
-				logging_printf( LOGGING_ERROR, "Unable to write pid to %s:%s\n", pid_file, strerror( errno ));
-				logging_printf( LOGGING_ERROR, "Pid = %d\n", pid);
+				logging_printf( LOGGING_ERROR, "daemon_start: Unable to write pid=%d to %s:%s\n", pid, pid_file, strerror( errno ));
 			}       
 		}
                 /* Parent exiting */
@@ -90,8 +89,15 @@ void daemon_start(void)
         }       
 
         reopen_file = freopen("/dev/null","r",stdin);
+	if( ! reopen_file )
+	{
+		logging_printf( LOGGING_ERROR, "daemon_start: Unable to reopen stdin as /dev/null: %s\n", strerror( errno ) );
+	}
         reopen_file = freopen("/dev/null","w",stdout);
-	reopen_file = NULL;
+	if( ! reopen_file )
+	{
+		logging_printf( LOGGING_ERROR, "daemon_start: Unable to reopen stdout as /dev/null: %s\n", strerror( errno ) );
+	}
 }
 
 void daemon_stop(void)

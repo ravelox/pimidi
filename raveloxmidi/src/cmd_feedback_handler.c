@@ -94,8 +94,7 @@ net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
 	response = net_response_create();
 	if( response )
 	{
-		int ret = 0;
-		ret = net_applemidi_pack( cmd, &(response->buffer), &(response->len) );
+		net_applemidi_pack( cmd, &(response->buffer), &(response->len) );
 	}
 
 	net_applemidi_cmd_destroy( &cmd );
