@@ -42,7 +42,7 @@ typedef struct net_ctx_t {
 } net_ctx_t;
 
 void net_ctx_reset( net_ctx_t *ctx );
-void debug_net_ctx_dump( net_ctx_t *ctx );
+void net_ctx_dump( net_ctx_t *ctx );
 void net_ctx_init( void );
 void net_ctx_destroy( void );
 int net_ctx_is_used( uint8_t id );
@@ -50,7 +50,7 @@ net_ctx_t * net_ctx_find_by_id( uint8_t id );
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
 void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_t *midi_note );
-void debug_ctx_journal_dump( uint8_t ctx_id );
+void net_ctx_journal_dump( uint8_t ctx_id );
 void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journal_buffer_size);
 void net_ctx_journal_reset( uint8_t ctx_id );
 void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet);

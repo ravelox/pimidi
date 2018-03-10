@@ -62,7 +62,7 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->control_port = 0;
 }
 
-void debug_net_ctx_dump( net_ctx_t *ctx )
+void net_ctx_dump( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
 	
@@ -223,7 +223,7 @@ void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_t *midi_note )
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
 }
 
-void debug_ctx_journal_dump( uint8_t ctx_id )
+void net_ctx_journal_dump( uint8_t ctx_id )
 {
 	net_ctx_t *ctx = NULL;
 
@@ -233,7 +233,7 @@ void debug_ctx_journal_dump( uint8_t ctx_id )
 
 	if( ! ctx) return;
 
-	logging_printf( LOGGING_DEBUG, "debug_ctx_journal_dump: Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "net_ctx_journal_dump: Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
 
 	if( ! journal_has_data( ctx->journal ) ) return;
 
@@ -306,8 +306,8 @@ void net_ctx_send( int send_socket, uint8_t ctx_id, unsigned char *buffer, size_
 
 	if( ! ctx ) return;
 
-	debug_net_ctx_dump( ctx );
-	debug_ctx_journal_dump( ctx_id );
+	net_ctx_dump( ctx );
+	net_ctx_journal_dump( ctx_id );
 
 
 	/* Set up the destination address */

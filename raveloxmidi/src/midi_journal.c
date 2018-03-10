@@ -74,7 +74,6 @@ void journal_header_destroy( journal_header_t **header )
 	FREENULL( "journal_header", (void **)header );
 }
 
-
 void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
@@ -318,6 +317,7 @@ void journal_destroy( journal_t **journal )
 	if( (*journal)->header )
 	{
 		journal_header_destroy( &( (*journal)->header ) );
+		(*journal)->header = NULL;
 	}
 
 	free( *journal );

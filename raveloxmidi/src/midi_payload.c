@@ -119,8 +119,15 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , u
 {
 	if( ! payload ) return;
 
+	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, buffer_size);
 	payload->header->len = buffer_size;
-	payload->buffer = buffer;
+	payload->buffer = (unsigned char *)malloc( buffer_size );
+	if( ! payload->buffer )
+	{
+		payload->header->len = 0;
+	} else {
+		memcpy( payload->buffer, buffer, buffer_size );
+	}
 }
 
 
@@ -177,8 +184,6 @@ void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t 
 		p++;
 	}
 
-	payload->buffer = (unsigned char *)malloc( payload->header->len );
-	memset( payload->buffer, 0, payload->header->len );
 	memcpy( p, payload->buffer, payload->header->len );
 
 	logging_printf(LOGGING_DEBUG, "midi_payload_pack: buffer=%p,len=%u\n", payload->buffer, payload->header->len );
