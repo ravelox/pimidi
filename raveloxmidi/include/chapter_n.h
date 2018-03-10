@@ -21,37 +21,49 @@
 #ifndef CHAPTER_N_JOURNAL_H
 #define CHAPTER_N_JOURNAL_H
 
-#ifndef CHAPTER_C
-#define CHAPTER_N	0x08
-#endif
+// #include "chapter_n_note_packet.h"
 
-#define MAX_CHAPTERN_NOTES	127
+typedef struct chapter_n_note_t {
+	unsigned char	S:1;
+	unsigned char	num:7;
+	unsigned char	Y:1;
+	unsigned char	velocity:7;
+} chapter_n_note_t;
+#define CHAPTER_N_NOTE_PACKED_SIZE	2
+
+#define MAX_CHAPTER_N_NOTES	127
 #define MAX_OFFBITS		16
 
-typedef struct chaptern_header_t {
+typedef struct chapter_n_header_t {
 	unsigned char	B:1;
 	unsigned char	len:7;
 	unsigned char	low:4;
 	unsigned char	high:4;
-} chaptern_header_t;
-#define CHAPTERN_HEADER_PACKED_SIZE	2
+} chapter_n_header_t;
+#define CHAPTER_N_HEADER_PACKED_SIZE	2
 
-typedef struct chaptern_t {
-	chaptern_header_t	*header;
+typedef struct chapter_n_t {
+	chapter_n_header_t	*header;
 	uint16_t		num_notes;
-	midi_note_t 		*notes[MAX_CHAPTERN_NOTES];
+	chapter_n_note_t	*notes[MAX_CHAPTER_N_NOTES];
 	char			*offbits;
-} chaptern_t;
+} chapter_n_t;
 
-void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size );
-void chaptern_header_destroy( chaptern_header_t **header );
-chaptern_header_t * chaptern_header_create( void );
-void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size );
-chaptern_t * chaptern_create( void );
-void chaptern_destroy( chaptern_t **chaptern );
-void chaptern_header_dump( chaptern_header_t *header );
-void chaptern_header_reset( chaptern_header_t *header );
-void chaptern_dump( chaptern_t *chaptern );
-void chaptern_reset( chaptern_t *chaptern );
+void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed , size_t *size );
+void chapter_n_header_destroy( chapter_n_header_t **header );
+chapter_n_header_t * chapter_n_header_create( void );
+void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size );
+chapter_n_t * chapter_n_create( void );
+void chapter_n_destroy( chapter_n_t **chapter_n );
+void chapter_n_header_dump( chapter_n_header_t *header );
+void chapter_n_header_reset( chapter_n_header_t *header );
+void chapter_n_dump( chapter_n_t *chapter_n );
+void chapter_n_reset( chapter_n_t *chapter_n );
+
+void chapter_n_note_pack( chapter_n_note_t *note , char **packed , size_t *size );
+void chapter_n_note_destroy( chapter_n_note_t **note );
+chapter_n_note_t * chapter_n_note_create( void );
+void chapter_n_note_dump( chapter_n_note_t *note );
+void chapter_n_note_reset( chapter_n_note_t *note );
 
 #endif

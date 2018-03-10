@@ -21,8 +21,6 @@
 #ifndef RTP_PACKET_H
 #define RTP_PACKET_H
 
-#include "midi_note_packet.h"
-
 typedef struct rtp_packet_header_t {
 	unsigned	v:2;
 	unsigned	p:1;

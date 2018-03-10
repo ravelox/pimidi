@@ -29,7 +29,7 @@ typedef struct chapter_p_t {
 	uint8_t	X;
 	uint8_t bank_lsb;
 } chapter_p_t;
-#define CHAPTER_P_PACKED_SIZE	24
+#define CHAPTER_P_PACKED_SIZE	3
 
 void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *size );
 void chapter_p_unpack( unsigned char *packed, size_t size, chapter_p_t **chapter_p );

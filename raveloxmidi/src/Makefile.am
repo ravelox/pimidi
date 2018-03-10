@@ -8,10 +8,12 @@ raveloxmidi_SOURCES = \
 	cmd_sync_handler.c \
 	cmd_feedback_handler.c \
 	midi_journal.c \
+	chapter_p.c \
 	chapter_n.c \
-	net_listener.c \
+	chapter_c.c \
+	net_socket.c \
+	net_response.c \
 	midi_note.c \
-	midi_note_packet.c \
 	midi_payload.c \
 	midi_command.c \
 	net_applemidi.c \

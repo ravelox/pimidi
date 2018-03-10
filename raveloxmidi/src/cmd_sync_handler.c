@@ -36,7 +36,8 @@ extern int errno;
 
 #include "net_applemidi.h"
 #include "net_connection.h"
-#include "net_listener.h"
+#include "net_socket.h"
+#include "net_response.h"
 
 #include "logging.h"
 

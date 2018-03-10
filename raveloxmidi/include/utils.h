@@ -30,7 +30,7 @@ void put_uint64( unsigned char **dest, uint64_t src, size_t *len );
 void get_uint32( void *dest, unsigned char **src, size_t *len );
 void get_uint64( void *dest, unsigned char **src, size_t *len );
 void hex_dump( unsigned char *buffer, size_t len );
-void FREENULL( void **ptr );
+void FREENULL( const char *description, void **ptr );
 int check_file_security( const char *filepath );
 int is_yes( const char *value );
 int is_no( const char *value );

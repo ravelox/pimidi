@@ -26,8 +26,7 @@
 #include <signal.h>
 
 #include "net_applemidi.h"
-#include "net_listener.h"
-#include "midi_journal.h"
+#include "net_socket.h"
 #include "net_connection.h"
 #include "utils.h"
 

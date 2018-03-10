@@ -64,7 +64,7 @@ void rtp_packet_destroy( rtp_packet_t **packet )
 	(*packet)->payload = NULL;
 	(*packet)->payload_len = 0;
 
-	FREENULL( (void **)packet);
+	FREENULL( "rtp_packet", (void **)packet);
 }
 
 int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )

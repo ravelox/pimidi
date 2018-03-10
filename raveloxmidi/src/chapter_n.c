@@ -29,7 +29,7 @@
 
 #include "logging.h"
 
-void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , size_t *size )
+void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 
@@ -38,11 +38,11 @@ void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , 
 
 	if( ! header ) return;
 
-	chaptern_header_dump( header );
-	*packed = ( unsigned char *)malloc( CHAPTERN_HEADER_PACKED_SIZE );
+	chapter_n_header_dump( header );
+	*packed = ( unsigned char *)malloc( CHAPTER_N_HEADER_PACKED_SIZE );
 
 	if( ! packed ) return;
-	memset( *packed, 0 , CHAPTERN_HEADER_PACKED_SIZE );
+	memset( *packed, 0 , CHAPTER_N_HEADER_PACKED_SIZE );
 
 	p = *packed;
 
@@ -58,20 +58,20 @@ void chaptern_header_pack( chaptern_header_t *header , unsigned char **packed , 
 	*size += sizeof( char );
 }
 
-void chaptern_header_destroy( chaptern_header_t **header )
+void chapter_n_header_destroy( chapter_n_header_t **header )
 {
-	FREENULL( (void **)header);
+	FREENULL( "chapter_n_header",(void **)header);
 }
 
-chaptern_header_t * chaptern_header_create( void )
+chapter_n_header_t * chapter_n_header_create( void )
 {
-	chaptern_header_t *header = NULL;
+	chapter_n_header_t *header = NULL;
 
-	header = ( chaptern_header_t *) malloc( sizeof( chaptern_header_t ) );
+	header = ( chapter_n_header_t *) malloc( sizeof( chapter_n_header_t ) );
 
 	if( header )
 	{
-		memset( header, 0 , sizeof( chaptern_header_t) );
+		memset( header, 0 , sizeof( chapter_n_header_t) );
 		header->low = 0x0f;
 		header->high = 0x00;
 	}
@@ -79,7 +79,7 @@ chaptern_header_t * chaptern_header_create( void )
 	return header;
 }
 
-void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
+void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
 {
 	unsigned char *packed_header = NULL;
 	char *packed_note = NULL;
@@ -95,29 +95,29 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 
 	header_size = note_size = note_buffer_size = 0;
 
-	if( ! chaptern ) return;
+	if( ! chapter_n ) return;
 
-	chaptern->header->len = chaptern->num_notes;
+	chapter_n->header->len = chapter_n->num_notes;
 
-	chaptern_header_pack( chaptern->header, &packed_header, &header_size) ;
+	chapter_n_header_pack( chapter_n->header, &packed_header, &header_size) ;
 
 	if( packed_header )
 	{
 		*size += header_size;
 	}
 
-	if( chaptern->num_notes > 0 )
+	if( chapter_n->num_notes > 0 )
 	{
-		note_buffer_size = MIDI_NOTE_PACKED_SIZE * chaptern->num_notes;
+		note_buffer_size = CHAPTER_N_NOTE_PACKED_SIZE * chapter_n->num_notes;
 		note_buffer = ( char * ) malloc( note_buffer_size );
 		if( note_buffer ) 
 		{
 			memset( note_buffer, 0 , note_buffer_size);
 			p = note_buffer;
 
-			for( i = 0 ; i < chaptern->num_notes ; i++ )
+			for( i = 0 ; i < chapter_n->num_notes ; i++ )
 			{
-				midi_note_pack( chaptern->notes[i], &packed_note, &note_size );
+				chapter_n_note_pack( chapter_n->notes[i], &packed_note, &note_size );
 				memcpy( p, packed_note, note_size );
 				p += note_size;
 				*size += note_size;
@@ -127,11 +127,11 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 	}
 
 	
-	offbits_size = ( chaptern->header->high - chaptern->header->low ) + 1;
+	offbits_size = ( chapter_n->header->high - chapter_n->header->low ) + 1;
 	if( offbits_size > 0 )
 	{
 		offbits_buffer = ( char * )malloc( offbits_size );
-		p = chaptern->offbits + chaptern->header->low;
+		p = chapter_n->offbits + chapter_n->header->low;
 		memcpy( offbits_buffer, p, offbits_size );
 		*size += offbits_size;
 	}
@@ -140,7 +140,7 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 
 	*packed = ( char * ) malloc( *size );
 
-	if( ! packed ) goto chaptern_pack_cleanup;
+	if( ! packed ) goto chapter_n_pack_cleanup;
 
 	p = *packed;
 
@@ -155,92 +155,92 @@ void chaptern_pack( chaptern_t *chaptern, char **packed, size_t *size )
 		memcpy( p, offbits_buffer, offbits_size );
 	}
 
-chaptern_pack_cleanup:
-	FREENULL( (void **)&packed_header );
-	FREENULL( (void **)&note_buffer );
-	FREENULL( (void **)&offbits_buffer );
+chapter_n_pack_cleanup:
+	FREENULL( "chapter_n:packed_header", (void **)&packed_header );
+	FREENULL( "chapter_n:note_buffer", (void **)&note_buffer );
+	FREENULL( "chapter_n:offbits_buffer",(void **)&offbits_buffer );
 }
 
-chaptern_t * chaptern_create( void )
+chapter_n_t * chapter_n_create( void )
 {
-	chaptern_t *chaptern = NULL;
+	chapter_n_t *chapter_n = NULL;
 	unsigned int i = 0;
 
-	chaptern = ( chaptern_t * ) malloc( sizeof( chaptern_t ) );
+	chapter_n = ( chapter_n_t * ) malloc( sizeof( chapter_n_t ) );
 
-	if( chaptern )
+	if( chapter_n )
 	{
-		chaptern_header_t *header = chaptern_header_create();
+		chapter_n_header_t *header = chapter_n_header_create();
 
-		memset( chaptern, 0, sizeof( chaptern_t ) );
+		memset( chapter_n, 0, sizeof( chapter_n_t ) );
 		if( ! header )
 		{
-			free( chaptern );
+			free( chapter_n );
 			return NULL;
 		}
 
-		chaptern->header = header;
+		chapter_n->header = header;
 
-		chaptern->num_notes = 0;
-		for( i = 0 ; i < MAX_CHAPTERN_NOTES ; i++ )
+		chapter_n->num_notes = 0;
+		for( i = 0 ; i < MAX_CHAPTER_N_NOTES ; i++ )
 		{
-			chaptern->notes[i] = NULL;
+			chapter_n->notes[i] = NULL;
 		}
 		
-		chaptern->offbits = ( char *)malloc( MAX_OFFBITS );
-		if (! chaptern->offbits )
+		chapter_n->offbits = ( char *)malloc( MAX_OFFBITS );
+		if (! chapter_n->offbits )
 		{
-			chaptern_destroy( &chaptern );
+			chapter_n_destroy( &chapter_n );
 			return NULL;
 		}
 			
-		memset( chaptern->offbits, 0, MAX_OFFBITS );
+		memset( chapter_n->offbits, 0, MAX_OFFBITS );
 	}
 
-	return chaptern;
+	return chapter_n;
 }
 
-void chaptern_destroy( chaptern_t **chaptern )
+void chapter_n_destroy( chapter_n_t **chapter_n )
 {
 	int i;
-	if( ! chaptern ) return;
-	if( ! *chaptern ) return;
+	if( ! chapter_n ) return;
+	if( ! *chapter_n ) return;
 
-	for( i = 0 ; i < MAX_CHAPTERN_NOTES ; i++ )
+	for( i = 0 ; i < MAX_CHAPTER_N_NOTES ; i++ )
 	{
-		if( (*chaptern)->notes[i] )
+		if( (*chapter_n)->notes[i] )
 		{
-			midi_note_destroy( &( (*chaptern)->notes[i] ) );
+			chapter_n_note_destroy( &( (*chapter_n)->notes[i] ) );
 		}
 	}
 
-	if( (*chaptern)->offbits )
+	if( (*chapter_n)->offbits )
 	{
-		free( (*chaptern)->offbits );
-		(*chaptern)->offbits = NULL;
+		free( (*chapter_n)->offbits );
+		(*chapter_n)->offbits = NULL;
 	}
 
-	if( (*chaptern)->header )
+	if( (*chapter_n)->header )
 	{
-		chaptern_header_destroy( &( (*chaptern)->header ) );
-		(*chaptern)->header = NULL;
+		chapter_n_header_destroy( &( (*chapter_n)->header ) );
+		(*chapter_n)->header = NULL;
 	}
 
-	free( *chaptern );
+	free( *chapter_n );
 
-	*chaptern = NULL;
+	*chapter_n = NULL;
 
 	return;
 }
 
-void chaptern_header_dump( chaptern_header_t *header )
+void chapter_n_header_dump( chapter_n_header_t *header )
 {
 	if( ! header ) return;
 
 	logging_printf( LOGGING_DEBUG, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
 }
 
-void chaptern_header_reset( chaptern_header_t *header )
+void chapter_n_header_reset( chapter_n_header_t *header )
 {
 	if( ! header ) return;
 
@@ -250,36 +250,100 @@ void chaptern_header_reset( chaptern_header_t *header )
 	header->low = 0;
 }
 
-void chaptern_dump( chaptern_t *chaptern )
+void chapter_n_dump( chapter_n_t *chapter_n )
 {
 	uint16_t i = 0;
 
-	if( ! chaptern ) return;
+	if( ! chapter_n ) return;
 
-	chaptern_header_dump( chaptern->header );
+	chapter_n_header_dump( chapter_n->header );
 
-	for( i = 0 ; i < chaptern->num_notes ; i++ )
+	for( i = 0 ; i < chapter_n->num_notes ; i++ )
 	{
-		midi_note_dump( chaptern->notes[i] );
+		chapter_n_note_dump( chapter_n->notes[i] );
 	}
 	
-	for( i = chaptern->header->low; i <= chaptern->header->high ; i++ )
+	for( i = chapter_n->header->low; i <= chapter_n->header->high ; i++ )
 	{
-		logging_printf( LOGGING_DEBUG, "Offbits[%d]=%02x\n", i, chaptern->offbits[i]);
+		logging_printf( LOGGING_DEBUG, "Offbits[%d]=%02x\n", i, chapter_n->offbits[i]);
 	}
 }
 
-void chaptern_reset( chaptern_t *chaptern )
+void chapter_n_reset( chapter_n_t *chapter_n )
 {
 	uint16_t i = 0;
 
-	if( ! chaptern ) return;
+	if( ! chapter_n ) return;
 
-	for( i = 0 ; i < chaptern->num_notes ; i++ )
+	for( i = 0 ; i < chapter_n->num_notes ; i++ )
 	{
-		midi_note_reset( chaptern->notes[i] );
+		chapter_n_note_reset( chapter_n->notes[i] );
 	}
-	chaptern->num_notes = 0;
-	memset( chaptern->offbits, 0, MAX_OFFBITS );
-	chaptern_header_reset( chaptern->header );
+	chapter_n->num_notes = 0;
+	memset( chapter_n->offbits, 0, MAX_OFFBITS );
+	chapter_n_header_reset( chapter_n->header );
+}
+
+void chapter_n_note_pack( chapter_n_note_t *note , char **packed , size_t *size )
+{
+	char *p = NULL;
+
+	*packed = NULL;
+	*size = 0;
+
+	if( ! note ) return;
+
+	*packed = ( char *)malloc( CHAPTER_N_NOTE_PACKED_SIZE );
+
+	if( ! packed ) return;
+
+	memset( *packed, 0, CHAPTER_N_NOTE_PACKED_SIZE );
+	p = *packed;
+
+	*p |= ( ( note->S & 0x01 ) << 7 );
+	*p |= ( note->num & 0x7f ) ;
+
+	p += sizeof( char );
+	*size += sizeof( char );
+
+	*p |= ( ( note->Y & 0x01 ) << 7 );
+	*p |= ( note->velocity & 0x7f );
+
+	*size += sizeof( char );
+}
+
+void chapter_n_note_destroy( chapter_n_note_t **note )
+{
+	FREENULL( "chapter_n:note",(void **)note );
+}
+
+chapter_n_note_t * chapter_n_note_create( void )
+{
+	chapter_n_note_t *note = NULL;
+	
+	note = ( chapter_n_note_t * ) malloc( sizeof( chapter_n_note_t ) );
+
+	if( note )
+	{
+		memset( note , 0 , sizeof( chapter_n_note_t ) );
+	}
+
+	return note;
+}
+
+void chapter_n_note_dump( chapter_n_note_t *note )
+{
+	if( ! note ) return;
+
+	logging_printf( LOGGING_DEBUG, "chapter_n_note: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
+}
+
+void chapter_n_note_reset( chapter_n_note_t *note )
+{
+	if( ! note ) return;
+
+	note->S = 0;
+	note->num = 0;
+	note->Y = 0;
+	note->velocity = 0;
 }

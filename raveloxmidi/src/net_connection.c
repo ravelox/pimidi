@@ -52,7 +52,7 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->send_ssrc = 0;
 	ctx->initiator = 0;
 	ctx->seq = 0x0000;
-	FREENULL( (void **)&(ctx->ip_address) );
+	FREENULL( "ip_address",(void **)&(ctx->ip_address) );
 	journal_destroy( &(ctx->journal) );
 	
 	journal_init( &journal );
@@ -208,19 +208,19 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	return NULL;
 }
 
-void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_packet_t *note_packet )
+void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_t *midi_note )
 {
 	net_ctx_t *ctx = NULL;
 
 	if( ctx_id > _max_ctx - 1 ) return;
 	
-	if( ! note_packet ) return;
+	if( ! midi_note ) return;
 
 	ctx = net_ctx_find_by_id( ctx_id );
 
 	if( ! ctx) return;
 
-	midi_journal_add_note( ctx->journal, ctx->seq, note_packet );
+	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
 }
 
 void debug_ctx_journal_dump( uint8_t ctx_id )

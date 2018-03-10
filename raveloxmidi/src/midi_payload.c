@@ -37,15 +37,15 @@ void midi_payload_destroy( midi_payload_t **payload )
 
 	if( (*payload)->buffer )
 	{
-		FREENULL( (void **)&((*payload)->buffer) );
+		FREENULL( "midi_payload:payload->buffer",(void **)&((*payload)->buffer) );
 	}
 
 	if( (*payload)->header )
 	{
-		FREENULL( (void **)&((*payload)->header) );
+		FREENULL( "midi_payload:payload->header",(void **)&((*payload)->header) );
 	}
 
-	FREENULL( (void **)payload );
+	FREENULL( "midi_payload",(void **)payload );
 }
 
 void midi_payload_reset( midi_payload_t *payload )
@@ -177,7 +177,11 @@ void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t 
 		p++;
 	}
 
+	payload->buffer = (unsigned char *)malloc( payload->header->len );
+	memset( payload->buffer, 0, payload->header->len );
 	memcpy( p, payload->buffer, payload->header->len );
+
+	logging_printf(LOGGING_DEBUG, "midi_payload_pack: buffer=%p,len=%u\n", payload->buffer, payload->header->len );
 }
 
 void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_len )

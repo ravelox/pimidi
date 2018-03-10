@@ -205,11 +205,12 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_enable();
 }
 
-void FREENULL( void **ptr )
+void FREENULL( const char *description, void **ptr )
 {
 	if( ! ptr ) return;
 	if( ! *ptr ) return;
 
+	logging_printf(LOGGING_DEBUG,"FREENULL: description=\"%s\",ptr=%p\n", description, *ptr);
 	free( *ptr );
 	*ptr = NULL;
 }

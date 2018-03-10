@@ -76,9 +76,9 @@ void midi_command_destroy( midi_command_t **command )
 	if( ! command ) return;
 	if( ! *command ) return;
 
-	if( (*command)->data ) FREENULL( (void **) &( (*command)->data ) );
+	if( (*command)->data ) FREENULL( "midi_command:command->data",(void **) &( (*command)->data ) );
 
-	FREENULL( (void **) command );
+	FREENULL( "midi_command:command", (void **) command );
 }
 
 void midi_command_reset( midi_command_t *command )

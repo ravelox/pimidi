@@ -21,49 +21,34 @@
 #ifndef CHAPTER_C_JOURNAL_H
 #define CHAPTER_C_JOURNAL_H
 
-#ifndef CHAPTER_C
-#define CHAPTER_C	0x40
-#endif
-
-typedef struct chapterc_header_t {
-	unsigned char	S:1;
-	unsigned char	len:7;
-} chapterc_header_t;
-#define CHAPTERC_HEADER_PACKED_SIZE	1
-
-typedef struct alt_controller_t {
-	unsigned char 	T:1;
-	unsigned char 	alt:6;
-} alt_controller_t;
-
 typedef struct controller_log_t {
-	unsigned char	S:1;
-	unsigned char	num:7;
-	unsigned char	A:1;
-	union valuealt {
-		alt_controller_t	alt_controller;
-		unsigned char		value:7;
-	} valuealt;
+	uint8_t S;
+	uint8_t number;
+	uint8_t A;
+	uint8_t T;
+	uint8_t value;
 } controller_log_t;
 
-#define CHAPTER_C_PACKED_SIZE 2
+#define PACKED_CONTROLLER_LOG_SIZE 2
 
-#define MAX_CONTROLLER_LOGS	127
-typedef struct chapterc_t {
-	chapterc_header_t	*header;
-	unsigned char		num_controllers;
-	controller_log_t	controller_log[ MAX_CONTROLLER_LOGS ];
-} chapterc_t;
+typedef struct chapter_c_t {
+	uint8_t S;
+	uint8_t len;
+	controller_log_t *controller_log;
+} chapter_c_t;
 
-void chapterc_header_pack( chapterc_header_t *header , unsigned char **packed , size_t *size );
-void chapterc_header_destroy( chapterc_header_t **header );
-chapterc_header_t * chapterc_header_create( void );
-void chapterc_pack( chapterc_t *chapterc, unsigned char **packed, size_t *size );
-chapterc_t * chapterc_create( void );
-void chapterc_destroy( chapterc_t **chapterc );
-void chapterc_header_dump( chapterc_header_t *header );
-void chapterc_header_reset( chapterc_header_t *header );
-void chapterc_dump( chapterc_t *chapterc );
-void chapterc_reset( chapterc_t *chapterc );
+#define PACKED_CHAPTER_C_HEADER_SIZE 1
+
+chapter_c_t *chapter_c_create( void );
+void chapter_c_unpack( unsigned char *packed, size_t size, chapter_c_t **chapter_c );
+void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *size );
+void chapter_c_destroy( chapter_c_t **chapter_c );
+void chapter_c_reset( chapter_c_t *chapter_c );
+void chapter_c_dump( chapter_c_t *chapter_c );
+
+controller_log_t *controller_log_create( void );
+void controller_log_destroy( controller_log_t **controller_log );
+void controller_log_reset( controller_log_t *controller_log );
+void controller_log_dump( controller_log_t *controller_log );
 
 #endif

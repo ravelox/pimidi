@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2018 Dave Kelly
+   Copyright (C) 2014 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,71 +24,87 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <arpa/inet.h>
+
 #include "midi_note.h"
 #include "utils.h"
 
 #include "logging.h"
 
-void midi_note_pack( midi_note_t *note , char **packed , size_t *size )
-{
-	char *p = NULL;
-
-	*packed = NULL;
-	*size = 0;
-
-	if( ! note ) return;
-
-	*packed = ( char *)malloc( MIDI_NOTE_PACKED_SIZE );
-
-	if( ! packed ) return;
-
-	memset( *packed, 0, MIDI_NOTE_PACKED_SIZE );
-	p = *packed;
-
-	*p |= ( ( note->S & 0x01 ) << 7 );
-	*p |= ( note->num & 0x7f ) ;
-
-	p += sizeof( char );
-	*size += sizeof( char );
-
-	*p |= ( ( note->Y & 0x01 ) << 7 );
-	*p |= ( note->velocity & 0x7f );
-
-	*size += sizeof( char );
-}
-
-void midi_note_destroy( midi_note_t **note )
-{
-	FREENULL( (void **)note );
-}
-
 midi_note_t * midi_note_create( void )
 {
-	midi_note_t *note = NULL;
-	
-	note = ( midi_note_t * ) malloc( sizeof( midi_note_t ) );
+	midi_note_t *new_note;
 
-	if( note )
+	new_note = (midi_note_t *) malloc( sizeof( midi_note_t ) );
+
+	if( ! new_note )  return NULL;
+
+	memset( new_note, 0, sizeof( midi_note_t ) );
+
+	return new_note;
+}
+
+void midi_note_destroy( midi_note_t **midi_note )
+{
+	FREENULL( "midi_note", (void **)midi_note );
+}
+
+int midi_note_unpack( midi_note_t **midi_note, unsigned char *buffer, size_t buffer_len )
+{
+	int ret = 0;
+
+
+	*midi_note = NULL;
+
+	if( ! buffer ) return -1;
+
+	if( buffer_len != sizeof( midi_note_t ) )
 	{
-		memset( note , 0 , sizeof( midi_note_t ) );
+		logging_printf( LOGGING_DEBUG, "midi_note_unpack: Expecting %d, got %zd\n", sizeof( midi_note_t ), buffer_len );
+		return -1;
 	}
 
-	return note;
+	*midi_note = midi_note_create();
+	
+	if( ! *midi_note ) return -1;
+
+	(*midi_note)->command = (buffer[0] & 0xf0) >> 4 ;
+	(*midi_note)->channel = (buffer[0] & 0x0f);
+	(*midi_note)->note = ( buffer[1] & 0x7f );
+	(*midi_note)->velocity = ( buffer[2] & 0x7f );
+
+	return ret;
 }
 
-void midi_note_dump( midi_note_t *note )
+int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buffer_len )
 {
-	if( ! note ) return;
+	int ret = 0;
 
-	logging_printf( LOGGING_DEBUG, "NOTE: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
+	*buffer = NULL;
+	*buffer_len = 0;
+
+	if( ! midi_note )
+	{
+		return -1;
+	}
+
+	*buffer = (unsigned char *)malloc( PACKED_MIDI_NOTE_SIZE );
+	
+	if( !buffer) return -1;
+
+	*buffer_len = PACKED_MIDI_NOTE_SIZE;
+
+	(*buffer)[0] = ( midi_note->command << 4 ) + (midi_note->channel & 0x0f);
+	(*buffer)[1] = ( midi_note->note & 0x7f );
+	(*buffer)[2] = ( midi_note->velocity & 0x7f );
+
+	return ret;
 }
 
-void midi_note_reset( midi_note_t *note )
+void midi_note_dump( midi_note_t *midi_note )
 {
-	if( ! note ) return;
+	if(! midi_note ) return;
 
-	note->S = 0;
-	note->num = 0;
-	note->Y = 0;
-	note->velocity = 0;
+	logging_printf( LOGGING_DEBUG, "MIDI Note(command=%d,channel=%d,note=%d,velocity=%d)\n",
+		midi_note->command, midi_note->channel, midi_note->note, midi_note->velocity);
 }
