@@ -30,13 +30,13 @@
 #include "logging.h"
 
 static midi_message_t midi_message_map[] = {
-        { 0x80, MIDI_NOTE_OFF, "Note Off"},
-        { 0x90, MIDI_NOTE_ON, "Note On"},
-        { 0xa0, MIDI_POLY_PRESSURE, "Polyphonic Key Pressure (Aftertouch)" },
-        { 0xb0, MIDI_CONTROL_CHANGE, "Control Change" },
-        { 0xc0, MIDI_PROGRAM_CHANGE, "Program Change" },
-        { 0xd0, MIDI_CHANNEL_PRESSURE, "Channel Pressure (Aftertouch)" },
-        { 0xe0, MIDI_PITCH_BEND, "Pitch Bend Change" },
+        { 0x8, MIDI_NOTE_OFF, "Note Off"},
+        { 0x9, MIDI_NOTE_ON, "Note On"},
+        { 0xa, MIDI_POLY_PRESSURE, "Polyphonic Key Pressure (Aftertouch)" },
+        { 0xb, MIDI_CONTROL_CHANGE, "Control Change" },
+        { 0xc, MIDI_PROGRAM_CHANGE, "Program Change" },
+        { 0xd, MIDI_CHANNEL_PRESSURE, "Channel Pressure (Aftertouch)" },
+        { 0xe, MIDI_PITCH_BEND, "Pitch Bend Change" },
         { 0xf0, MIDI_SYSEX, "System Exclusive" },
         { 0xf1, MIDI_TIME_CODE_QF, "Midi Time Code QF" },
         { 0xf2, MIDI_SONG_POSITION, "Song Position" },
@@ -95,6 +95,8 @@ void midi_command_reset( midi_command_t *command )
 void midi_command_map( midi_command_t *command, char **description, enum midi_message_type_t *message_type)
 {
 	uint32_t i;
+	uint8_t status = 0;
+
 	*description = "Unknown";
 	*message_type = MIDI_NULL;
 
@@ -106,7 +108,8 @@ void midi_command_map( midi_command_t *command, char **description, enum midi_me
 			continue;
 		}
 
-		if( command->status & midi_message_map[i].message ) break;
+		status = ( (command->status & 0xf0) >> 4 );
+		if( status == midi_message_map[i].message ) break;
 	}
 
 	if( midi_message_map[i].message != 0x00 )

@@ -255,7 +255,7 @@ midi_payload_unpack_success:
 	return;
 }
 
-void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **commands, size_t *num_commands )
+void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands )
 {
 	unsigned char *p;
 	size_t current_len;
@@ -291,20 +291,23 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **command
 	{
 		logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: current_len=%zu\n", current_len );
 		current_delta = 0;
-		/* If the Z flag == 0 then no delta time is present for the first midi command */
-		if( ( payload->header->Z == 0 ) && ( *num_commands == 0 ) )
-		{ 
-			/*Do nothing*/
-		} else {
-			// Get the delta
-			do
-			{
-				data_byte = *p;
-				current_delta <<= 8;
-				current_delta += ( data_byte & 0x7f );
-				p++;
-				current_len--;
-			} while ( ( data_byte & 0x80 ) && current_len > 0 );
+		if( data_type == MIDI_PAYLOAD_RTP )
+		{
+			/* If the Z flag == 0 then no delta time is present for the first midi command */
+			if( ( payload->header->Z == 0 ) && ( *num_commands == 0 ) )
+			{ 
+				/*Do nothing*/
+			} else {
+				// Get the delta
+				do
+				{
+					data_byte = *p;
+					current_delta <<= 8;
+					current_delta += ( data_byte & 0x7f );
+					p++;
+					current_len--;
+				} while ( ( data_byte & 0x80 ) && current_len > 0 );
+			}	
 		}
 
 		(*num_commands)++;

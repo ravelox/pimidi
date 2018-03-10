@@ -205,6 +205,10 @@ int net_socket_listener( void )
 
 				unsigned char *packed_rtp_payload = NULL;
 
+                                midi_command_t *midi_commands=NULL;
+                                size_t num_midi_commands=0;
+                                size_t midi_command_index = 0;
+
 
 				// FIX ME: Currently, the journal is the same for ALL contexts
 				// FIX ME: The context ID is set to 0
@@ -223,6 +227,7 @@ int net_socket_listener( void )
 
 					hex_dump( packet, recv_len );
 					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
+					midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
 
 					if( packed_journal_len > 0 )
 					{
@@ -304,7 +309,7 @@ int net_socket_listener( void )
 				midi_payload_unpack( &midi_payload, rtp_packet->payload, recv_len );
 
 				// Read all the commands in the packet into an array
-				midi_payload_to_commands( midi_payload, &midi_commands, &num_midi_commands );
+				midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands, &num_midi_commands );
 
 				// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
 				response = cmd_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );

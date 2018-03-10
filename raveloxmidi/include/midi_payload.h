@@ -40,6 +40,10 @@ typedef struct midi_payload_t {
 	unsigned char	*buffer;
 } midi_payload_t;
 
+typedef enum midi_payload_data_t {
+	MIDI_PAYLOAD_STREAM = 0,
+	MIDI_PAYLOAD_RTP
+} midi_payload_data_t;
 void midi_payload_destroy( midi_payload_t **payload );
 void midi_payload_reset( midi_payload_t *payload );
 midi_payload_t * midi_payload_create( void );
@@ -51,6 +55,6 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , u
 void midi_payload_header_dump( midi_payload_header_t *header );
 void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
 void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_size);
-void midi_payload_to_commands( midi_payload_t *payload, midi_command_t **commands, size_t *num_commands );
+void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands );
 
 #endif
