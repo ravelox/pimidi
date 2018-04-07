@@ -285,6 +285,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	p = payload->buffer;
 	current_len = payload->header->len;
 
+	logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: payload->header->len=%zu\n", payload->header->len);
+
 	hex_dump( p, current_len );
 	
 	do 
@@ -377,7 +379,13 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 				}
 				break;
 			case MIDI_SYSEX:
+			case MIDI_END_SYSEX:
 				// Read until the end of the SYSEX block
+				// RFC6295 sec 3.2 indicates that the following may occur
+				// 0xF0-0xF0 == first block of multiple SysEx segments
+				// 0xF7-0xF0 == middle block
+				// 0xF7-0xF7 == end block
+				// 0xF7-0xF4 == cancel ( FIXME: Need to code for this )
 				sysex_start_byte = p;
 				sysex_len = 0;
 				do {
@@ -385,7 +393,24 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 					sysex_len++;
 					p++;
 					current_len--;
-				} while( ( current_len > 0 ) && (data_byte != MIDI_END_SYSEX ) );
+				} while( ( current_len > 0 ) && ( (data_byte != 0xF7 )  && (data_byte != 0xF0) && (data_byte != 0xF4) ) );
+				logging_printf( LOGGING_DEBUG, "SysEx end: 0x%02X\n", data_byte);
+				if( ( message_type == MIDI_SYSEX ) && ( data_byte == 0xF0 ) )
+				{
+					logging_printf(LOGGING_DEBUG, "MIDI SYSEX first block\n");
+				}
+				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF0 ) )
+				{
+					logging_printf(LOGGING_DEBUG, "MIDI SYSEX middle block\n");
+				}
+				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF7 ) )
+				{
+					logging_printf(LOGGING_DEBUG, "MIDI SYSEX last block\n");
+				}
+				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF4 ) ) // FIXME: Need to code for this
+				{
+					logging_printf(LOGGING_DEBUG, "MIDI SYSEX cancel block\n");
+				}
 				if( sysex_len > 0 )
 				{
 					(*commands)[index].data = (unsigned char *) malloc( sysex_len );
@@ -397,7 +422,6 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 				}
 				break;
 			case MIDI_TUNE_REQUEST:
-			case MIDI_END_SYSEX:
 			case MIDI_TIMING_CLOCK:
 			case MIDI_START:
 			case MIDI_CONTINUE:
