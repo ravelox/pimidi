@@ -238,6 +238,7 @@ static raveloxmidi_config_t *config_get_item( char *key )
 void config_add_item(char *key, char *value )
 {
 	raveloxmidi_config_t *new_item, *found_item;
+	raveloxmidi_config_t **new_config_item_list = NULL;
 
 	found_item = config_get_item( key );
 	if( ! found_item )
@@ -253,13 +254,18 @@ void config_add_item(char *key, char *value )
 				new_item->value = NULL;
 			}
 
-			config_items = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
-			if( config_items )
+			new_config_item_list = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
+			if( ! new_config_item_list )
 			{
-				config_items[ num_items ] = new_item;
-				num_items++;
+				logging_printf(LOGGING_ERROR, "config_add_item: Insufficient memory to create new config item\n");
+				free( new_item );
+				return;
 			}
+			config_items = new_config_item_list;
+			config_items[ num_items ] = new_item;
+			num_items++;
 		}
+	/* Overwrite any existing item that has the same key */
 	} else {
 		if( found_item->value ) free(found_item->value);
 		if( value )

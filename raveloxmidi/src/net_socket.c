@@ -65,6 +65,7 @@ int net_socket_create( unsigned int port )
 {
 	int new_socket;
 	struct sockaddr_in socket_address;
+	int *new_socket_list = NULL;
 
 	new_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if( new_socket < 0 )
@@ -89,7 +90,13 @@ int net_socket_create( unsigned int port )
         } 
 
 	num_sockets++;
-	sockets = (int *)realloc( sockets , sizeof(int) * num_sockets );
+	new_socket_list = (int *) realloc( sockets, sizeof(int) * num_sockets );
+	if( ! new_socket_list )
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_create: Insufficient memory to create socket %d\n", num_sockets );
+		return -1;
+	}
+	sockets = new_socket_list;
 	sockets[num_sockets - 1 ] = new_socket;
 
 	fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -293,6 +300,12 @@ int net_socket_listener( void )
 				}
 
 				midi_note_destroy( &midi_note );
+
+				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
+				{
+					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
+				}
+				free( midi_commands );
 			} else {
 			// RTP MIDI inbound from remote socket
 				rtp_packet_t *rtp_packet = NULL;

@@ -59,7 +59,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	/* See https://en.wikipedia.org/wiki/RTP-MIDI#Apple.27s_session_protocol */
 
 	/* If no context is found, this is a new connection */
-	/* We assumer that the current port is the control port */
+	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
 		logging_printf( LOGGING_DEBUG, "cmd_inv_hander: Registering new connection\n");

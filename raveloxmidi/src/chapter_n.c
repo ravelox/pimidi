@@ -122,6 +122,9 @@ void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
 				p += note_size;
 				*size += note_size;
 				free( packed_note );
+			} else {
+				logging_printf(LOGGING_ERROR, "chapter_n_pack: Insufficient memory to create note buffer\n");
+				goto chapter_n_pack_cleanup;
 			}
 		}
 	}
@@ -147,8 +150,11 @@ void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
 	memcpy( p , packed_header, header_size );
 	p += header_size;
 
-	memcpy( p, note_buffer, note_buffer_size );
-	p+= note_buffer_size;
+	if( note_buffer )
+	{
+		memcpy( p, note_buffer, note_buffer_size );
+		p+= note_buffer_size;
+	}
 
 	if( offbits_buffer )
 	{
