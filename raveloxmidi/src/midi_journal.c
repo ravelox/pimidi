@@ -126,9 +126,11 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 {
 	unsigned char *packed_channel_header = NULL;
 	char *packed_chapter_n = NULL;
+	char *packed_chapter_c = NULL;
 	
 	size_t packed_channel_header_size = 0;
 	size_t packed_chapter_n_size = 0;
+	size_t packed_chapter_c_size = 0;
 
 	char *p = NULL;
 
@@ -138,13 +140,17 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 
 	if( ! channel ) return;
 
+	channel->header->len = CHANNEL_HEADER_PACKED_SIZE;
+
 	chapter_n_pack( channel->chapter_n, &packed_chapter_n, &packed_chapter_n_size );
-	channel->header->len = packed_chapter_n_size + CHANNEL_HEADER_PACKED_SIZE;
+	channel->header->len += packed_chapter_n_size;
+
+	chapter_c_pack( channel->chapter_c, &packed_chapter_c, &packed_chapter_c_size );
+	channel->header->len += packed_chapter_c_size;
 
 	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
 
-
-	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size );
+	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size );
 
 	if( ! packed ) goto channel_pack_cleanup;
 
@@ -157,9 +163,13 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	memcpy( p, packed_chapter_n, packed_chapter_n_size );
 	*size += packed_chapter_n_size;
 
+	memcpy( p, packed_chapter_c, packed_chapter_c_size );
+	*size += packed_chapter_c_size;
+
 channel_pack_cleanup:
 	FREENULL( "packed_channel_header", (void **)&packed_channel_header );
 	FREENULL( "packed_chapter_n", (void **)&packed_chapter_n );
+	FREENULL( "packed_chapter_c", (void **)&packed_chapter_c );
 }
 
 void channel_destroy( channel_t **channel )
@@ -170,6 +180,11 @@ void channel_destroy( channel_t **channel )
 	if( (*channel)->chapter_n )
 	{
 		chapter_n_destroy( &( (*channel)->chapter_n ) );
+	}
+
+	if( (*channel)->chapter_c )
+	{
+		chapter_c_destroy( &( (*channel)->chapter_c ) );
 	}
 
 	if( (*channel)->header )
@@ -186,6 +201,7 @@ channel_t * channel_create( void )
 	channel_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
 	chapter_n_t *new_chapter_n = NULL;
+	chapter_c_t *new_chapter_c = NULL;
 	
 	new_channel = ( channel_t * ) malloc( sizeof( channel_t ) );
 
@@ -202,14 +218,20 @@ channel_t * channel_create( void )
 	new_channel->header = new_header;
 
 	new_chapter_n = chapter_n_create();
-
 	if( ! new_chapter_n )
 	{
 		channel_destroy( &new_channel );
 		return NULL;
 	}
-
 	new_channel->chapter_n = new_chapter_n;
+
+	new_chapter_c = chapter_c_create();
+	if( ! new_chapter_c )
+	{
+		channel_destroy( &new_channel );
+		return NULL;
+	}
+	new_channel->chapter_c = new_chapter_c;
 		
 	return new_channel;
 }
@@ -336,7 +358,6 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 	channel = midi_note->channel;
 	if( channel > MAX_MIDI_CHANNELS ) return;
 
-
 	// Set Journal Header A flag
 	journal->header->bitfield |= 0x02;
 	
@@ -419,13 +440,23 @@ void channel_journal_dump( channel_t *channel )
 	{
 		chapter_n_dump( channel->chapter_n );
 	}
+
+	if( channel->header->bitfield & CHAPTER_C )
+	{
+		chapter_c_dump( channel->chapter_c );
+	}
 }
 
 void channel_journal_reset( channel_t *channel )
 {
 	if( ! channel ) return;
 
+	if( channel->header )
+	{
+		logging_printf(LOGGING_DEBUG, "channel_journal_reset( %u )\n", channel->header->chan);
+	}
 	chapter_n_reset( channel->chapter_n );
+	chapter_c_reset( channel->chapter_c );
 	channel_header_reset( channel->header );
 }
 

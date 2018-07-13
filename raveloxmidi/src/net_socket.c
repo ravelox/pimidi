@@ -204,8 +204,6 @@ int net_socket_listener( void )
 				midi_note_t *midi_note = NULL;
 				midi_payload_t *midi_payload = NULL;
 
-				char *packed_journal = NULL;
-				size_t packed_journal_len = 0;
 
 				unsigned char *packed_payload = NULL;
 				size_t packed_payload_len = 0;
@@ -216,13 +214,6 @@ int net_socket_listener( void )
                                 size_t num_midi_commands=0;
                                 size_t midi_command_index = 0;
 
-
-				// FIX ME: Currently, the journal is the same for ALL contexts
-				// FIX ME: The context ID is set to 0
-				//
-				// Get a journal if there is one
-				net_ctx_journal_pack( 0 , &packed_journal, &packed_journal_len);
-
 				// For the NOTE event, the MIDI note is already packed
 				// but we still need to pack it into a payload
 				// Create the payload
@@ -231,6 +222,8 @@ int net_socket_listener( void )
 				if( midi_payload )
 				{
 					uint8_t ctx_id = 0;
+					char *packed_journal = NULL;
+					size_t packed_journal_len = 0;
 
 					hex_dump( packet, recv_len );
 					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
@@ -245,13 +238,6 @@ int net_socket_listener( void )
 					logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,len=%u\n", packed_payload, packed_payload_len);
 					hex_dump( packed_payload, packed_payload_len );
 
-					// Join the packed MIDI payload and the journal together
-					packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
-					memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
-					memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
-
-					logging_printf(LOGGING_DEBUG, "packed_rtp_payload\n");
-					hex_dump( packed_rtp_payload, packed_payload_len + packed_journal_len );
 
 					// Build the RTP packet
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
@@ -259,6 +245,16 @@ int net_socket_listener( void )
 
 						// Check that the connection id is active
 						if( ! net_ctx_is_used( ctx_id ) ) continue;
+
+						// Get a journal if there is one
+						net_ctx_journal_pack( ctx_id , &packed_journal, &packed_journal_len);
+
+						// Join the packed MIDI payload and the journal together
+						packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
+						memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
+						memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
+						logging_printf(LOGGING_DEBUG, "packed_rtp_payload\n");
+						hex_dump( packed_rtp_payload, packed_payload_len + packed_journal_len );
 
 						rtp_packet = rtp_packet_create();
 						net_ctx_increment_seq( ctx_id );
@@ -280,12 +276,13 @@ int net_socket_listener( void )
 
 						FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 						rtp_packet_destroy( &rtp_packet );
+
+						FREENULL( "packed_rtp_payload", (void **)&packed_rtp_payload );
+						FREENULL( "packed_journal", (void **)&packed_journal );
 					}
 
 					// Do some cleanup
-					FREENULL( "packed_rtp_payload", (void **)&packed_rtp_payload );
 					FREENULL( "packed_payload", (void **)&packed_payload );
-					FREENULL( "packed_journal", (void **)&packed_journal );
 					midi_payload_destroy( &midi_payload );
 
 					ret = midi_note_unpack( &midi_note, packet + 1 , recv_len - 1);

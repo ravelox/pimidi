@@ -112,7 +112,7 @@ void chapter_c_unpack( unsigned char *packed, size_t size, chapter_c_t **chapter
 	} while( current_size >= PACKED_CONTROLLER_LOG_SIZE );
 }
 
-void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *size )
+void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
 {
 	uint8_t index, current_size;
 	unsigned char *p;
@@ -166,6 +166,7 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 void chapter_c_destroy( chapter_c_t **chapter_c )
 {
 	if( ! chapter_c ) return;
+	if( ! *chapter_c ) return;
 
 	if( (*chapter_c)->controller_log )
 	{

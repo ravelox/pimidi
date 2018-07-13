@@ -57,7 +57,7 @@ typedef struct channel_t {
 	channel_header_t *header;
 	chapter_p_t *chapter_p;
 	chapter_n_t *chapter_n;
-	chapter_n_t *chapter_c;
+	chapter_c_t *chapter_c;
 } channel_t;
 
 #define MAX_MIDI_CHANNELS	16

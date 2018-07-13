@@ -74,7 +74,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
             logging_printf(LOGGING_WARN, "Service name collision, renaming service to '%s'\n", sd_name_copy);
 
             /* And recreate the services */
-            create_services(avahi_entry_group_get_client(g));
+            create_services( avahi_entry_group_get_client(g) );
             break;
         }
 
@@ -197,10 +197,22 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 
 void dns_service_publisher_cleanup( void )
 {
+	if( group )
+	{
+		avahi_entry_group_free( group );
+		group = NULL;
+	}
+
 	if( client)
 	{
 		avahi_client_free( client );
 		client = NULL;
+	}
+
+	if( threaded_poll )
+	{
+		avahi_threaded_poll_free( threaded_poll );
+		threaded_poll = NULL;
 	}
 
 	if( sd_name_copy )
@@ -213,12 +225,6 @@ void dns_service_publisher_cleanup( void )
 	{
 		avahi_free( sd_service_copy );
 		sd_service_copy = NULL;
-	}
-
-	if( threaded_poll )
-	{
-		avahi_threaded_poll_free( threaded_poll );
-		threaded_poll = NULL;
 	}
 }
 

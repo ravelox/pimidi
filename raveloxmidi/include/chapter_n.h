@@ -64,6 +64,6 @@ void chapter_n_note_pack( chapter_n_note_t *note , char **packed , size_t *size 
 void chapter_n_note_destroy( chapter_n_note_t **note );
 chapter_n_note_t * chapter_n_note_create( void );
 void chapter_n_note_dump( chapter_n_note_t *note );
-void chapter_n_note_reset( chapter_n_note_t *note );
+void chapter_n_note_reset( chapter_n_note_t **note );
 
 #endif

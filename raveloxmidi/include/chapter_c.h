@@ -41,7 +41,7 @@ typedef struct chapter_c_t {
 
 chapter_c_t *chapter_c_create( void );
 void chapter_c_unpack( unsigned char *packed, size_t size, chapter_c_t **chapter_c );
-void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *size );
+void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size );
 void chapter_c_destroy( chapter_c_t **chapter_c );
 void chapter_c_reset( chapter_c_t *chapter_c );
 void chapter_c_dump( chapter_c_t *chapter_c );

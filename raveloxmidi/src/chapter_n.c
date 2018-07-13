@@ -284,7 +284,7 @@ void chapter_n_reset( chapter_n_t *chapter_n )
 
 	for( i = 0 ; i < chapter_n->num_notes ; i++ )
 	{
-		chapter_n_note_reset( chapter_n->notes[i] );
+		chapter_n_note_reset( &chapter_n->notes[i] );
 	}
 	chapter_n->num_notes = 0;
 	memset( chapter_n->offbits, 0, MAX_OFFBITS );
@@ -333,6 +333,7 @@ chapter_n_note_t * chapter_n_note_create( void )
 	if( note )
 	{
 		memset( note , 0 , sizeof( chapter_n_note_t ) );
+		logging_printf(LOGGING_DEBUG,"chapter_n_note_create:note=%p\n", note);
 	}
 
 	return note;
@@ -345,12 +346,13 @@ void chapter_n_note_dump( chapter_n_note_t *note )
 	logging_printf( LOGGING_DEBUG, "chapter_n_note: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);
 }
 
-void chapter_n_note_reset( chapter_n_note_t *note )
+void chapter_n_note_reset( chapter_n_note_t **note )
 {
 	if( ! note ) return;
 
-	note->S = 0;
-	note->num = 0;
-	note->Y = 0;
-	note->velocity = 0;
+	(*note)->S = 0;
+	(*note)->num = 0;
+	(*note)->Y = 0;
+	(*note)->velocity = 0;
+	chapter_n_note_destroy( note );
 }

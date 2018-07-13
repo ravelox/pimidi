@@ -81,7 +81,7 @@ static void config_load_file( char *filename )
 
 		if( ! return_value )
 		{
-			logging_printf( LOGGING_ERROR, "config_load_file: Unable to read config (file=\"%s\")\n", filename );
+			fprintf( stderr, "config_load_file: Unable to read config (file=\"%s\")\n", filename );
 			break;
 		}
 
@@ -184,6 +184,7 @@ void config_destroy( void )
 {
 	int i = 0;
 
+	fprintf( stderr, "config_destroy config_items=%p num_items=%u\n", config_items, num_items );
 	if( ! config_items ) return;
 	if( num_items == 0 ) return;
 
@@ -257,7 +258,7 @@ void config_add_item(char *key, char *value )
 			new_config_item_list = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
 			if( ! new_config_item_list )
 			{
-				logging_printf(LOGGING_ERROR, "config_add_item: Insufficient memory to create new config item\n");
+				fprintf(stderr, "config_add_item: Insufficient memory to create new config item\n");
 				free( new_item );
 				return;
 			}
