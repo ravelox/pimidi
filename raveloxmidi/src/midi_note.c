@@ -24,9 +24,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <arpa/inet.h>
-
 #include "midi_note.h"
+#include "midi_command.h"
 #include "utils.h"
 
 #include "logging.h"
@@ -108,3 +107,25 @@ void midi_note_dump( midi_note_t *midi_note )
 	logging_printf( LOGGING_DEBUG, "MIDI Note(command=%d,channel=%d,note=%d,velocity=%d)\n",
 		midi_note->command, midi_note->channel, midi_note->note, midi_note->velocity);
 }
+
+int midi_note_from_command( midi_command_t *command , midi_note_t **midi_note )
+{
+	int ret = 0;
+
+	if( ! command ) return -1;
+
+	*midi_note = midi_note_create();
+	
+	if( ! *midi_note ) return -1;
+
+	(*midi_note)->command = command->channel_message.message;
+	(*midi_note)->channel = command->channel_message.channel;
+	if( command->data_len > 0 )
+	{
+		(*midi_note)->note = (command->data[0] & 0x7f );
+		(*midi_note)->velocity = ( command->data[1] & 0x7f );
+	}
+
+	return ret;
+}
+

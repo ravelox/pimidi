@@ -46,6 +46,7 @@ extern int errno;
 #include "cmd_end_handler.h"
 
 #include "midi_note.h"
+#include "midi_control.h"
 #include "rtp_packet.h"
 #include "midi_command.h"
 #include "midi_payload.h"
@@ -202,6 +203,7 @@ int net_socket_listener( void )
 				size_t packed_rtp_buffer_len = 0;
 
 				midi_note_t *midi_note = NULL;
+				midi_control_t *midi_control = NULL;
 				midi_payload_t *midi_payload = NULL;
 
 
@@ -224,30 +226,34 @@ int net_socket_listener( void )
 					uint8_t ctx_id = 0;
 					char *packed_journal = NULL;
 					size_t packed_journal_len = 0;
+					char *description = NULL;
+					enum midi_message_type_t message_type = 0;
 
 					hex_dump( packet, recv_len );
 					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 					midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
 
-					if( packed_journal_len > 0 )
-					{
-						midi_payload_toggle_j( midi_payload );
-					}
 					
-					midi_payload_pack( midi_payload, &packed_payload, &packed_payload_len );
-					logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,len=%u\n", packed_payload, packed_payload_len);
-					hex_dump( packed_payload, packed_payload_len );
 
 
 					// Build the RTP packet
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
 					{
-
 						// Check that the connection id is active
 						if( ! net_ctx_is_used( ctx_id ) ) continue;
 
 						// Get a journal if there is one
 						net_ctx_journal_pack( ctx_id , &packed_journal, &packed_journal_len);
+
+						if( packed_journal_len > 0 )
+						{
+							midi_payload_toggle_j( midi_payload );
+						}
+						// We have to pack the payload again each time because some connections may not have a journal
+						// and the flag to indicate the journal being present is in the payload
+						midi_payload_pack( midi_payload, &packed_payload, &packed_payload_len );
+						logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,len=%u\n", packed_payload, packed_payload_len);
+						hex_dump( packed_payload, packed_payload_len );
 
 						// Join the packed MIDI payload and the journal together
 						packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
@@ -281,23 +287,66 @@ int net_socket_listener( void )
 						FREENULL( "packed_journal", (void **)&packed_journal );
 					}
 
-					// Do some cleanup
+					// Clean up
 					FREENULL( "packed_payload", (void **)&packed_payload );
 					midi_payload_destroy( &midi_payload );
 
-					ret = midi_note_unpack( &midi_note, packet + 1 , recv_len - 1);
-
-					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					// Loop through the detected MIDI commands and add them to the appropriate journal
+					for( midi_command_index = 0; midi_command_index < num_midi_commands; midi_command_index++ )
 					{
-						// Check that the connection id is active
-						if( ! net_ctx_is_used( ctx_id ) ) continue;
+						midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
+						midi_command_dump( &(midi_commands[ midi_command_index ]) );
 
-						net_ctx_add_journal_note( ctx_id , midi_note );
+						switch( message_type )
+						{
+							case MIDI_NOTE_OFF:
+							case MIDI_NOTE_ON:
+								ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+								break;
+							case MIDI_CONTROL_CHANGE:	
+								ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+								break;
+							default:
+								continue;
+						}
+
+						// Loop through each active connection
+						for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+						{
+							// Check that the connection id is active
+							if( ! net_ctx_is_used( ctx_id ) ) continue;
+
+							switch( message_type )
+							{
+								case MIDI_NOTE_OFF:
+								case MIDI_NOTE_ON:
+									net_ctx_add_journal_note( ctx_id , midi_note );
+									break;
+								case MIDI_CONTROL_CHANGE:
+									net_ctx_add_journal_control( ctx_id, midi_control );
+									break;
+								default:
+									continue;
+							}
+						}
+
+						// Clean up
+						switch( message_type )
+						{
+							case MIDI_NOTE_OFF:
+							case MIDI_NOTE_ON:
+								midi_note_destroy( &midi_note );
+								break;
+							case MIDI_CONTROL_CHANGE:
+								midi_control_destroy( &midi_control );
+								break;
+							default:
+								break;
+						}
 					}
 				}
 
-				midi_note_destroy( &midi_note );
-
+				// Clean out the array of commands
 				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
 				{
 					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );

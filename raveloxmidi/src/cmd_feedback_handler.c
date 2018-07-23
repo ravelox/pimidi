@@ -61,7 +61,7 @@ net_response_t * cmd_feedback_handler( void *data )
 	}
 
 	logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
-	if( feedback->rtp_seq[1] >= ctx->seq )
+	if( feedback->rtp_seq[1] > ctx->seq )
 	{
 		logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Resetting journal\n" );
 		journal_reset( ctx->journal );

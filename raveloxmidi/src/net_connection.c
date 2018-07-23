@@ -43,8 +43,6 @@ uint8_t _max_ctx = 0;
 
 void net_ctx_reset( net_ctx_t *ctx )
 {
-	journal_t *journal;
-
 	if( ! ctx ) return;
 
 	ctx->used = 0;
@@ -54,9 +52,6 @@ void net_ctx_reset( net_ctx_t *ctx )
 	ctx->seq = 0x0000;
 	FREENULL( "ip_address",(void **)&(ctx->ip_address) );
 	journal_destroy( &(ctx->journal) );
-	
-	journal_init( &journal );
-	ctx->journal = journal;
 
 	ctx->data_port = 0;
 	ctx->control_port = 0;
@@ -72,6 +67,8 @@ void net_ctx_dump( net_ctx_t *ctx )
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
 {
+	journal_t *journal = NULL;
+
 	if( ! ctx ) return;
 
 	if( ctx->used > 0 ) return;
@@ -88,6 +85,8 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 
 	ctx->ip_address = ( char *) strdup( ip_address );
 
+	journal_init( &journal );
+	ctx->journal = journal;
 }
 
 static net_ctx_t * new_net_ctx( void )
@@ -134,13 +133,10 @@ void net_ctx_destroy( void )
 		if( ctx[ i ] )
 		{
 			net_ctx_reset( ctx[i] );
-			journal_destroy( & (ctx[i]->journal) );
-			free( ctx[i] );
-			ctx[i] = NULL;
+			FREENULL( "ctx[i]", (void **)&(ctx[i]) );
 		}
 	}
-	free( ctx );
-	ctx = NULL;
+	FREENULL( "ctx", (void **)&ctx);
 }
 
 int net_ctx_is_used( uint8_t id )
@@ -221,6 +217,21 @@ void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_t *midi_note )
 	if( ! ctx) return;
 
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
+
+	journal_dump( ctx->journal );
+}
+
+void net_ctx_add_journal_control( uint8_t ctx_id, midi_control_t *midi_control )
+{
+	net_ctx_t *ctx = NULL;
+	
+	if( ctx_id > _max_ctx - 1 ) return;
+	if( ! midi_control ) return;
+
+	ctx = net_ctx_find_by_id( ctx_id );
+	if( !ctx ) return;
+
+	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
 }
 
 void net_ctx_journal_dump( uint8_t ctx_id )
@@ -264,6 +275,7 @@ void net_ctx_journal_reset( uint8_t ctx_id )
 
 	if( ! ctx) return;
 
+	logging_printf(LOGGING_DEBUG,"net_ctx_journal_reset( %u )\n", ctx_id );
 	journal_reset( ctx->journal);
 }
 

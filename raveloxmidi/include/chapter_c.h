@@ -21,6 +21,8 @@
 #ifndef CHAPTER_C_JOURNAL_H
 #define CHAPTER_C_JOURNAL_H
 
+#define MAX_CHAPTER_C_CONTROLLERS	127
+
 typedef struct controller_log_t {
 	uint8_t S;
 	uint8_t number;
@@ -34,7 +36,7 @@ typedef struct controller_log_t {
 typedef struct chapter_c_t {
 	uint8_t S;
 	uint8_t len;
-	controller_log_t *controller_log;
+	controller_log_t controller_log[MAX_CHAPTER_C_CONTROLLERS];
 } chapter_c_t;
 
 #define PACKED_CHAPTER_C_HEADER_SIZE 1

@@ -14,6 +14,7 @@ raveloxmidi_SOURCES = \
 	net_socket.c \
 	net_response.c \
 	midi_note.c \
+	midi_control.c \
 	midi_payload.c \
 	midi_command.c \
 	net_applemidi.c \

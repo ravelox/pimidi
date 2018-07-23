@@ -21,9 +21,11 @@
 #ifndef MIDI_COMMAND_H
 #define MIDI_COMMAND_H
 
+#include "midi_note.h"
+
 typedef struct channel_message_t {
-	unsigned char	message:4;
 	unsigned char	channel:4;
+	unsigned char	message:4;
 } channel_message_t;
 
 typedef struct system_message_t {
@@ -76,5 +78,6 @@ void midi_command_reset( midi_command_t *command );
 void midi_command_map( midi_command_t *command , char **description, enum midi_message_type_t *message_type );
 
 void midi_command_dump( midi_command_t *command );
+int midi_note_from_command( midi_command_t *command , midi_note_t **midi_note );
 
 #endif

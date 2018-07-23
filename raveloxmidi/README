@@ -1,9 +1,9 @@
 Introduction
 - - - - - - -
 
-raveloxmidi is a simple proxy to send MIDI NoteOn and NoteOff events from the local machine via RTP MIDI.
+raveloxmidi is a simple proxy to send MIDI NoteOn,NoteOff and Control Change (CC) events from the local machine via RTP MIDI or to receive any MIDI events from a remote source via RTP MIDI and write them to a file.
 
-The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads.
+The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads. As some people have started to use this, there have been several requests for the ability to send Control Change events too.
 Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on Windows talking to FL Studio 11.
 
 Except for the Avahi code, it's all mine but I have leaned heavily on the following references:
@@ -37,16 +37,22 @@ SYNC packets are sent from the connecting server on a regular basis.
 Stage 2 - MIDI
 - - - - - - - 
 
-This stage uses the defined MIDI RTP payload. raveloxmidi opens an additional listening port (by default 5006) which will accept a simple data packet containing note information. Where Apple MIDI packets are prefixed with a single byte 0xff, note data packets are expected to be prefixed with 0xaa. The rest of data packet is expected to be a MIDI Note command.
+This stage uses the defined MIDI RTP payload. raveloxmidi opens an additional listening port (by default 5006) which will accept a simple data packet containing note information. Where Apple MIDI packets are prefixed with a single byte 0xff, note data packets are expected to be prefixed with 0xaa. The rest of data packet is expected to be a MIDI Note or ControlChange command.
 
-Command: 4 bits ( NoteOn = 0x9, NoteOff = 0x8 )
+Command: 4 bits ( NoteOn = 0x09, NoteOff = 0x08 , ControlChange = 0x0B )
 Channel: 4 bits ( 0 - 15 )
+
+Note events are defined as:
 Note: 8 bits ( -127 to 127 )
 Velocity: 8 bits ( 0 to 127 )
 
-When raveloxmidi receives the note packet, it will send that MIDI command to any  active connections in the connection table. 
+Control Change events are defined as:
+Controller Number: 8 bits (0 to 127 with 120-127 as Channel Mode messages)
+Controller Value : 8 bits (0 to 127).
 
-The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn and NoteOff events, only Chapter N journal entries are stored.
+When raveloxmidi receives the command packet, it will send that MIDI command to any  active connections in the connection table. 
+
+The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn, NoteOff and ControlChange events, only Chapter N and Chapter C journal entries are stored.
 
 Stage 3 - Feedback
 - - - - - - - - - 
@@ -60,7 +66,7 @@ raveloxmidi keeps track of the sequence number in the connection table and, if t
 Inbound MIDI commands 
 - - - - - - - - - - -
 
-raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet.
+raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection.
 
 Configuration
 - - - - - - -

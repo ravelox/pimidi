@@ -44,6 +44,7 @@ typedef enum midi_payload_data_t {
 	MIDI_PAYLOAD_STREAM = 0,
 	MIDI_PAYLOAD_RTP
 } midi_payload_data_t;
+
 void midi_payload_destroy( midi_payload_t **payload );
 void midi_payload_reset( midi_payload_t *payload );
 midi_payload_t * midi_payload_create( void );

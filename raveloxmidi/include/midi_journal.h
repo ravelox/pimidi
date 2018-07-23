@@ -22,6 +22,7 @@
 #define MIDI_JOURNAL_H
 
 #include "midi_note.h"
+#include "midi_control.h"
 
 #include "chapter_p.h"
 #include "chapter_n.h"
@@ -80,7 +81,6 @@ void journal_header_destroy( journal_header_t **header );
 void journal_pack( journal_t *journal, char **packed, size_t *size );
 int journal_init( journal_t **journal );
 void journal_destroy( journal_t **journal );
-void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_note );
 void channel_header_dump( channel_header_t *header );
 void channel_header_reset( channel_header_t *header );
 void channel_journal_dump( channel_t *channel );
@@ -90,5 +90,8 @@ void journal_header_dump( journal_header_t *header );
 void journal_header_reset( journal_header_t *header );
 void journal_dump( journal_t *journal );
 void journal_reset( journal_t *journal );
+
+void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_note );
+void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t *midi_control );
 
 #endif

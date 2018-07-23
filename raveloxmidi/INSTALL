@@ -36,7 +36,6 @@ To build a .deb package, from a fresh clone:
 
 A build/ directory will be created containing the .deb package
 
-
 To build a .rpm package, from a fresh clone:
 
 1. cd raveloxmidi

@@ -127,7 +127,10 @@ void midi_command_dump( midi_command_t *command )
 	if( ! command ) return;
 
 	midi_command_map( command, &description, &message_type );
+
 	logging_printf(LOGGING_DEBUG, "MIDI Command: status=0x%02X,description=\"%s\"\n", command->status, description );
+	logging_printf(LOGGING_DEBUG, "\tchannel_message:channel=0x%0x message=0x%0x\n", command->channel_message.channel, command->channel_message.message);
+	logging_printf(LOGGING_DEBUG, "\tsystem_message: message=0x%0x\n", command->system_message.message); 
+	logging_printf(LOGGING_DEBUG, "\tdelta=%zu, data_len=%u\n", command->delta, command->data_len);
+	if( command->data_len > 0 ) hex_dump( command->data , command->data_len );
 }
-
-

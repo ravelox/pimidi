@@ -71,7 +71,7 @@ journal_header_t * journal_header_create( void )
 
 void journal_header_destroy( journal_header_t **header )
 {
-	FREENULL( "journal_header", (void **)header );
+	if( header ) FREENULL( "journal_header", (void **)header );
 }
 
 void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size )
@@ -105,7 +105,7 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 void channel_header_destroy( channel_header_t **header )
 {
-	FREENULL( "channel_header", (void **)header);
+	if( header) FREENULL( "channel_header", (void **)header);
 }
 
 channel_header_t * channel_header_create( void )
@@ -192,8 +192,7 @@ void channel_destroy( channel_t **channel )
 		channel_header_destroy( &( (*channel)->header ) );
 	}
 
-	free( *channel );
-	*channel = NULL;
+	FREENULL("channel", (void **) channel);
 }
 
 channel_t * channel_create( void )
@@ -252,7 +251,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	if( ! journal ) return;
 
-	logging_printf( LOGGING_DEBUG, "journal_pack: journal_has_data = %s\n", ( journal_has_data( journal )  ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "journal_pack: journal_has_data = %s header->totchan=%u\n", ( journal_has_data( journal )  ? "YES" : "NO" ) , journal->header->totchan);
 	if(  ! journal_has_data( journal ) ) return;
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
@@ -411,6 +410,48 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 
 	journal->channels[ channel ]->chapter_n->notes[note_slot] = new_note;
 	journal->channels[ channel ]->chapter_n->num_notes++;
+}
+
+void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t *midi_control)
+{
+	unsigned char channel = 0;
+	unsigned char controller = 0;
+
+	if( ! journal ) return;
+	if( ! midi_control ) return;
+
+	channel = midi_control->channel;
+	if( channel > MAX_MIDI_CHANNELS ) return;
+
+	controller = midi_control->controller_number;
+	if( controller > MAX_CHAPTER_C_CONTROLLERS ) return;
+
+	// Set Journal Header A flag
+	journal->header->bitfield |= 0x02;
+	
+	if( ! journal->channels[ channel ] )
+	{
+		channel_t *channel_journal = channel_create();
+
+		if( ! channel_journal ) return;
+		journal->channels[ channel ] = channel_journal;
+
+	}
+
+	// Set flag to show that chapter C is present
+	journal->channels[ channel ]->header->bitfield |= CHAPTER_C;
+
+	if( journal->channels[ channel ]->header->chan != ( channel + 1 ) )
+	{
+		journal->channels[ channel ]->header->chan = ( channel + 1 );
+		journal->header->totchan +=1;
+	}
+
+	journal->header->seq = seq;
+
+	journal->channels[ channel]->chapter_c->controller_log[ controller ].S = 1;
+	journal->channels[ channel]->chapter_c->controller_log[ controller ].number = controller;
+	journal->channels[ channel]->chapter_c->controller_log[ controller ].value = midi_control->controller_value;
 }
 
 void channel_header_dump( channel_header_t *header )

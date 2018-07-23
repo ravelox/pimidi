@@ -339,7 +339,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 		}
 
 		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
-		logging_printf( LOGGING_INFO, "MIDI command( num=%u,delta=%zu,command=\"%s\")\n", *num_commands, (*commands)[index].delta, command_description);
+		midi_command_dump( &((*commands)[index]));
 
 		switch( message_type )
 		{
