@@ -79,13 +79,13 @@ chapter_n_header_t * chapter_n_header_create( void )
 	return header;
 }
 
-void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
+void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *size )
 {
 	unsigned char *packed_header = NULL;
-	char *packed_note = NULL;
-	char *note_buffer = NULL;
-	char *offbits_buffer = NULL;
-	char *p = NULL;
+	unsigned char *packed_note = NULL;
+	unsigned char *note_buffer = NULL;
+	unsigned char *offbits_buffer = NULL;
+	unsigned char *p = NULL;
 	int i = 0;
 	size_t header_size, note_size, note_buffer_size;
 	int offbits_size;
@@ -109,7 +109,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
 	if( chapter_n->num_notes > 0 )
 	{
 		note_buffer_size = CHAPTER_N_NOTE_PACKED_SIZE * chapter_n->num_notes;
-		note_buffer = ( char * ) malloc( note_buffer_size );
+		note_buffer = ( unsigned char * ) malloc( note_buffer_size );
 		if( note_buffer ) 
 		{
 			memset( note_buffer, 0 , note_buffer_size);
@@ -134,15 +134,14 @@ void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size )
 	offbits_size = ( chapter_n->header->high - chapter_n->header->low ) + 1;
 	if( offbits_size > 0 )
 	{
-		offbits_buffer = ( char * )malloc( offbits_size );
+		offbits_buffer = ( unsigned char * )malloc( offbits_size );
 		p = chapter_n->offbits + chapter_n->header->low;
 		memcpy( offbits_buffer, p, offbits_size );
 		*size += offbits_size;
 	}
 
 	// Now pack it all together
-
-	*packed = ( char * ) malloc( *size );
+	*packed = ( unsigned char * ) malloc( *size );
 
 	if( ! packed ) goto chapter_n_pack_cleanup;
 
@@ -194,7 +193,7 @@ chapter_n_t * chapter_n_create( void )
 			chapter_n->notes[i] = NULL;
 		}
 		
-		chapter_n->offbits = ( char *)malloc( MAX_OFFBITS );
+		chapter_n->offbits = ( unsigned char *)malloc( MAX_OFFBITS );
 		if (! chapter_n->offbits )
 		{
 			chapter_n_destroy( &chapter_n );
@@ -291,16 +290,16 @@ void chapter_n_reset( chapter_n_t *chapter_n )
 	chapter_n_header_reset( chapter_n->header );
 }
 
-void chapter_n_note_pack( chapter_n_note_t *note , char **packed , size_t *size )
+void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size_t *size )
 {
-	char *p = NULL;
+	unsigned char *p = NULL;
 
 	*packed = NULL;
 	*size = 0;
 
 	if( ! note ) return;
 
-	*packed = ( char *)malloc( CHAPTER_N_NOTE_PACKED_SIZE );
+	*packed = ( unsigned char *)malloc( CHAPTER_N_NOTE_PACKED_SIZE );
 
 	if( ! packed ) return;
 

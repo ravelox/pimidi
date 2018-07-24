@@ -51,7 +51,7 @@ static void config_set_defaults( void )
 	config_add_item("security.check", "yes");
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
-	config_add_item("file_mode", "0700");
+	config_add_item("file_mode", "0640");
 }
 
 static void config_load_file( char *filename )
@@ -184,7 +184,7 @@ void config_destroy( void )
 {
 	int i = 0;
 
-	fprintf( stderr, "config_destroy config_items=%p num_items=%u\n", config_items, num_items );
+	fprintf( stderr, "config_destroy config_items=%p num_items=%u\n", config_items, num_items - 1 );
 	if( ! config_items ) return;
 	if( num_items == 0 ) return;
 

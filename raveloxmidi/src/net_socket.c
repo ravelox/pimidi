@@ -233,9 +233,6 @@ int net_socket_listener( void )
 					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
 					midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
 
-					
-
-
 					// Build the RTP packet
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
 					{
@@ -363,6 +360,7 @@ int net_socket_listener( void )
 
 				rtp_packet = rtp_packet_create();
 				rtp_packet_unpack( packet, recv_len, rtp_packet );
+				logging_printf(LOGGING_DEBUG, "net_socket_listener: inbound MIDI received\n");
 				rtp_packet_dump( rtp_packet );
 
 				midi_payload_unpack( &midi_payload, rtp_packet->payload, recv_len );
@@ -383,6 +381,7 @@ int net_socket_listener( void )
 				// If an inbound midi file is defined, write the MIDI commands to it
 				if( inbound_midi_fd >= 0 )
 				{
+					logging_printf(LOGGING_DEBUG, "net_socket_listener: Write to file\n");
 					for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 					{
 						unsigned char *raw_buffer = (unsigned char *)malloc( 2 + midi_commands[midi_command_index].data_len );
@@ -483,6 +482,7 @@ int net_socket_setup( void )
 		logging_printf(LOGGING_WARN, "net_socket_setup: No filename defined for inbound_midi\n");
 	} else if( ! check_file_security( inbound_midi_filename ) ) {
 		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
+		logging_printf(LOGGING_WARN, "net_socket_setup: File mode=%s\n", config_get("file_mode") );
 	} else {
 		long file_mode_param = strtol( config_get("file_mode") , NULL, 8 );
 		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT , (mode_t)file_mode_param);

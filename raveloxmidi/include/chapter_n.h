@@ -21,8 +21,6 @@
 #ifndef CHAPTER_N_JOURNAL_H
 #define CHAPTER_N_JOURNAL_H
 
-// #include "chapter_n_note_packet.h"
-
 typedef struct chapter_n_note_t {
 	unsigned char	S:1;
 	unsigned char	num:7;
@@ -46,13 +44,13 @@ typedef struct chapter_n_t {
 	chapter_n_header_t	*header;
 	uint16_t		num_notes;
 	chapter_n_note_t	*notes[MAX_CHAPTER_N_NOTES];
-	char			*offbits;
+	unsigned char		*offbits;
 } chapter_n_t;
 
 void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed , size_t *size );
 void chapter_n_header_destroy( chapter_n_header_t **header );
 chapter_n_header_t * chapter_n_header_create( void );
-void chapter_n_pack( chapter_n_t *chapter_n, char **packed, size_t *size );
+void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *size );
 chapter_n_t * chapter_n_create( void );
 void chapter_n_destroy( chapter_n_t **chapter_n );
 void chapter_n_header_dump( chapter_n_header_t *header );
@@ -60,7 +58,7 @@ void chapter_n_header_reset( chapter_n_header_t *header );
 void chapter_n_dump( chapter_n_t *chapter_n );
 void chapter_n_reset( chapter_n_t *chapter_n );
 
-void chapter_n_note_pack( chapter_n_note_t *note , char **packed , size_t *size );
+void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size_t *size );
 void chapter_n_note_destroy( chapter_n_note_t **note );
 chapter_n_note_t * chapter_n_note_create( void );
 void chapter_n_note_dump( chapter_n_note_t *note );

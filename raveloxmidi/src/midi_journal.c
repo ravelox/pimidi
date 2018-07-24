@@ -64,6 +64,7 @@ journal_header_t * journal_header_create( void )
 	if( journal_header )
 	{
 		memset( journal_header , 0 , sizeof( journal_header_t ) );
+		journal_header->bitfield |= JOURNAL_HEADER_S_FLAG;
 	}
 
 	return journal_header;
@@ -92,7 +93,7 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 	p = *packed;
 
-	temp_header |= ( ( header->S & 0x01 ) << 15 );
+	temp_header |= ( header->S << 15 );
 	temp_header |= ( ( ( header->chan == 0 ? 0 : header->chan - 1 ) & 0x0f ) << 11 );
 	temp_header |= ( ( header->H & 0x01 ) << 10 );
 	temp_header |= ( ( header->len & 0x03ff ) );
@@ -117,6 +118,7 @@ channel_header_t * channel_header_create( void )
 	if( header )
 	{
 		memset( header, 0 , sizeof( channel_header_t ) );
+		header->S = 1;
 	}
 
 	return header;
@@ -125,8 +127,8 @@ channel_header_t * channel_header_create( void )
 void channel_pack( channel_t *channel, char **packed, size_t *size )
 {
 	unsigned char *packed_channel_header = NULL;
-	char *packed_chapter_n = NULL;
-	char *packed_chapter_c = NULL;
+	unsigned char *packed_chapter_n = NULL;
+	unsigned char *packed_chapter_c = NULL;
 	
 	size_t packed_channel_header_size = 0;
 	size_t packed_chapter_n_size = 0;
@@ -141,14 +143,24 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	if( ! channel ) return;
 
 	channel->header->len = CHANNEL_HEADER_PACKED_SIZE;
+	logging_printf(LOGGING_DEBUG, "channel_pack: channel->header->len=%u\n", channel->header->len);
 
-	chapter_n_pack( channel->chapter_n, &packed_chapter_n, &packed_chapter_n_size );
-	channel->header->len += packed_chapter_n_size;
+	if( channel->chapter_n )
+	{
+		chapter_n_pack( channel->chapter_n, &packed_chapter_n, &packed_chapter_n_size );
+		channel->header->len += packed_chapter_n_size;
+		logging_printf(LOGGING_DEBUG, "channel_pack: packed_chapter_n_size=%u channel->header->len=%u\n", packed_chapter_n_size,channel->header->len);
+	}
 
-	chapter_c_pack( channel->chapter_c, &packed_chapter_c, &packed_chapter_c_size );
-	channel->header->len += packed_chapter_c_size;
+	if( channel->chapter_c )
+	{
+		chapter_c_pack( channel->chapter_c, &packed_chapter_c, &packed_chapter_c_size );
+		channel->header->len += packed_chapter_c_size;
+		logging_printf(LOGGING_DEBUG, "channel_pack: packed_chapter_c_size=%u channel->header->len=%u\n", packed_chapter_c_size,channel->header->len);
+	}
 
 	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
+	logging_printf(LOGGING_DEBUG, "channel_pack: packed_channel_header_size=%u channel->header->len=%u\n", packed_channel_header_size,channel->header->len);
 
 	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size );
 
@@ -199,8 +211,6 @@ channel_t * channel_create( void )
 {
 	channel_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
-	chapter_n_t *new_chapter_n = NULL;
-	chapter_c_t *new_chapter_c = NULL;
 	
 	new_channel = ( channel_t * ) malloc( sizeof( channel_t ) );
 
@@ -216,21 +226,8 @@ channel_t * channel_create( void )
 
 	new_channel->header = new_header;
 
-	new_chapter_n = chapter_n_create();
-	if( ! new_chapter_n )
-	{
-		channel_destroy( &new_channel );
-		return NULL;
-	}
-	new_channel->chapter_n = new_chapter_n;
-
-	new_chapter_c = chapter_c_create();
-	if( ! new_chapter_c )
-	{
-		channel_destroy( &new_channel );
-		return NULL;
-	}
-	new_channel->chapter_c = new_chapter_c;
+	new_channel->chapter_n = NULL;
+	new_channel->chapter_c = NULL;
 		
 	return new_channel;
 }
@@ -357,8 +354,8 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 	channel = midi_note->channel;
 	if( channel > MAX_MIDI_CHANNELS ) return;
 
-	// Set Journal Header A flag
-	journal->header->bitfield |= 0x02;
+	// Set Journal Header A and S flags
+	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
 	
 	if( ! journal->channels[ channel ] )
 	{
@@ -367,6 +364,11 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 		if( ! channel_journal ) return;
 		journal->channels[ channel ] = channel_journal;
 
+	}
+
+	if( ! journal->channels[ channel ]->chapter_n )
+	{
+		journal->channels[ channel ]->chapter_n = chapter_n_create();
 	}
 
 	journal->channels[ channel ]->header->bitfield |= CHAPTER_N;
@@ -426,8 +428,8 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	controller = midi_control->controller_number;
 	if( controller > MAX_CHAPTER_C_CONTROLLERS ) return;
 
-	// Set Journal Header A flag
-	journal->header->bitfield |= 0x02;
+	// Set Journal Header A and S flags
+	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
 	
 	if( ! journal->channels[ channel ] )
 	{
@@ -436,6 +438,11 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 		if( ! channel_journal ) return;
 		journal->channels[ channel ] = channel_journal;
 
+	}
+
+	if( ! journal->channels[ channel ]->chapter_c )
+	{
+		journal->channels[ channel ]->chapter_c = chapter_c_create();
 	}
 
 	// Set flag to show that chapter C is present
@@ -448,6 +455,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	}
 
 	journal->header->seq = seq;
+
 
 	journal->channels[ channel]->chapter_c->controller_log[ controller ].S = 1;
 	journal->channels[ channel]->chapter_c->controller_log[ controller ].number = controller;
@@ -466,7 +474,7 @@ void channel_header_reset( channel_header_t *header )
 	if( ! header ) return;
 
 	header->chan = 0;
-	header->S = 0;
+	header->S = 1;
 	header->H = 0;
 	header->bitfield = 0;
 }
@@ -475,6 +483,7 @@ void channel_journal_dump( channel_t *channel )
 {
 	if( ! channel ) return;
 
+	logging_printf(LOGGING_DEBUG,"channel_journal_dump\n");
 	channel_header_dump( channel->header );
 
 	if( channel->header->bitfield & CHAPTER_N )
@@ -521,7 +530,7 @@ void journal_header_reset( journal_header_t *header )
 {
 	if( ! header ) return;
 
-	header->bitfield = 0;
+	header->bitfield = JOURNAL_HEADER_S_FLAG;
 	header->totchan = 0;
 	header->seq = 0;
 }

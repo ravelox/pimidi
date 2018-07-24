@@ -68,6 +68,11 @@ typedef struct journal_t {
 	channel_t *channels[MAX_MIDI_CHANNELS];
 } journal_t;
 
+#define JOURNAL_HEADER_S_FLAG	0x08
+#define JOURNAL_HEADER_Y_FLAG	0x04
+#define JOURNAL_HEADER_A_FLAG	0x02
+#define JOURNAL_HEADER_H_FLAG	0x01
+
 void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size );
 void channel_header_destroy( channel_header_t **header );
 channel_header_t * channel_header_create( void );

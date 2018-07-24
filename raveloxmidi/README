@@ -52,7 +52,7 @@ Controller Value : 8 bits (0 to 127).
 
 When raveloxmidi receives the command packet, it will send that MIDI command to any  active connections in the connection table. 
 
-The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn, NoteOff and ControlChange events, only Chapter N and Chapter C journal entries are stored.
+The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note and control change events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn, NoteOff and ControlChange events, only Chapter N and Chapter C journal entries are stored.
 
 Stage 3 - Feedback
 - - - - - - - - - 
@@ -66,7 +66,7 @@ raveloxmidi keeps track of the sequence number in the connection table and, if t
 Inbound MIDI commands 
 - - - - - - - - - - -
 
-raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection.
+raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection. A Feedback response is sent back when inbound midi events are received.
 
 Configuration
 - - - - - - -
@@ -105,4 +105,4 @@ security.check
 inbound_midi
         Name of file to write inbound MIDI events to. This file is governed by the security check option. Default is /dev/sequencer
 file_mode
-        File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0700.
+        File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0640.

@@ -42,6 +42,7 @@ chapter_c_t *chapter_c_create( void )
 	}
 	
 	memset( new_chapter_c, 0, sizeof( chapter_c_t ) );
+	new_chapter_c->S = 1;
 
 	for( index = 0 ; index <= MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
@@ -112,10 +113,10 @@ void chapter_c_unpack( unsigned char *packed, size_t size, chapter_c_t **chapter
 	} while( current_size >= PACKED_CONTROLLER_LOG_SIZE );
 }
 
-void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
+void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *size )
 {
 	uint8_t index, current_size;
-	char *p;
+	unsigned char *p = NULL;
 
 	*packed = NULL;
 	*size = 0;
@@ -128,7 +129,6 @@ void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
 	{
 		if( chapter_c->controller_log[index].number == index )
 		{
-			logging_printf(LOGGING_DEBUG, "chapter_c_pack: controller_log[%u].number=%u\n", index, chapter_c->controller_log[index].number);
 			chapter_c->len++;
 		}
 	}
@@ -137,7 +137,7 @@ void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
 	if( chapter_c->len == 0 ) return;
 
 	*size = PACKED_CHAPTER_C_HEADER_SIZE + ( (chapter_c->len) * PACKED_CONTROLLER_LOG_SIZE );
-	*packed = (char *)malloc( *size );
+	*packed = (unsigned char *)malloc( *size );
 	
 	if(! packed )
 	{
@@ -145,27 +145,34 @@ void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
 		logging_printf(LOGGING_ERROR,"chapter_c_pack: Unable to allocate memory for packed chapter_c\n");
 		return;
 	}
+
 	memset( *packed, 0, *size );
 	current_size = *size;
 	p = *packed;
 		
 	// Pack the header
-	*p = ( ( chapter_c->S & 0x01 ) << 7 ) & ( chapter_c->len & 0x07 );
+	// LENGTH is number of controllers - 1
+	*p = ( chapter_c->S  << 7 ) | ( ( chapter_c->len - 1 ) & 0x7f );
+	logging_printf(LOGGING_DEBUG,"chapter_c_pack: header = 0x%02x\n", *p);
+
 	p++;
 	current_size--;
 
 	index = 0;
 
+	// Loop through the controllers
 	while( ( current_size >= PACKED_CONTROLLER_LOG_SIZE ) && ( index <= MAX_CHAPTER_C_CONTROLLERS ) )
 	{
 		// Short-circuit if the controller isn't active
 		if( chapter_c->controller_log[index].number == index )
 		{
-			*p = ( ( chapter_c->controller_log[index].S & 0x01 ) << 7 ) | ( chapter_c->controller_log[index].number & 0x07 );
+			controller_log_dump( &(chapter_c->controller_log[index]) );
+			*p = ( chapter_c->controller_log[index].S << 7 ) | ( chapter_c->controller_log[index].number & 0x7f );
+			logging_printf(LOGGING_DEBUG,"chapter_c_pack: controller = 0x%02x\n", *p);
 			p++;
 			current_size--;
 		
-			*p = (chapter_c->controller_log[index].A & 0x01 ) << 7 ;
+			*p = chapter_c->controller_log[index].A << 7 ;
 			if( chapter_c->controller_log[index].A == 1 )
 			{
 				*p |= ( chapter_c->controller_log[index].T << 6 );
@@ -173,6 +180,7 @@ void chapter_c_pack( chapter_c_t *chapter_c, char **packed, size_t *size )
 			} else {
 				*p |= ( chapter_c->controller_log[index].value  & 0x7f );
 			}
+			logging_printf(LOGGING_DEBUG,"chapter_c_pack: value = 0x%02x\n", *p);
 			p++;
 			current_size--;
 		}
@@ -194,8 +202,10 @@ void chapter_c_reset( chapter_c_t *chapter_c )
 	if( !chapter_c ) return;
 	
 	memset( chapter_c, 0, sizeof(chapter_c_t) );
+	chapter_c->S = 1; 
 	for( index = 0 ; index <= MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
+		chapter_c->controller_log[ index ].S = 1;
 		chapter_c->controller_log[ index ].number = 255;
 	}
 }
@@ -228,6 +238,8 @@ controller_log_t *controller_log_create( void )
 	}
 
 	memset( new_controller_log, 0, sizeof(controller_log_t ));
+	new_controller_log->S = 1;
+	new_controller_log->number=255;
 
 	return new_controller_log;
 }
@@ -243,6 +255,8 @@ void controller_log_reset( controller_log_t *controller_log )
 {
 	if(! controller_log ) return;
 	memset( controller_log, 0, sizeof(controller_log_t) );
+	controller_log->S = 1;
+	controller_log->number = 255;
 }
 
 void controller_log_dump( controller_log_t *controller_log )
