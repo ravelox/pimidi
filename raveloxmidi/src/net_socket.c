@@ -468,7 +468,7 @@ int net_socket_setup( void )
 	if(
 		net_socket_create( atoi( config_get("network.control.port") ) ) ||
 		net_socket_create( atoi( config_get("network.data.port") ) ) ||
-		net_socket_create( atoi( config_get("network.note.port") ) ) )
+		net_socket_create( atoi( config_get("network.local.port") ) ) )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
 		return -1;

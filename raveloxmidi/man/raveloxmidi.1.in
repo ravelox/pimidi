@@ -45,8 +45,8 @@ Port to listen on for RTP MIDI events from remote clients ( default is 5004 )
 .B network.rtsp.port
 Port to listen on for RTSP events from remote clients ( default is 5005 )
 .TP
-.B network.note.port
-Port to listen on for local MIDI notes ( default is 5006 )
+.B network.local.port
+Port to listen on for local MIDI  ( default is 5006 )
 network.note.port = 5006
 .TP
 .B network.socket_interval

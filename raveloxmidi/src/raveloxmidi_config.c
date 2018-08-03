@@ -39,7 +39,7 @@ static void config_set_defaults( void )
 	config_add_item("network.bind_address", "0.0.0.0");
 	config_add_item("network.control.port", "5004");
 	config_add_item("network.data.port", "5005");
-	config_add_item("network.note.port", "5006");
+	config_add_item("network.local.port", "5006");
 	config_add_item("network.socket_interval" , "5000" );
 	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
