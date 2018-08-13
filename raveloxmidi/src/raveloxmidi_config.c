@@ -30,10 +30,6 @@ extern int errno;
 
 #include "config.h"
 
-#ifdef HAVE_ALSA
-#include "raveloxmidi_alsa.h"
-#endif
-
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
@@ -183,12 +179,6 @@ void config_init( int argc, char *argv[] )
 			case 'R':
 				config_add_item("readonly", "yes");
 				break;
-#ifdef HAVE_ALSA
-			/* This option exits */
-			case 'L':
-				raveloxmidi_alsa_list_rawmidi_devices();
-				exit(0);
-#endif
 		}
 	} 
 
@@ -314,14 +304,8 @@ void config_usage( void )
 {
 	fprintf( stderr, "Usage:\n");
 	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-h]");
-#ifdef HAVE_ALSA
-	fprintf( stderr, " [-L]");
-#endif
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--help]");
-#ifdef HAVE_ALSA
-	fprintf( stderr, " [--listinterfaces]");
-#endif
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "-c filename\tName of config file to use\n");
@@ -330,9 +314,6 @@ void config_usage( void )
 	fprintf( stderr, "-N\t\tDo not run in the background\n");
 	fprintf( stderr, "-P filename\tName of file to write background pid\n");
 	fprintf( stderr, "-h\t\tThis output\n");
-#ifdef HAVE_ALSA
-	fprintf( stderr, "-L\t\tList available ALSA rawmidi interfaces\n");
-#endif
 	fprintf( stderr, "\nThe following configuration file items are default:\n");
 	config_dump();
 }
