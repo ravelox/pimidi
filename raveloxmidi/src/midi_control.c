@@ -24,7 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 
-//#include <arpa/inet.h>
+#include "config.h"
 
 #include "midi_control.h"
 #include "midi_command.h"

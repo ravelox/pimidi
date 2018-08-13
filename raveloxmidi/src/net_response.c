@@ -20,7 +20,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include <fcntl.h>
@@ -32,14 +31,10 @@
 
 #include <pthread.h>
 
-#include <errno.h>
-extern int errno;
-
 #include "net_response.h"
 #include "utils.h"
-
-#include "raveloxmidi_config.h"
 #include "logging.h"
+#include "config.h"
 
 net_response_t * net_response_create( void )
 {

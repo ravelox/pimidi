@@ -26,10 +26,11 @@
 
 #include <arpa/inet.h>
 
+#include "config.h"
+
 #include "net_applemidi.h"
 #include "utils.h"
 #include "logging.h"
-
 
 void net_applemidi_command_dump( net_applemidi_command *command)
 {

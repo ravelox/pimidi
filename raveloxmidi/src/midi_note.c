@@ -24,6 +24,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "config.h"
+
 #include "midi_note.h"
 #include "midi_command.h"
 #include "utils.h"

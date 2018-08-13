@@ -30,6 +30,8 @@
 #include <errno.h>
 extern int errno;
 
+#include "config.h"
+
 #include "midi_journal.h"
 #include "net_connection.h"
 #include "rtp_packet.h"

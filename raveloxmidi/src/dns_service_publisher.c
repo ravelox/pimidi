@@ -38,6 +38,8 @@
 #include <avahi-common/error.h>
 #include <avahi-common/timeval.h>
 
+#include "config.h"
+
 #include "dns_service_publisher.h"
 #include "logging.h"
 

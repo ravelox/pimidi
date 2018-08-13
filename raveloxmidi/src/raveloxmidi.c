@@ -25,6 +25,8 @@
 
 #include <signal.h>
 
+#include "config.h"
+
 #include "net_applemidi.h"
 #include "net_socket.h"
 #include "net_connection.h"
@@ -36,7 +38,10 @@
 #include "daemon.h"
 
 #include "logging.h"
-#include "config.h"
+
+#ifdef HAVE_ALSA
+#include "raveloxmidi_alsa.h"
+#endif
 
 static int running_as_daemon=0;
 
@@ -49,6 +54,10 @@ int main(int argc, char *argv[])
 
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
+
+#ifdef HAVE_ALSA
+	raveloxmidi_alsa_init( config_get("alsa.output_device") );
+#endif
 
 	if( is_yes( config_get("run_as_daemon") ) )
 	{
@@ -84,6 +93,9 @@ int main(int argc, char *argv[])
 	net_socket_destroy();
 	net_ctx_destroy();
 
+#ifdef HAVE_ALSA
+	raveloxmidi_alsa_destroy();
+#endif
 	dns_service_publisher_stop();
 
 	if( running_as_daemon )

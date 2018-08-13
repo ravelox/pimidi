@@ -35,6 +35,8 @@
 #include <errno.h>
 extern int errno;
 
+#include "config.h"
+
 #include "net_applemidi.h"
 #include "net_response.h"
 #include "net_socket.h"
@@ -54,6 +56,8 @@ extern int errno;
 
 #include "raveloxmidi_config.h"
 #include "logging.h"
+
+#include "raveloxmidi_alsa.h"
 
 static int num_sockets;
 static int *sockets;
@@ -129,6 +133,7 @@ int net_socket_listener( void )
 	unsigned from_len;
 	struct sockaddr_in from_addr;
 	char *ip_address = NULL;
+	int output_enabled = 0;
 
 	net_applemidi_command *command;
 	int ret = 0;
@@ -378,8 +383,12 @@ int net_socket_listener( void )
                                         net_response_destroy( &response );
                                 }
 
-				// If an inbound midi file is defined, write the MIDI commands to it
-				if( inbound_midi_fd >= 0 )
+				// Determine if the MIDI commands need to be written out
+				output_enabled = ( inbound_midi_fd >= 0 );
+#ifdef HAVE_ALSA
+				output_enabled |= raveloxmidi_alsa_output_available();
+#endif
+				if( output_enabled )
 				{
 					logging_printf(LOGGING_DEBUG, "net_socket_listener: Write to file\n");
 					for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
@@ -395,8 +404,15 @@ int net_socket_listener( void )
 								memcpy( raw_buffer + 1, midi_commands[midi_command_index].data, midi_commands[midi_command_index].data_len );
 							}
 
-							bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-							logging_printf( LOGGING_DEBUG, "net_socket_listener: inbound MIDI write(bytes=%u)\n", bytes_written );
+							if( inbound_midi_fd >= 0 )
+							{
+								bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+								logging_printf( LOGGING_DEBUG, "net_socket_listener: inbound MIDI write(bytes=%u)\n", bytes_written );
+							}
+
+#ifdef HAVE_ALSA
+							raveloxmidi_alsa_output( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+#endif
 							free( raw_buffer );
 						}
 					}

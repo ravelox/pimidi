@@ -29,6 +29,8 @@
 #include <sys/stat.h>
 #include <pthread.h>
 
+#include "config.h"
+
 #include "utils.h"
 #include "raveloxmidi_config.h"
 #include "logging.h"

@@ -26,8 +26,10 @@
 
 #include <arpa/inet.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <errno.h>
 
+#include "config.h"
 #include "logging.h"
 
 extern int errno;

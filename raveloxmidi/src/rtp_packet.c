@@ -24,6 +24,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "config.h"
+
 #include "rtp_packet.h"
 #include "utils.h"
 
