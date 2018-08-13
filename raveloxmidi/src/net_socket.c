@@ -390,7 +390,7 @@ int net_socket_listener( void )
 #endif
 				if( output_enabled )
 				{
-					logging_printf(LOGGING_DEBUG, "net_socket_listener: Write to file\n");
+					logging_printf(LOGGING_DEBUG, "net_socket_listener: output_enabled\n");
 					for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 					{
 						unsigned char *raw_buffer = (unsigned char *)malloc( 2 + midi_commands[midi_command_index].data_len );

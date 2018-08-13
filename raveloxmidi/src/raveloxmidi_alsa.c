@@ -80,7 +80,7 @@ int raveloxmidi_alsa_init( unsigned char *device_name )
 	int ret = 0;
 	if( ! device_name ) return -1;
 
-	ret = snd_rawmidi_open( &input_handle, &output_handle, device_name, 0 );
+	ret = snd_rawmidi_open( &input_handle, &output_handle, device_name, SND_RAWMIDI_APPEND | SND_RAWMIDI_NONBLOCK );
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init: ret=%d %s\n", ret , snd_strerror( ret ));
 
 	raveloxmidi_alsa_dump_rawmidi( input_handle );
@@ -143,6 +143,7 @@ int raveloxmidi_alsa_output( unsigned char *buffer, size_t buffer_size )
 	if( output_handle ) 
 	{
 		bytes_written = snd_rawmidi_write( output_handle, buffer, buffer_size );
+		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_output: bytes_written=%u\n", bytes_written );
 	}
 
 	return bytes_written;
