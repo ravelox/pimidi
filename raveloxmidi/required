@@ -1,2 +1,10 @@
+Ubuntu/Debian
+-------------
 libavahi-core-dev
 libavahi-client-dev
+libasound2-dev
+
+RedHat/CentOs
+-------------
+avahi-devel
+alsalib-devel
