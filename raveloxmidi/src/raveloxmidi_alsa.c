@@ -36,18 +36,23 @@
 static snd_rawmidi_t *input_handle = NULL;
 static snd_rawmidi_t *output_handle = NULL;
 
-int raveloxmidi_alsa_init( unsigned char *device_name )
+void raveloxmidi_alsa_init( char *input_name , char *output_name )
 {
 	int ret = 0;
-	if( ! device_name ) return -1;
 
-	ret = snd_rawmidi_open( &input_handle, &output_handle, device_name, SND_RAWMIDI_APPEND | SND_RAWMIDI_NONBLOCK );
-	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init: ret=%d %s\n", ret , snd_strerror( ret ));
+	if( input_name )
+	{
+		ret = snd_rawmidi_open( &input_handle, NULL, input_name, SND_RAWMIDI_NONBLOCK );
+		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init input: device=%s ret=%d %s\n", input_name, ret, snd_strerror( ret ) );
+		raveloxmidi_alsa_dump_rawmidi( input_handle );
+	}
 
-	raveloxmidi_alsa_dump_rawmidi( input_handle );
-	raveloxmidi_alsa_dump_rawmidi( output_handle );
-	
-	return ret;
+	if( output_name )
+	{
+		ret = snd_rawmidi_open( NULL, &output_handle, output_name, SND_RAWMIDI_NONBLOCK );
+		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", output_name, ret, snd_strerror( ret ) );
+		raveloxmidi_alsa_dump_rawmidi( output_handle );
+	}
 }
 
 void raveloxmidi_alsa_handle_destroy( snd_rawmidi_t *rawmidi )
@@ -98,17 +103,47 @@ int raveloxmidi_alsa_output_available( void )
 	return output_handle != NULL;
 }
 
-int raveloxmidi_alsa_output( unsigned char *buffer, size_t buffer_size )
+int raveloxmidi_alsa_input_available( void )
+{
+	return input_handle != NULL;
+}
+
+int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
 {
 	size_t bytes_written = 0;
 
 	if( output_handle ) 
 	{
 		bytes_written = snd_rawmidi_write( output_handle, buffer, buffer_size );
-		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_output: bytes_written=%u\n", bytes_written );
+		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: bytes_written=%u\n", bytes_written );
 	}
 
 	return bytes_written;
+}
+
+int raveloxmidi_alsa_read( unsigned char *buffer, size_t buffer_size )
+{
+	size_t bytes_read = -1;
+	
+	if( ! buffer )
+	{
+		return -1;
+	}
+	
+	if( buffer_size == 0 )
+	{
+		return -1;
+	}
+;
+	if( input_handle )
+	{
+		bytes_read = snd_rawmidi_read( input_handle, buffer + 1, buffer_size - 1 );
+		// Add fake 0xaa identifier for origin identifier
+		buffer[0] = 0xaa;
+		bytes_read++;
+	}
+
+	return bytes_read;
 }
 
 #endif

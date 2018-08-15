@@ -59,18 +59,31 @@ extern int errno;
 
 #include "raveloxmidi_alsa.h"
 
-static int num_sockets;
-static int *sockets;
+static int num_sockets = 0;
+static int *sockets = NULL;
 static int net_socket_shutdown;
 static int inbound_midi_fd = -1;
 
 static pthread_mutex_t shutdown_lock;
 
+void net_socket_add( int new_socket )
+{
+	int *new_socket_list = NULL;
+
+	num_sockets++;
+	new_socket_list = (int *) realloc( sockets, sizeof(int) * num_sockets );
+	if( ! new_socket_list )
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_create: Insufficient memory to create socket %d\n", num_sockets );
+	}
+	sockets = new_socket_list;
+	sockets[num_sockets - 1 ] = new_socket;
+}
+
 int net_socket_create( unsigned int port )
 {
 	int new_socket;
 	struct sockaddr_in socket_address;
-	int *new_socket_list = NULL;
 
 	new_socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if( new_socket < 0 )
@@ -94,15 +107,7 @@ int net_socket_create( unsigned int port )
 		return errno;
         } 
 
-	num_sockets++;
-	new_socket_list = (int *) realloc( sockets, sizeof(int) * num_sockets );
-	if( ! new_socket_list )
-	{
-		logging_printf(LOGGING_ERROR, "net_socket_create: Insufficient memory to create socket %d\n", num_sockets );
-		return -1;
-	}
-	sockets = new_socket_list;
-	sockets[num_sockets - 1 ] = new_socket;
+	net_socket_add( new_socket );
 
 	fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
@@ -127,7 +132,7 @@ int net_socket_destroy( void )
 
 int net_socket_listener( void )
 {
-	unsigned char packet[ NET_APPLEMIDI_UDPSIZE + 1 ];
+	unsigned char packet[ BUFFER_32K + 1 ];
 	int i;
 	int recv_len;
 	unsigned from_len;
@@ -139,13 +144,24 @@ int net_socket_listener( void )
 	int ret = 0;
 
 	from_len = sizeof( struct sockaddr );
+
 	for( i = 0 ; i < num_sockets ; i++ )
 	{
-
+		memset( &from_addr, 0, from_len );
 		while( 1 )
 		{
-			recv_len = recvfrom( sockets[ i ], packet, NET_APPLEMIDI_UDPSIZE, 0,  (struct sockaddr *)&from_addr, &from_len );
-
+			memset( packet, 0, BUFFER_32K + 1 );
+#ifdef HAVE_ALSA
+			if( sockets[i] == RAVELOXMIDI_ALSA_INPUT )
+			{
+				recv_len = raveloxmidi_alsa_read( packet, BUFFER_32K );
+			} else {
+#endif
+				recv_len = recvfrom( sockets[ i ], packet, NET_APPLEMIDI_UDPSIZE, 0,  (struct sockaddr *)&from_addr, &from_len );
+				ip_address = inet_ntoa(from_addr.sin_addr);	
+#ifdef HAVE_ALSA
+			}
+#endif
 			if ( recv_len <= 0)
 			{   
 				if ( errno == EAGAIN )
@@ -157,9 +173,18 @@ int net_socket_listener( void )
 				break;
 			}
 
-			ip_address = inet_ntoa(from_addr.sin_addr);	
-			logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
+			if( sockets[i] != RAVELOXMIDI_ALSA_INPUT )
+			{
+				logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
+			}
+#ifdef HAVE_ALSA
+			else
+			{
+				logging_printf( LOGGING_DEBUG, "net_socket_listener: read socket=ALSA bytes=%u first_byte=%02x\n", recv_len, packet[0] );
+			}
+#endif
 
+			hex_dump( packet, recv_len );
 			// Apple MIDI command
 			if( packet[0] == 0xff )
 			{
@@ -200,8 +225,12 @@ int net_socket_listener( void )
 				}
 
 				net_applemidi_cmd_destroy( &command );
+#ifdef HAVE_ALSAj
+			} else if( (packet[0]==0xaa) || (socket[i]==RAVELOXMIDI_ALSA_INPUT) )
+#else
 			} else if( packet[0] == 0xaa )
-			// MIDI note on internal socket
+#endif
+			// MIDI note on internal socket or ALSA rawmidi device
 			{
 				rtp_packet_t *rtp_packet = NULL;
 				unsigned char *packed_rtp_buffer = NULL;
@@ -411,7 +440,7 @@ int net_socket_listener( void )
 							}
 
 #ifdef HAVE_ALSA
-							raveloxmidi_alsa_output( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+							raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
 #endif
 							free( raw_buffer );
 						}
@@ -510,5 +539,12 @@ int net_socket_setup( void )
 		}
 	}
 
+#ifdef HAVE_ALSA
+/* Add a dummy socket identifier to indicate that the listener loop should read from the ALSA input device */
+	if( raveloxmidi_alsa_input_available() )
+	{
+		net_socket_add( RAVELOXMIDI_ALSA_INPUT );
+	}
+#endif
 	return 0;
 }

@@ -32,6 +32,14 @@
 
 #include "logging.h"
 
+// Sec 3.2 of RFC6295
+// As we note above, the first channel command in the MIDI list MUST
+// include a status octet.  However, the corresponding command in the
+//original MIDI source data stream might not have a status octet (in
+// this case, the source would be coding the command using running
+// status)
+static unsigned char running_status = 0;
+
 void midi_payload_destroy( midi_payload_t **payload )
 {
 	if( ! payload ) return;
@@ -268,13 +276,6 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	size_t index, sysex_len;
 	unsigned char *sysex_start_byte = NULL;
 	
-	// Sec 3.2 of RFC6295
-	// As we note above, the first channel command in the MIDI list MUST
-   	// include a status octet.  However, the corresponding command in the
-   	//original MIDI source data stream might not have a status octet (in
-   	// this case, the source would be coding the command using running
-   	// status)
-	unsigned char running_status = 0;
 
 	*commands = NULL;
 	*num_commands = 0;

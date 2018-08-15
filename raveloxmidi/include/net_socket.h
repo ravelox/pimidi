@@ -21,6 +21,9 @@
 #ifndef NET_SOCKET_H
 #define NET_SOCKET_H
 
+#include "config.h"
+
+void net_socket_add( int new_socket );
 int net_socket_create( unsigned int port );
 int net_socket_destroy( void );
 
@@ -33,4 +36,7 @@ extern uint8_t _max_ctx;
 
 /* Indicate which socket should be the data port */
 #define DATA_PORT 1
+
+#define BUFFER_32K	32768
+
 #endif
