@@ -164,11 +164,7 @@ int net_socket_listener( void )
 #endif
 			if ( recv_len <= 0)
 			{   
-				if ( errno == EAGAIN )
-				{   
-					break;
-				}   
-
+				if ( errno == EAGAIN ) break;
 				logging_printf(LOGGING_ERROR, "net_socket_listener: Socket error (%d) on socket (%d)\n", errno , sockets[i] );
 				break;
 			}
@@ -176,13 +172,13 @@ int net_socket_listener( void )
 			if( sockets[i] != RAVELOXMIDI_ALSA_INPUT )
 			{
 				logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
-			}
+
 #ifdef HAVE_ALSA
-			else
-			{
+			} else {
 				logging_printf( LOGGING_DEBUG, "net_socket_listener: read socket=ALSA bytes=%u first_byte=%02x\n", recv_len, packet[0] );
-			}
 #endif
+			}
+			
 
 			hex_dump( packet, recv_len );
 			// Apple MIDI command
@@ -225,8 +221,8 @@ int net_socket_listener( void )
 				}
 
 				net_applemidi_cmd_destroy( &command );
-#ifdef HAVE_ALSAj
-			} else if( (packet[0]==0xaa) || (socket[i]==RAVELOXMIDI_ALSA_INPUT) )
+#ifdef HAVE_ALSA
+			} else if( (packet[0]==0xaa) || (sockets[i]==RAVELOXMIDI_ALSA_INPUT) )
 #else
 			} else if( packet[0] == 0xaa )
 #endif
@@ -321,7 +317,6 @@ int net_socket_listener( void )
 					// Clean up
 					FREENULL( "packed_payload", (void **)&packed_payload );
 					midi_payload_destroy( &midi_payload );
-
 					// Loop through the detected MIDI commands and add them to the appropriate journal
 					for( midi_command_index = 0; midi_command_index < num_midi_commands; midi_command_index++ )
 					{
@@ -377,12 +372,14 @@ int net_socket_listener( void )
 					}
 				}
 
+
 				// Clean out the array of commands
 				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
 				{
 					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
 				}
 				free( midi_commands );
+
 			} else {
 			// RTP MIDI inbound from remote socket
 				rtp_packet_t *rtp_packet = NULL;
@@ -479,13 +476,13 @@ static int get_shutdown_lock ( void )
 
 int net_socket_loop( unsigned int interval )
 {
-        struct timeval tv; 
         int ret = 0;
 
 	pthread_mutex_init( &shutdown_lock , NULL );
 
 	set_shutdown_lock( 0 );
         do {
+		struct timeval tv; 
                 tv.tv_sec = 0;
                 tv.tv_usec = interval;
                 ret = select( 0 , NULL , NULL , NULL , &tv );

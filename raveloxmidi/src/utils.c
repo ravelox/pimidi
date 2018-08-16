@@ -27,7 +27,10 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/time.h>
+
 #include <errno.h>
+extern int errno;
 
 #include "config.h"
 #include "logging.h"
@@ -259,4 +262,12 @@ int is_no( const char *value )
 	if( strcasecmp( value, "0" ) == 0 ) return 1;
 
 	return 0;
+}
+
+void profile_duration( char *label, suseconds_t start_time )
+{
+	struct timeval end_time;
+
+	gettimeofday(&end_time, NULL);
+	logging_printf(LOGGING_INFO, "Profile: %s, duration=%ld\n", label, end_time.tv_usec - start_time);
 }

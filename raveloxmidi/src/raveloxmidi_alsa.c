@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #include <asoundlib.h>
 
@@ -123,7 +124,7 @@ int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
 
 int raveloxmidi_alsa_read( unsigned char *buffer, size_t buffer_size )
 {
-	size_t bytes_read = -1;
+	ssize_t bytes_read = -1;
 	
 	if( ! buffer )
 	{
@@ -134,13 +135,21 @@ int raveloxmidi_alsa_read( unsigned char *buffer, size_t buffer_size )
 	{
 		return -1;
 	}
-;
+
 	if( input_handle )
 	{
+		struct timeval start;
+		gettimeofday(&start,NULL);
+
 		bytes_read = snd_rawmidi_read( input_handle, buffer + 1, buffer_size - 1 );
-		// Add fake 0xaa identifier for origin identifier
-		buffer[0] = 0xaa;
-		bytes_read++;
+
+		if( bytes_read > 0 )
+		{
+			// Add fake 0xaa identifier for origin identifier
+			buffer[0] = 0xaa;
+			bytes_read++;
+			profile_duration("raveloxmidi_alsa_read", start.tv_usec);
+		}
 	}
 
 	return bytes_read;

@@ -145,7 +145,7 @@ void midi_payload_header_dump( midi_payload_header_t *header )
 {
 	if( ! header ) return;
 
-	logging_printf( LOGGING_INFO, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
+	logging_printf( LOGGING_DEBUG, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
 		header->B, header->J,header->Z, header->P, header->len);
 }
 

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include <arpa/inet.h>
 
@@ -312,6 +313,7 @@ void net_ctx_send( int send_socket, uint8_t ctx_id, unsigned char *buffer, size_
 	net_ctx_t *ctx = NULL;
 	struct sockaddr_in send_address;
 	ssize_t bytes_sent = 0;
+	struct timeval start;
 
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
@@ -330,12 +332,14 @@ void net_ctx_send( int send_socket, uint8_t ctx_id, unsigned char *buffer, size_
 	send_address.sin_port = htons( ctx->data_port ) ;
 	inet_aton( ctx->ip_address, &send_address.sin_addr );
 
+	gettimeofday(&start, NULL);
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
 
 	if( bytes_sent < 0 )
 	{
 		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, ctx->data_port , strerror( errno ));
 	} else {
+		profile_duration("net_ctx_send:", start.tv_usec);
 		logging_printf( LOGGING_DEBUG, "net_ctx_send: write( bytes=%u,host=%s,port=%u)\n", bytes_sent, ctx->ip_address, ctx->data_port );
 	}
 }
