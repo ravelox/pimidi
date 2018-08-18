@@ -188,15 +188,17 @@ int net_socket_listener( void )
 				break;
 			}
 
+#ifdef HAVE_ALSA
 			if( sockets[i] != RAVELOXMIDI_ALSA_INPUT )
 			{
+#endif
 				logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
 
 #ifdef HAVE_ALSA
 			} else {
 				logging_printf( LOGGING_DEBUG, "net_socket_listener: read socket=ALSA bytes=%u first_byte=%02x\n", recv_len, packet[0] );
-#endif
 			}
+#endif
 			
 
 			hex_dump( packet, recv_len );
