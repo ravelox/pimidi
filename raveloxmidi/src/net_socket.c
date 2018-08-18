@@ -132,7 +132,11 @@ int net_socket_destroy( void )
 
 int net_socket_listener( void )
 {
-	unsigned char packet[ BUFFER_32K + 1 ];
+	unsigned char *packet = NULL;
+	size_t packet_size = 0;
+#ifdef HAVE_ALSA
+	size_t alsa_buffer_size = 0;
+#endif
 	int i;
 	int recv_len;
 	unsigned from_len;
@@ -145,16 +149,31 @@ int net_socket_listener( void )
 
 	from_len = sizeof( struct sockaddr );
 
+#ifdef HAVE_ALSA
+	alsa_buffer_size = atoi( config_get("alsa.input_buffer_size") );
+	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, atoi( config_get("alsa.input_buffer_size") ) );
+#else
+	packet_size = NET_APPLEMIDI_UDPSIZE;
+#endif
+
+	packet = ( unsigned char * ) malloc( packet_size + 1);
+
+	if( ! packet ) 
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_listener: Unable to allocate memory for read buffer\n");
+		return -1;
+	}
+
 	for( i = 0 ; i < num_sockets ; i++ )
 	{
 		memset( &from_addr, 0, from_len );
 		while( 1 )
 		{
-			memset( packet, 0, BUFFER_32K + 1 );
+			memset( packet, 0, packet_size + 1 );
 #ifdef HAVE_ALSA
 			if( sockets[i] == RAVELOXMIDI_ALSA_INPUT )
 			{
-				recv_len = raveloxmidi_alsa_read( packet, BUFFER_32K );
+				recv_len = raveloxmidi_alsa_read( packet, alsa_buffer_size);
 			} else {
 #endif
 				recv_len = recvfrom( sockets[ i ], packet, NET_APPLEMIDI_UDPSIZE, 0,  (struct sockaddr *)&from_addr, &from_len );

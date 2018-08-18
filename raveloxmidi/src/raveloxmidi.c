@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
 #ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( config_get("alsa.input_device") , config_get("alsa.output_device") );
+	raveloxmidi_alsa_init( config_get("alsa.input_device") , config_get("alsa.output_device") , atoi(config_get("alsa.input_buffer_size")) );
 #endif
 
 	if( is_yes( config_get("run_as_daemon") ) )
