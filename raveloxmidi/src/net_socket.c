@@ -120,6 +120,9 @@ int net_socket_destroy( void )
 
 	for(socket = 0 ; socket < num_sockets ; socket++ )
 	{
+#ifdef HAVE_ALSA
+		if( sockets[socket] == RAVELOXMIDI_ALSA_INPUT ) continue;
+#endif
 		close( sockets[socket] );
 	}
 
@@ -255,11 +258,8 @@ int net_socket_listener( void )
 
 				midi_note_t *midi_note = NULL;
 				midi_control_t *midi_control = NULL;
-				midi_payload_t *midi_payload = NULL;
+				midi_payload_t *initial_midi_payload = NULL;
 
-
-				unsigned char *packed_payload = NULL;
-				size_t packed_payload_len = 0;
 
 				unsigned char *packed_rtp_payload = NULL;
 
@@ -267,22 +267,29 @@ int net_socket_listener( void )
                                 size_t num_midi_commands=0;
                                 size_t midi_command_index = 0;
 
-				// For the NOTE event, the MIDI note is already packed
-				// but we still need to pack it into a payload
-				// Create the payload
-				midi_payload = midi_payload_create();
+				uint8_t ctx_id = 0;
+				char *packed_journal = NULL;
+				size_t packed_journal_len = 0;
+				char *description = NULL;
+				enum midi_message_type_t message_type = 0;
+				size_t midi_payload_len = 0;
 
-				if( midi_payload )
+
+				// Convert the buffer into a set of commands
+				midi_payload_len = recv_len - 1;
+				initial_midi_payload = midi_payload_create();
+				midi_payload_set_buffer( initial_midi_payload, packet + 1 , &midi_payload_len );
+				midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
+
+				for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 				{
-					uint8_t ctx_id = 0;
-					char *packed_journal = NULL;
-					size_t packed_journal_len = 0;
-					char *description = NULL;
-					enum midi_message_type_t message_type = 0;
+					midi_payload_t *single_midi_payload = NULL;
+					unsigned char *packed_payload = NULL;
+					size_t packed_payload_len = 0;
 
-					hex_dump( packet, recv_len );
-					midi_payload_set_buffer( midi_payload, packet + 1 , recv_len - 1 );
-					midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
+					/* Extract a single command as a midi payload */
+					midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
+					if( ! single_midi_payload ) continue;
 
 					// Build the RTP packet
 					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
@@ -291,15 +298,15 @@ int net_socket_listener( void )
 						if( ! net_ctx_is_used( ctx_id ) ) continue;
 
 						// Get a journal if there is one
-						net_ctx_journal_pack( ctx_id , &packed_journal, &packed_journal_len);
+						//net_ctx_journal_pack( ctx_id , &packed_journal, &packed_journal_len);
 
 						if( packed_journal_len > 0 )
 						{
-							midi_payload_toggle_j( midi_payload );
+							midi_payload_set_j( single_midi_payload );
 						}
 						// We have to pack the payload again each time because some connections may not have a journal
 						// and the flag to indicate the journal being present is in the payload
-						midi_payload_pack( midi_payload, &packed_payload, &packed_payload_len );
+						midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
 						logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,len=%u\n", packed_payload, packed_payload_len);
 						hex_dump( packed_payload, packed_payload_len );
 
@@ -337,68 +344,62 @@ int net_socket_listener( void )
 
 					// Clean up
 					FREENULL( "packed_payload", (void **)&packed_payload );
-					midi_payload_destroy( &midi_payload );
-					// Loop through the detected MIDI commands and add them to the appropriate journal
-					for( midi_command_index = 0; midi_command_index < num_midi_commands; midi_command_index++ )
+					midi_payload_destroy( &single_midi_payload );
+
+					midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
+					midi_command_dump( &(midi_commands[ midi_command_index ]) );
+
+					switch( message_type )
 					{
-						midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
-						midi_command_dump( &(midi_commands[ midi_command_index ]) );
+						case MIDI_NOTE_OFF:
+						case MIDI_NOTE_ON:
+							ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+							midi_note_dump( midi_note );
+							break;
+						case MIDI_CONTROL_CHANGE:	
+							ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+							break;
+						default:
+							continue;
+					}
+
+					// Loop through each active connection
+					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					{
+						// Check that the connection id is active
+						if( ! net_ctx_is_used( ctx_id ) ) continue;
 
 						switch( message_type )
 						{
 							case MIDI_NOTE_OFF:
 							case MIDI_NOTE_ON:
-								ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+								net_ctx_add_journal_note( ctx_id , midi_note );
 								break;
-							case MIDI_CONTROL_CHANGE:	
-								ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+							case MIDI_CONTROL_CHANGE:
+								 net_ctx_add_journal_control( ctx_id, midi_control );
 								break;
 							default:
 								continue;
 						}
-
-						// Loop through each active connection
-						for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
-						{
-							// Check that the connection id is active
-							if( ! net_ctx_is_used( ctx_id ) ) continue;
-
-							switch( message_type )
-							{
-								case MIDI_NOTE_OFF:
-								case MIDI_NOTE_ON:
-									net_ctx_add_journal_note( ctx_id , midi_note );
-									break;
-								case MIDI_CONTROL_CHANGE:
-									net_ctx_add_journal_control( ctx_id, midi_control );
-									break;
-								default:
-									continue;
-							}
-						}
-
-						// Clean up
-						switch( message_type )
-						{
-							case MIDI_NOTE_OFF:
-							case MIDI_NOTE_ON:
-								midi_note_destroy( &midi_note );
-								break;
-							case MIDI_CONTROL_CHANGE:
-								midi_control_destroy( &midi_control );
-								break;
-							default:
-								break;
-						}
 					}
+
+					 // Clean up
+					switch( message_type )
+					{
+						case MIDI_NOTE_OFF:
+						case MIDI_NOTE_ON:
+							midi_note_destroy( &midi_note );
+							break;
+						case MIDI_CONTROL_CHANGE:
+							midi_control_destroy( &midi_control );
+							break;
+						default:
+							break;
+					}
+
+					midi_command_reset( &(midi_commands[midi_command_index]) );
 				}
 
-
-				// Clean out the array of commands
-				for( ; num_midi_commands >= 1 ; num_midi_commands-- )
-				{
-					midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
-				}
 				free( midi_commands );
 
 			} else {

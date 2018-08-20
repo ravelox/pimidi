@@ -97,46 +97,91 @@ midi_payload_t * midi_payload_create( void )
 	return payload;
 }
 
-void midi_payload_toggle_b( midi_payload_t *payload )
+void midi_payload_set_b( midi_payload_t *payload )
 {
-	if(! payload) return;
-
-	payload->header->B ^= 1;
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->B = 1;
 }
 
-void midi_payload_toggle_j( midi_payload_t *payload )
+void midi_payload_set_j( midi_payload_t *payload )
 {
-	if( ! payload ) return;
-
-	payload->header->J ^= 1;
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->J = 1;
 }
 
-void midi_payload_toggle_z( midi_payload_t *payload )
+void midi_payload_set_z( midi_payload_t *payload )
 {
-	if( ! payload ) return;
-
-	payload->header->Z ^=1;
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->Z = 1;
 }
 
-void midi_payload_toggle_p( midi_payload_t *payload )
+void midi_payload_set_p( midi_payload_t *payload )
 {
-	if( ! payload ) return;
-
-	payload->header->P ^= 1;
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->P = 1;
 }
 
-void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , uint16_t buffer_size)
+void midi_payload_unset_b( midi_payload_t *payload )
 {
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->B = 0;
+}
+
+void midi_payload_unset_j( midi_payload_t *payload )
+{
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->J = 0;
+}
+
+void midi_payload_unset_z( midi_payload_t *payload )
+{
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->Z = 0;
+}
+
+void midi_payload_unset_p( midi_payload_t *payload )
+{
+	if( ! payload) return;
+	if( ! payload->header) return;
+	payload->header->P = 0;
+}
+
+
+void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , size_t *buffer_size)
+{
+	int status_present = 0;
 	if( ! payload ) return;
 
-	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, buffer_size);
-	payload->header->len = buffer_size;
-	payload->buffer = (unsigned char *)malloc( buffer_size );
+	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, *buffer_size);
+
+	status_present = buffer[0] & 0x80;
+
+	/* If the first byte doesn't include a status then add one */
+	if( ! status_present )
+	{
+		*buffer_size += 1;
+	}
+
+	payload->header->len = *buffer_size;
+	payload->buffer = (unsigned char *)malloc( *buffer_size );
 	if( ! payload->buffer )
 	{
 		payload->header->len = 0;
 	} else {
-		memcpy( payload->buffer, buffer, buffer_size );
+		if( status_present )
+		{
+			memcpy( payload->buffer, buffer, *buffer_size );
+		} else {
+			memcpy( payload->buffer + 1, buffer, *buffer_size - 1 );
+			payload->buffer[0] = running_status;
+		}
 	}
 }
 
@@ -215,10 +260,10 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 	current_len = buffer_len;
 
 	/* Get the flags */
-	if( *p & PAYLOAD_HEADER_B ) midi_payload_toggle_b( *payload );
-	if( *p & PAYLOAD_HEADER_J ) midi_payload_toggle_j( *payload );
-	if( *p & PAYLOAD_HEADER_Z ) midi_payload_toggle_z( *payload );
-	if( *p & PAYLOAD_HEADER_P ) midi_payload_toggle_p( *payload );
+	if( *p & PAYLOAD_HEADER_B ) midi_payload_set_b( *payload );
+	if( *p & PAYLOAD_HEADER_J ) midi_payload_set_j( *payload );
+	if( *p & PAYLOAD_HEADER_Z ) midi_payload_set_z( *payload );
+	if( *p & PAYLOAD_HEADER_P ) midi_payload_set_p( *payload );
 
 	/* Check that there's enough buffer if the B flag indicates the length field is 12 bits */
 	if( (*payload)->header->B && ( current_len == 1 ) )
@@ -463,4 +508,39 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 		}
 
 	} while( current_len > 0 );
+}
+
+void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload )
+{
+	size_t new_payload_size = 0;
+	unsigned char *new_payload_buffer = NULL;
+
+	if( ! command ) {
+		*payload = NULL;
+		return;
+	}
+
+	*payload = midi_payload_create();
+	if( ! *payload )
+	{
+		logging_printf(LOGGING_ERROR, "midi_command_to_payload: Unable to allocate memory for new payload\n");
+		return;
+	}
+
+	new_payload_size = command->data_len + 1;
+	new_payload_buffer = (unsigned char *)malloc( new_payload_size );
+
+	if( ! new_payload_buffer )
+	{
+		logging_printf(LOGGING_ERROR,"midi_command_to_payload: Unable to allocate memory for new payload buffer\n");
+		midi_payload_destroy( &(*payload) );
+		*payload = NULL;
+	}
+
+	new_payload_buffer[0] = command->status;
+	memcpy( new_payload_buffer + 1 , command->data, command->data_len );
+
+	midi_payload_set_buffer( *payload, new_payload_buffer, &new_payload_size );
+
+	free( new_payload_buffer );
 }
