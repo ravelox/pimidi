@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	if( net_socket_init() != 0 )
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
-		exit(1);
+		goto daemon_stop;
 	}
 
 	net_ctx_init();
@@ -98,12 +98,14 @@ int main(int argc, char *argv[])
 #endif
 	dns_service_publisher_stop();
 
+daemon_stop:
 	if( running_as_daemon )
 	{
-		daemon_stop();
+		daemon_teardown();
 	}
 
 	logging_stop();
+
 	config_teardown();
 
 	return 0;

@@ -102,7 +102,7 @@ void daemon_start(void)
 	}
 }
 
-void daemon_stop(void)
+void daemon_teardown(void)
 {
 	
 	struct stat filestat;
@@ -120,7 +120,7 @@ void daemon_stop(void)
 			ret = unlink( pid_file_name );
 			if( ret != 0 )
 			{
-				logging_printf( LOGGING_ERROR, "Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
+				logging_printf( LOGGING_ERROR, "daemon_teardown: Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
 			}
 		}
 	}
