@@ -56,16 +56,16 @@ int main(int argc, char *argv[])
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
 #ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( config_get("alsa.input_device") , config_get("alsa.output_device") , atoi(config_get("alsa.input_buffer_size")) );
+	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
 #endif
 
-	if( is_yes( config_get("run_as_daemon") ) )
+	if( is_yes( config_string_get("run_as_daemon") ) )
 	{
 		running_as_daemon = 1;
 		daemon_start();
 	}
 
-	if( net_socket_setup() != 0 )
+	if( net_socket_init() != 0 )
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
 		exit(1);
@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
         signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	service_desc.name = config_get("service.name");
+	service_desc.name = config_string_get("service.name");
 	service_desc.service = "_apple-midi._udp";
-	service_desc.port = atoi( config_get("network.control.port") );
+	service_desc.port = config_int_get("network.control.port");
 
 	ret = dns_service_publisher_start( &service_desc );
 	
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
-		net_socket_loop( atoi( config_get("network.socket_interval") ) );
+		net_socket_loop( config_int_get("network.socket_interval") );
 	}
 
 	net_socket_teardown();

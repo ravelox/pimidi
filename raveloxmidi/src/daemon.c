@@ -42,9 +42,9 @@ void daemon_start(void)
 	char *pid_file;
 	FILE *reopen_file = NULL;
 
-	pid_file = config_get("daemon.pid_file");
+	pid_file = config_string_get("daemon.pid_file");
 
-	if( is_yes( config_get("security.check") ) )
+	if( is_yes( config_string_get("security.check") ) )
 	{
 		/* Check that the pid file is valid as it's going to be unlinked at the end */
 		if( ! check_file_security( pid_file ) )
@@ -75,7 +75,7 @@ void daemon_start(void)
                 FILE *pidfile = NULL;
 
 		// Disable writing a pid file if readonly option is set
-		if( is_no( config_get("readonly") ) )
+		if( is_no( config_string_get("readonly") ) )
 		{
 			pidfile = fopen(pid_file, "w");
 
@@ -109,7 +109,7 @@ void daemon_stop(void)
 	int ret = 0;
 	char *pid_file_name = NULL;
 
-	pid_file_name = config_get("daemon.pid_file");
+	pid_file_name = config_string_get("daemon.pid_file");
 
 	if( pid_file_name )
 	{

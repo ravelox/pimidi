@@ -97,7 +97,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	accept_inv->ssrc = ctx->send_ssrc;
 	accept_inv->version = 2;
 	accept_inv->initiator = ctx->initiator;
-	service_name = config_get("service.name");
+	service_name = config_string_get("service.name");
 	if( service_name )
 	{
 		accept_inv->name = (char *)strdup( service_name );

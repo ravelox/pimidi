@@ -142,7 +142,7 @@ static net_ctx_t * net_ctx_create( void )
 
 void net_ctx_init( void )
 {
-	_max_ctx = atoi( config_get("network.max_connections") );
+	_max_ctx = config_int_get("network.max_connections");
 	if( _max_ctx == 0 ) _max_ctx = 1;
 
 	_ctx_head = NULL;

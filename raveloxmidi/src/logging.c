@@ -166,14 +166,14 @@ void logging_init(void)
 
 	pthread_mutex_lock( &logging_mutex );
 
-	if( is_yes( config_get("logging.enabled") ) )
+	if( is_yes( config_string_get("logging.enabled") ) )
 	{
-		logging_threshold = logging_name_to_value( loglevel_map, config_get("logging.log_level") ) ;
+		logging_threshold = logging_name_to_value( loglevel_map, config_string_get("logging.log_level") ) ;
 
 		// Disable logging to a file if readonly option is set
-		if( is_no( config_get("readonly") ) )
+		if( is_no( config_string_get("readonly") ) )
 		{
-			name = config_get("logging.log_file") ;
+			name = config_string_get("logging.log_file") ;
 			if( name )
 			{
 				logging_file_name = strdup( name );

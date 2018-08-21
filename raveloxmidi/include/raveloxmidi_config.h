@@ -10,7 +10,9 @@ typedef struct raveloxmidi_config_t
 void config_init( int argc, char *argv[] );
 void config_teardown( void );
 
-char *config_get( char *key );
+char *config_string_get( char *key );
+int config_int_get( char *key );
+
 void config_add_item(char *key, char *value);
 void config_dump( void );
 

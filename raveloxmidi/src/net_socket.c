@@ -100,8 +100,8 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_family = AF_INET;   
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if (inet_aton( config_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_get("network.bind_address") );
+	if (inet_aton( config_string_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
+		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_string_get("network.bind_address") );
 		return errno;
 	}
 
@@ -514,25 +514,25 @@ int net_socket_init( void )
 	char *inbound_midi_filename = NULL;
 
 	if(
-		net_socket_create( atoi( config_get("network.control.port") ) ) ||
-		net_socket_create( atoi( config_get("network.data.port") ) ) ||
-		net_socket_create( atoi( config_get("network.local.port") ) ) )
+		net_socket_create( config_int_get("network.control.port") ) ||
+		net_socket_create( config_int_get("network.data.port") ) ||
+		net_socket_create( config_int_get("network.local.port") ) )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
 		return -1;
 	}
 
 	// If a file name is defined, open up the file handle to write inbound MIDI events
-	inbound_midi_filename = config_get("inbound_midi");
+	inbound_midi_filename = config_string_get("inbound_midi");
 
 	if( ! inbound_midi_filename )
 	{
 		logging_printf(LOGGING_WARN, "net_socket_setup: No filename defined for inbound_midi\n");
 	} else if( ! check_file_security( inbound_midi_filename ) ) {
 		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
-		logging_printf(LOGGING_WARN, "net_socket_setup: File mode=%s\n", config_get("file_mode") );
+		logging_printf(LOGGING_WARN, "net_socket_setup: File mode=%s\n", config_string_get("file_mode") );
 	} else {
-		long file_mode_param = strtol( config_get("file_mode") , NULL, 8 );
+		long file_mode_param = strtol( config_string_get("file_mode") , NULL, 8 );
 		inbound_midi_fd = open( inbound_midi_filename, O_RDWR | O_CREAT , (mode_t)file_mode_param);
 		
 		if( inbound_midi_fd < 0 )
@@ -551,8 +551,8 @@ int net_socket_init( void )
 #endif
 
 #ifdef HAVE_ALSA
-	alsa_buffer_size = atoi( config_get("alsa.input_buffer_size") );
-	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, atoi( config_get("alsa.input_buffer_size") ) );
+	alsa_buffer_size = config_int_get("alsa.input_buffer_size");
+	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, alsa_buffer_size );
 #else
 	packet_size = NET_APPLEMIDI_UDPSIZE;
 #endif

@@ -61,6 +61,8 @@ static void config_set_defaults( void )
 
 }
 
+static raveloxmidi_config_t *config_get_item( char *key );
+
 static void config_load_file( char *filename )
 {
 
@@ -187,9 +189,9 @@ void config_init( int argc, char *argv[] )
 		}
 	} 
 
-	config_load_file( config_get("config.file") );
+	config_load_file( config_string_get("config.file") );
 
-	if( strcasecmp( config_get("logging.log_level"), "debug" ) == 0 )
+	if( strcasecmp( config_string_get("logging.log_level"), "debug" ) == 0 )
 	{
 		config_dump();
 	}
@@ -217,22 +219,26 @@ void config_teardown( void )
 }
 
 /* Public version */
-char *config_get( char *key )
+char *config_string_get( char *key )
 {
-	int i = 0;
-	if( num_items <= 0 ) return NULL;
-	if( ! config_items ) return NULL;
-	
-	for( i=0 ; i < num_items ; i++ )
-	{
-		if( strcasecmp( key, config_items[i]->key ) == 0 )
-		{
-			return config_items[i]->value;
-		}
-	}
-	return NULL;
+	raveloxmidi_config_t *item = NULL;
+
+	item = config_get_item( key );
+
+	if( ! item ) return NULL;
+	return item->value;
 }
 
+int config_int_get( char *key )
+{
+	char *item_string = NULL;
+
+	item_string = config_string_get( key );
+	if(! item_string ) return 0;
+	if( strlen( item_string ) == 0 ) return 0;
+	return atoi( item_string );
+}
+	
 static raveloxmidi_config_t *config_get_item( char *key )
 {
 	int i = 0 ;
