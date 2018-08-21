@@ -75,7 +75,7 @@ void raveloxmidi_alsa_handle_destroy( snd_rawmidi_t *rawmidi )
 	snd_rawmidi_close( rawmidi );
 }
 
-void raveloxmidi_alsa_destroy( void )
+void raveloxmidi_alsa_teardown( void )
 {
 	raveloxmidi_alsa_handle_destroy( input_handle );
 	raveloxmidi_alsa_handle_destroy( output_handle );

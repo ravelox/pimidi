@@ -8,7 +8,7 @@
 void raveloxmidi_alsa_list_rawmidi_devices( void );
 void raveloxmidi_alsa_init( char *input_name, char *output_name , size_t buffer_size);
 void raveloxmidi_alsa_handle_destroy( snd_rawmidi_t *rawmidi );
-void raveloxmidi_alsa_destroy( void );
+void raveloxmidi_alsa_teardown( void );
 
 void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi );
 

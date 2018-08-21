@@ -25,7 +25,7 @@
 
 void net_socket_add( int new_socket );
 int net_socket_create( unsigned int port );
-int net_socket_destroy( void );
+int net_socket_teardown( void );
 
 int net_socket_listener( void );
 int net_socket_loop( unsigned int interval );

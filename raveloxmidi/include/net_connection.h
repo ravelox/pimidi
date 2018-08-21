@@ -30,7 +30,6 @@
 #define MAX_CTX 8
 
 typedef struct net_ctx_t {
-	uint8_t		used;
 	uint32_t	ssrc;
 	uint32_t	send_ssrc;
 	uint32_t	initiator;
@@ -40,25 +39,36 @@ typedef struct net_ctx_t {
 	time_t		start;
 	char * 		ip_address;
 	journal_t	*journal;
+	struct net_ctx_t	*next;
+	struct net_ctx_t	*prev;
 } net_ctx_t;
 
-void net_ctx_reset( net_ctx_t *ctx );
+void net_ctx_destroy( net_ctx_t **ctx );
 void net_ctx_dump( net_ctx_t *ctx );
 void net_ctx_init( void );
-void net_ctx_destroy( void );
-int net_ctx_is_used( uint8_t id );
+void net_ctx_teardown( void );
 net_ctx_t * net_ctx_find_by_id( uint8_t id );
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
+net_ctx_t * net_ctx_get_last( void );
 
-void net_ctx_add_journal_note( uint8_t ctx_id , midi_note_t *midi_note );
-void net_ctx_add_journal_control( uint8_t ctx_id , midi_control_t *midi_control );
+void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note );
+void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control );
 
-void net_ctx_journal_dump( uint8_t ctx_id );
-void net_ctx_journal_pack( uint8_t ctx_id, char **journal_buffer, size_t *journal_buffer_size);
-void net_ctx_journal_reset( uint8_t ctx_id );
-void net_ctx_update_rtp_fields( uint8_t ctx_id, rtp_packet_t *rtp_packet);
-void net_ctx_send( int socket, uint8_t ctx_id, unsigned char *buffer, size_t buffer_len );
-void net_ctx_increment_seq( uint8_t ctx_id );
+void net_ctx_journal_dump( net_ctx_t *ctx);
+void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size);
+void net_ctx_journal_reset( net_ctx_t *ctx );
+void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet);
+void net_ctx_send( int socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len );
+void net_ctx_increment_seq( net_ctx_t *ctx );
+
+net_ctx_t *net_ctx_iter_start_head(void);
+net_ctx_t *net_ctx_iter_start_tail(void);
+net_ctx_t *net_ctx_iter_current(void);
+int net_ctx_iter_has_current(void);
+int net_ctx_iter_has_next(void);
+int net_ctx_iter_has_prev(void);
+void net_ctx_iter_next(void);
+void net_ctx_iter_prev(void);
 
 #endif

@@ -114,7 +114,7 @@ int net_socket_create( unsigned int port )
 	return 0;
 }
 
-int net_socket_destroy( void )
+int net_socket_teardown( void )
 {
 	int socket;
 
@@ -291,19 +291,41 @@ int net_socket_listener( void )
 					midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
 					if( ! single_midi_payload ) continue;
 
-					// Build the RTP packet
-					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
+					midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
+					midi_command_dump( &(midi_commands[ midi_command_index ]) );
+					switch( message_type )
 					{
-						// Check that the connection id is active
-						if( ! net_ctx_is_used( ctx_id ) ) continue;
+						case MIDI_NOTE_OFF:
+						case MIDI_NOTE_ON:
+							ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+							midi_note_dump( midi_note );
+							break;
+						case MIDI_CONTROL_CHANGE:	
+							ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+							midi_control_dump( midi_control );
+							break;
+						default:
+							break;
+					}
+
+					// Build the RTP packet
+					for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
+					{
+						net_ctx_t *current_ctx = net_ctx_iter_current();
+
+						logging_printf( LOGGING_DEBUG, "net_ctx_iter_current()=%p\n", current_ctx );
+						if(! current_ctx ) continue;
 
 						// Get a journal if there is one
-						//net_ctx_journal_pack( ctx_id , &packed_journal, &packed_journal_len);
+						net_ctx_journal_pack( current_ctx , &packed_journal, &packed_journal_len);
 
 						if( packed_journal_len > 0 )
 						{
 							midi_payload_set_j( single_midi_payload );
+						} else {
+							midi_payload_unset_j( single_midi_payload );
 						}
+
 						// We have to pack the payload again each time because some connections may not have a journal
 						// and the flag to indicate the journal being present is in the payload
 						midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
@@ -318,10 +340,10 @@ int net_socket_listener( void )
 						hex_dump( packed_rtp_payload, packed_payload_len + packed_journal_len );
 
 						rtp_packet = rtp_packet_create();
-						net_ctx_increment_seq( ctx_id );
+						net_ctx_increment_seq( current_ctx );
 
 						// Transfer the connection details to the RTP packet
-						net_ctx_update_rtp_fields( ctx_id , rtp_packet );
+						net_ctx_update_rtp_fields( current_ctx , rtp_packet );
 	
 						// Add the MIDI data to the RTP packet
 						rtp_packet->payload_len = packed_payload_len + packed_journal_len;
@@ -333,57 +355,31 @@ int net_socket_listener( void )
 						// Pack the RTP data
 						rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-						net_ctx_send( sockets[ DATA_PORT ], ctx_id , packed_rtp_buffer, packed_rtp_buffer_len );
+						net_ctx_send( sockets[ DATA_PORT ], current_ctx, packed_rtp_buffer, packed_rtp_buffer_len );
 
 						FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 						rtp_packet_destroy( &rtp_packet );
 
 						FREENULL( "packed_rtp_payload", (void **)&packed_rtp_payload );
 						FREENULL( "packed_journal", (void **)&packed_journal );
-					}
-
-					// Clean up
-					FREENULL( "packed_payload", (void **)&packed_payload );
-					midi_payload_destroy( &single_midi_payload );
-
-					midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
-					midi_command_dump( &(midi_commands[ midi_command_index ]) );
-
-					switch( message_type )
-					{
-						case MIDI_NOTE_OFF:
-						case MIDI_NOTE_ON:
-							ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
-							midi_note_dump( midi_note );
-							break;
-						case MIDI_CONTROL_CHANGE:	
-							ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
-							break;
-						default:
-							continue;
-					}
-
-					// Loop through each active connection
-					for( ctx_id = 0 ; ctx_id < _max_ctx ; ctx_id++ )
-					{
-						// Check that the connection id is active
-						if( ! net_ctx_is_used( ctx_id ) ) continue;
 
 						switch( message_type )
 						{
 							case MIDI_NOTE_OFF:
 							case MIDI_NOTE_ON:
-								net_ctx_add_journal_note( ctx_id , midi_note );
+								net_ctx_add_journal_note( current_ctx , midi_note );
 								break;
 							case MIDI_CONTROL_CHANGE:
-								 net_ctx_add_journal_control( ctx_id, midi_control );
+								 net_ctx_add_journal_control( current_ctx, midi_control );
 								break;
 							default:
 								continue;
 						}
 					}
 
-					 // Clean up
+					// Clean up
+					FREENULL( "packed_payload", (void **)&packed_payload );
+					midi_payload_destroy( &single_midi_payload );
 					switch( message_type )
 					{
 						case MIDI_NOTE_OFF:
@@ -477,6 +473,8 @@ int net_socket_listener( void )
 			}
 		}
 	}
+
+	if( packet ) FREENULL( "net_socket_listener: packet", (void **)&packet );
 	return ret;
 }
 

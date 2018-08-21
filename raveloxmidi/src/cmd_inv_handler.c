@@ -81,7 +81,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	if( ! cmd )
 	{
 		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command\n");
-		net_ctx_reset( ctx );
+		net_ctx_destroy( &ctx );
 		return NULL;
 	}
 
@@ -90,7 +90,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	if( ! accept_inv ) {
 		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
-		net_ctx_reset( ctx );
+		net_ctx_destroy( &ctx );
 		return NULL;
 	}
 

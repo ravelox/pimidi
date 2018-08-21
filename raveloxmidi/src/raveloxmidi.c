@@ -90,11 +90,11 @@ int main(int argc, char *argv[])
 		net_socket_loop( atoi( config_get("network.socket_interval") ) );
 	}
 
-	net_socket_destroy();
-	net_ctx_destroy();
+	net_socket_teardown();
+	net_ctx_teardown();
 
 #ifdef HAVE_ALSA
-	raveloxmidi_alsa_destroy();
+	raveloxmidi_alsa_teardown();
 #endif
 	dns_service_publisher_stop();
 
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 	}
 
 	logging_stop();
-	config_destroy();
+	config_teardown();
 
 	return 0;
 }

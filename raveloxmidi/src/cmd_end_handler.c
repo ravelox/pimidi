@@ -59,7 +59,8 @@ net_response_t * cmd_end_handler( void *data )
 		return NULL;
 	}
 
-	net_ctx_reset( ctx );
+	net_ctx_dump( ctx );
+	net_ctx_destroy( &ctx );
 
 	return NULL;
 }

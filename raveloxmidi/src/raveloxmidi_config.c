@@ -195,11 +195,11 @@ void config_init( int argc, char *argv[] )
 	}
 }
 
-void config_destroy( void )
+void config_teardown( void )
 {
 	int i = 0;
 
-	fprintf( stderr, "config_destroy config_items=%p num_items=%u\n", config_items, num_items - 1 );
+	fprintf( stderr, "config_teardown config_items=%p num_items=%u\n", config_items, num_items - 1 );
 	if( ! config_items ) return;
 	if( num_items == 0 ) return;
 
