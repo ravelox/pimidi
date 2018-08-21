@@ -134,5 +134,4 @@ void midi_command_dump( midi_command_t *command )
 	logging_printf(LOGGING_DEBUG, "\tchannel_message:channel=0x%0x message=0x%0x\n", command->channel_message.channel, command->channel_message.message);
 	logging_printf(LOGGING_DEBUG, "\tsystem_message: message=0x%0x\n", command->system_message.message); 
 	logging_printf(LOGGING_DEBUG, "\tdelta=%zu, data_len=%u\n", command->delta, command->data_len);
-	//if( command->data_len > 0 ) hex_dump( command->data , command->data_len );
 }

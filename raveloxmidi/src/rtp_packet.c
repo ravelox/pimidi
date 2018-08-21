@@ -161,7 +161,7 @@ void rtp_packet_dump( rtp_packet_t *packet )
 {
 	if( ! packet ) return;
 
-	logging_printf( LOGGING_DEBUG, "RTP Packet(v=%u,p=%u,x=%u,cc=%u,m=%u,pt=%u,seq=%u,timestamp=0x%08x,ssrc=0x%08x,payload_length=%u,payload=%p)\n",
+	logging_printf( LOGGING_DEBUG, rtp_packet_dump: v=%u,p=%u,x=%u,cc=%u,m=%u,pt=%u,seq=%u,timestamp=0x%08x,ssrc=0x%08x,payload_length=%u,payload=%p\n",
 		packet->header.v, packet->header.p, packet->header.x, packet->header.cc, packet->header.m, packet->header.pt,
 		packet->header.seq, packet->header.timestamp, packet->header.ssrc, packet->payload_len, packet->payload);
 	return;

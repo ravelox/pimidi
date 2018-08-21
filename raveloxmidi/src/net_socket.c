@@ -483,14 +483,15 @@ static int get_shutdown_lock ( void )
 int net_socket_loop( unsigned int interval )
 {
         int ret = 0;
+	struct timeval tv; 
+
+	tv.tv_sec = 0;
+	tv.tv_usec = interval;
 
 	pthread_mutex_init( &shutdown_lock , NULL );
 
 	set_shutdown_lock( 0 );
         do {
-		struct timeval tv; 
-                tv.tv_sec = 0;
-                tv.tv_usec = interval;
                 ret = select( 0 , NULL , NULL , NULL , &tv );
 
 		net_socket_listener();

@@ -207,6 +207,8 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	if( ! new_ctx )
 	{
 		new_ctx = net_ctx_create();
+	} else {
+		logging_printf(LOGGING_WARN, "net_ctx_register: net_ctx already exists\n");
 	}
 
 	if( ! new_ctx )
@@ -241,7 +243,7 @@ void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
 	if( ! midi_note ) return;
 	if( ! ctx) return;
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
-	journal_dump( ctx->journal );
+	net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
@@ -249,14 +251,14 @@ void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
 	if( ! midi_control ) return;
 	if( !ctx ) return;
 	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
-	journal_dump( ctx->journal );
+	net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_journal_dump( net_ctx_t *ctx )
 {
 	if( ! ctx) return;
 
-	logging_printf( LOGGING_DEBUG, "net_ctx_journal_dump: Journal has data: %s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
+	logging_printf( LOGGING_DEBUG, "net_ctx_journal_dump: has_data=%s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
 	if( ! journal_has_data( ctx->journal ) ) return;
 	journal_dump( ctx->journal );
 }
