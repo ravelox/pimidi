@@ -63,6 +63,11 @@ static int num_sockets = 0;
 static int *sockets = NULL;
 static int net_socket_shutdown;
 static int inbound_midi_fd = -1;
+static unsigned char *packet = NULL;
+static size_t packet_size = 0;
+#ifdef HAVE_ALSA
+static size_t alsa_buffer_size = 0;
+#endif
 
 static pthread_mutex_t shutdown_lock;
 
@@ -129,17 +134,13 @@ int net_socket_teardown( void )
 	free(sockets);
 
 	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
+	if( packet ) FREENULL( "net_socket_teardown: packet", (void **)&packet );
 
 	return 0;
 }
 
 int net_socket_listener( void )
 {
-	unsigned char *packet = NULL;
-	size_t packet_size = 0;
-#ifdef HAVE_ALSA
-	size_t alsa_buffer_size = 0;
-#endif
 	int i;
 	int recv_len;
 	unsigned from_len;
@@ -152,20 +153,6 @@ int net_socket_listener( void )
 
 	from_len = sizeof( struct sockaddr );
 
-#ifdef HAVE_ALSA
-	alsa_buffer_size = atoi( config_get("alsa.input_buffer_size") );
-	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, atoi( config_get("alsa.input_buffer_size") ) );
-#else
-	packet_size = NET_APPLEMIDI_UDPSIZE;
-#endif
-
-	packet = ( unsigned char * ) malloc( packet_size + 1);
-
-	if( ! packet ) 
-	{
-		logging_printf(LOGGING_ERROR, "net_socket_listener: Unable to allocate memory for read buffer\n");
-		return -1;
-	}
 
 	for( i = 0 ; i < num_sockets ; i++ )
 	{
@@ -474,7 +461,6 @@ int net_socket_listener( void )
 		}
 	}
 
-	if( packet ) FREENULL( "net_socket_listener: packet", (void **)&packet );
 	return ret;
 }
 
@@ -522,7 +508,7 @@ void net_socket_loop_shutdown(int signal)
 	set_shutdown_lock( 1 );
 }
 
-int net_socket_setup( void )
+int net_socket_init( void )
 {
 	num_sockets = 0;
 	char *inbound_midi_filename = NULL;
@@ -563,5 +549,20 @@ int net_socket_setup( void )
 		net_socket_add( RAVELOXMIDI_ALSA_INPUT );
 	}
 #endif
+
+#ifdef HAVE_ALSA
+	alsa_buffer_size = atoi( config_get("alsa.input_buffer_size") );
+	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, atoi( config_get("alsa.input_buffer_size") ) );
+#else
+	packet_size = NET_APPLEMIDI_UDPSIZE;
+#endif
+
+	packet = ( unsigned char * ) malloc( packet_size + 1);
+
+	if( ! packet ) 
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_init: Unable to allocate memory for read buffer\n");
+		return -1;
+	}
 	return 0;
 }

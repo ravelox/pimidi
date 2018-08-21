@@ -25,12 +25,12 @@
 
 void net_socket_add( int new_socket );
 int net_socket_create( unsigned int port );
+int net_socket_init( void );
 int net_socket_teardown( void );
 
 int net_socket_listener( void );
 int net_socket_loop( unsigned int interval );
 void net_socket_loop_shutdown(int signal);
-int net_socket_setup( void );
 
 extern uint8_t _max_ctx;
 
