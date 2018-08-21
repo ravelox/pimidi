@@ -53,6 +53,11 @@ static int logging_threshold = 3;
 static char *logging_file_name = NULL;
 static unsigned char prefix_disabled = 0;
 
+int logging_is_debug( void )
+{
+	return ( logging_threshold == 0 ? 1 : 0);
+}
+
 int logging_name_to_value(name_map_t *map, const char *name)
 {
 	int value = -1;

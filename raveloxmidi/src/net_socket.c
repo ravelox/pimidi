@@ -182,7 +182,7 @@ int net_socket_listener( void )
 			if( sockets[i] != RAVELOXMIDI_ALSA_INPUT )
 			{
 #endif
-				logging_printf( LOGGING_DEBUG, "net_socket_listener: read(bytes=%u,socket=%d,host=%s,port=%u,first_byte=%02x)\n", recv_len, i,ip_address, ntohs( from_addr.sin_port ), packet[0]);
+				logging_printf( LOGGING_DEBUG, "net_socket_listener: read socket=%d, bytes=%u, host=%s, port=%u, first_byte=%02x)\n", i, recv_len,ip_address, ntohs( from_addr.sin_port ), packet[0]);
 
 #ifdef HAVE_ALSA
 			} else {
@@ -190,8 +190,8 @@ int net_socket_listener( void )
 			}
 #endif
 			
-
 			hex_dump( packet, recv_len );
+
 			// Apple MIDI command
 			if( packet[0] == 0xff )
 			{

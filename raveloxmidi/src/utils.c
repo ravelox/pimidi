@@ -189,6 +189,9 @@ void hex_dump( unsigned char *buffer, size_t len )
 	size_t i = 0 ;
 	unsigned char c = 0 ;
 
+/* Only do a hex dump at debug level */
+	if( ! logging_is_debug() ) return;
+
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hexdump(%p , %u)\n", buffer, len );

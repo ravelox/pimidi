@@ -16,6 +16,7 @@ typedef struct {
 #define LOGGING_ERROR	4
 
 
+int logging_is_debug( void );
 int logging_name_to_value(name_map_t *map, const char *name);
 char *logging_value_to_name(name_map_t *map, int value);
 void logging_printf(int level, const char *format, ...);
