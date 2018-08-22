@@ -304,8 +304,6 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 	ssize_t bytes_sent = 0;
 	struct timeval start;
 
-	logging_printf( LOGGING_ERROR, "net_ctx_send: socket=%d, ctx ptr=%p, buffer ptr=%p, buffer_len=%u\n", send_socket, ctx, buffer, buffer_len);
-
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
 	if( ! ctx ) return;
