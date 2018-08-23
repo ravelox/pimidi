@@ -18,18 +18,20 @@ PKG_PROG_PKG_CONFIG
 
 PKG_CHECK_MODULES(AVAHI, avahi-client )
 
-AC_ARG_ENABLE(alsa,
-        AC_HELP_STRING([--enable-alsa],[Enable alsa support]),
-        enable_alsa="yes", enable_alsa="no")
-if test "x$enable_alsa" == "xyes" -o "x$enable_all" == "xyes"
+AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes")
+if test "$have_alsa" == "yes"
 then
-	PKG_CHECK_MODULES(ALSA,alsa,[have_alsa="yes"])
-	if test "$have_alsa" == "yes"
-	then
-	   AC_DEFINE(HAVE_ALSA, 1, [ALSA has been detected])
-	fi
+   ALSA_LIBS="`pkg-config --libs alsa`"
+   ALSA_CFLAGS="`pkg-config --cflags alsa`"
+   AC_SUBST(ALSA_LIBS)
+   AC_SUBST(ALSA_CFLAGS)
+   AC_DEFINE(HAVE_ALSA, 1, [ALSA has been detected])
 fi
 
-DEB_ARCH="`dpkg --print-architecture`"
-AC_SUBST(DEB_ARCH)
+AC_CHECK_PROG([have_dpkg],[dpkg], "yes", "no")
+if test "$have_dpkg" == "yes"
+then
+	DEB_ARCH="`dpkg --print-architecture`"
+	AC_SUBST(DEB_ARCH)
+fi
 AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 DEBIAN/control pkgscripts/build_deb raveloxmidi.spec)
