@@ -33,5 +33,6 @@ if test "$have_dpkg" == "yes"
 then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
+	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
 fi
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 DEBIAN/control pkgscripts/build_deb raveloxmidi.spec)
+AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec)

@@ -257,7 +257,6 @@ int net_socket_listener( void )
                                 size_t num_midi_commands=0;
                                 size_t midi_command_index = 0;
 
-				uint8_t ctx_id = 0;
 				char *packed_journal = NULL;
 				size_t packed_journal_len = 0;
 				char *description = NULL;

@@ -63,8 +63,8 @@ void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet);
 void net_ctx_send( int socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len );
 void net_ctx_increment_seq( net_ctx_t *ctx );
 
-net_ctx_t *net_ctx_iter_start_head(void);
-net_ctx_t *net_ctx_iter_start_tail(void);
+void net_ctx_iter_start_head(void);
+void net_ctx_iter_start_tail(void);
 net_ctx_t *net_ctx_iter_current(void);
 int net_ctx_iter_has_current(void);
 int net_ctx_iter_has_next(void);

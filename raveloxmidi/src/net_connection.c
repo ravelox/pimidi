@@ -93,8 +93,6 @@ void net_ctx_dump( net_ctx_t *ctx )
 
 static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
 {
-	journal_t *journal = NULL;
-
 	if( ! ctx ) return;
 
 	ctx->ssrc = ssrc;
@@ -334,13 +332,13 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 	}
 }
 
-net_ctx_t *net_ctx_iter_start_head(void)
+void net_ctx_iter_start_head(void)
 {
 	_iterator_current = _ctx_head;
 	logging_printf(LOGGING_DEBUG,"net_ctx_iter_start_head: current=%p\n", _iterator_current );
 	
 }
-net_ctx_t *net_ctx_iter_start_tail(void)
+void net_ctx_iter_start_tail(void)
 {
 	_iterator_current = net_ctx_get_last();
 	logging_printf(LOGGING_DEBUG,"net_ctx_iter_start_end: current=%p\n", _iterator_current );
