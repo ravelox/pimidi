@@ -201,7 +201,7 @@ void config_teardown( void )
 {
 	int i = 0;
 
-	fprintf( stderr, "config_teardown config_items=%p num_items=%u\n", config_items, num_items - 1 );
+	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p num_items=%u\n", config_items, num_items - 1 );
 	if( ! config_items ) return;
 	if( num_items == 0 ) return;
 

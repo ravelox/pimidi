@@ -104,9 +104,10 @@ daemon_stop:
 		daemon_teardown();
 	}
 
-	logging_stop();
-
 	config_teardown();
+
+	logging_teardown();
+
 
 	return 0;
 }

@@ -46,7 +46,7 @@ chapter_c_t *chapter_c_create( void )
 	memset( new_chapter_c, 0, sizeof( chapter_c_t ) );
 	new_chapter_c->S = 1;
 
-	for( index = 0 ; index <= MAX_CHAPTER_C_CONTROLLERS; index++ )
+	for( index = 0 ; index < MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
 		new_chapter_c->controller_log[ index ].number = 255;
 	}
@@ -127,10 +127,12 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 
 	// Ensure the len field is correct
 	chapter_c->len = 0;
-	for( index=0; index <= MAX_CHAPTER_C_CONTROLLERS; index++ )
+	logging_printf(LOGGING_DEBUG, "chapter_c_pack: Active controllers are:\n");
+	for( index=0; index < MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
 		if( chapter_c->controller_log[index].number == index )
 		{
+			logging_printf(LOGGING_DEBUG, "\t%u\n", index);
 			chapter_c->len++;
 		}
 	}
@@ -163,8 +165,9 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 	index = 0;
 
 	// Loop through the controllers
-	while( ( current_size >= PACKED_CONTROLLER_LOG_SIZE ) && ( index <= MAX_CHAPTER_C_CONTROLLERS ) )
+	while( ( current_size >= PACKED_CONTROLLER_LOG_SIZE ) && ( index < MAX_CHAPTER_C_CONTROLLERS ) )
 	{
+		logging_printf(LOGGING_DEBUG,"chapter_c_pack: Checking %u = (%u)\n", index, chapter_c->controller_log[index].number);
 		// Short-circuit if the controller isn't active
 		if( chapter_c->controller_log[index].number == index )
 		{
@@ -205,7 +208,7 @@ void chapter_c_reset( chapter_c_t *chapter_c )
 	
 	memset( chapter_c, 0, sizeof(chapter_c_t) );
 	chapter_c->S = 1; 
-	for( index = 0 ; index <= MAX_CHAPTER_C_CONTROLLERS; index++ )
+	for( index = 0 ; index < MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
 		chapter_c->controller_log[ index ].S = 1;
 		chapter_c->controller_log[ index ].number = 255;

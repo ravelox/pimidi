@@ -54,6 +54,7 @@ net_ctx_t * net_ctx_get_last( void );
 
 void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note );
 void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control );
+void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program );
 
 void net_ctx_journal_dump( net_ctx_t *ctx);
 void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size);

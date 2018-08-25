@@ -47,23 +47,28 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		ret = snd_rawmidi_open( &input_handle, NULL, input_name, SND_RAWMIDI_NONBLOCK );
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init input: device=%s ret=%d %s\n", input_name, ret, snd_strerror( ret ) );
 		
-		if( (buffer_size > RAVELOXMIDI_ALSA_DEFAULT_BUFFER) && (buffer_size <= RAVELOXMIDI_ALSA_MAX_BUFFER) )
+		if( ret > 0 )
 		{
-			snd_rawmidi_params_malloc( &params );
-			snd_rawmidi_params_current( input_handle, params );
-			snd_rawmidi_params_set_buffer_size( input_handle, params, buffer_size );
-			snd_rawmidi_params( input_handle, params );
-			snd_rawmidi_params_free( params );
+			if( (buffer_size > RAVELOXMIDI_ALSA_DEFAULT_BUFFER) && (buffer_size <= RAVELOXMIDI_ALSA_MAX_BUFFER) )
+			{
+				snd_rawmidi_params_malloc( &params );
+				snd_rawmidi_params_current( input_handle, params );
+				snd_rawmidi_params_set_buffer_size( input_handle, params, buffer_size );
+				snd_rawmidi_params( input_handle, params );
+				snd_rawmidi_params_free( params );
+			}
+			raveloxmidi_alsa_dump_rawmidi( input_handle );
 		}
-
-		raveloxmidi_alsa_dump_rawmidi( input_handle );
 	}
 
 	if( output_name )
 	{
 		ret = snd_rawmidi_open( NULL, &output_handle, output_name, SND_RAWMIDI_NONBLOCK );
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", output_name, ret, snd_strerror( ret ) );
-		raveloxmidi_alsa_dump_rawmidi( output_handle );
+		if( ret > 0 ) 
+		{
+			raveloxmidi_alsa_dump_rawmidi( output_handle );
+		}
 	}
 }
 

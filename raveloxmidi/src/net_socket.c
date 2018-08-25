@@ -49,6 +49,8 @@ extern int errno;
 
 #include "midi_note.h"
 #include "midi_control.h"
+#include "midi_program.h"
+
 #include "rtp_packet.h"
 #include "midi_command.h"
 #include "midi_payload.h"
@@ -245,6 +247,7 @@ int net_socket_listener( void )
 
 				midi_note_t *midi_note = NULL;
 				midi_control_t *midi_control = NULL;
+				midi_program_t *midi_program = NULL;
 				midi_payload_t *initial_midi_payload = NULL;
 
 
@@ -291,6 +294,10 @@ int net_socket_listener( void )
 							ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
 							midi_control_dump( midi_control );
 							break;
+						case MIDI_PROGRAM_CHANGE:
+							ret = midi_program_from_command( &(midi_commands[midi_command_index]), &midi_program);
+							midi_program_dump( midi_program );
+							break;
 						default:
 							break;
 					}
@@ -316,11 +323,12 @@ int net_socket_listener( void )
 						// We have to pack the payload again each time because some connections may not have a journal
 						// and the flag to indicate the journal being present is in the payload
 						midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
-						logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,len=%u\n", packed_payload, packed_payload_len);
+						logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
 						hex_dump( packed_payload, packed_payload_len );
 
 						// Join the packed MIDI payload and the journal together
 						packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
+						memset( packed_rtp_payload, 0, packed_payload_len + packed_journal_len );
 						memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
 						memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
 						logging_printf(LOGGING_DEBUG, "packed_rtp_payload\n");
@@ -357,7 +365,10 @@ int net_socket_listener( void )
 								net_ctx_add_journal_note( current_ctx , midi_note );
 								break;
 							case MIDI_CONTROL_CHANGE:
-								 net_ctx_add_journal_control( current_ctx, midi_control );
+								net_ctx_add_journal_control( current_ctx, midi_control );
+								break;
+							case MIDI_PROGRAM_CHANGE:	
+								net_ctx_add_journal_program( current_ctx, midi_program );
 								break;
 							default:
 								continue;
@@ -375,6 +386,9 @@ int net_socket_listener( void )
 							break;
 						case MIDI_CONTROL_CHANGE:
 							midi_control_destroy( &midi_control );
+							break;
+						case MIDI_PROGRAM_CHANGE:
+							midi_program_destroy( &midi_program );
 							break;
 						default:
 							break;

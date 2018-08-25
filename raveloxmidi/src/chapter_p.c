@@ -63,10 +63,11 @@ void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *siz
 		return;
 	}
 
+	memset(*packed, 0, CHAPTER_P_PACKED_SIZE);
 	*size = CHAPTER_P_PACKED_SIZE;
-	(*packed)[0] = ( (chapter_p->S & 0x01) << 7 ) & (chapter_p->program & 0x7f);
-	(*packed)[1] = ( (chapter_p->B & 0x01) << 7 ) & (chapter_p->bank_msb & 0x7f);
-	(*packed)[2] = ( (chapter_p->X & 0x01) << 7 ) & (chapter_p->bank_lsb & 0x7f);
+	(*packed)[0] = ( (chapter_p->S & 0x01) << 7 ) | (chapter_p->program & 0x7f);
+	(*packed)[1] = ( (chapter_p->B & 0x01) << 7 ) | (chapter_p->bank_msb & 0x7f);
+	(*packed)[2] = ( (chapter_p->X & 0x01) << 7 ) | (chapter_p->bank_lsb & 0x7f);
 }
 
 void chapter_p_unpack( unsigned char *packed, size_t size, chapter_p_t **chapter_p)
@@ -100,7 +101,7 @@ void chapter_p_destroy( chapter_p_t **chapter_p )
 
 void chapter_p_dump( chapter_p_t *chapter_p )
 {
-	logging_printf(LOGGING_INFO,"Chapter P: (S=%u,program=%u,B=%u,msb=%u,X=%u,lsb=%u\n",
+	logging_printf(LOGGING_INFO," chapter_p: S=%u,program=%u,B=%u,msb=%u,X=%u,lsb=%u\n",
 		chapter_p->S, chapter_p->program, chapter_p->B, chapter_p->bank_msb, chapter_p->X, chapter_p->bank_lsb);
 }
 

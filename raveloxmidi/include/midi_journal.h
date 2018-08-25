@@ -23,6 +23,7 @@
 
 #include "midi_note.h"
 #include "midi_control.h"
+#include "midi_program.h"
 
 #include "chapter_p.h"
 #include "chapter_n.h"
@@ -98,5 +99,6 @@ void journal_reset( journal_t *journal );
 
 void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_note );
 void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t *midi_control );
+void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t *midi_program );
 
 #endif

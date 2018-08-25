@@ -83,7 +83,7 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 		return 1;
 	}
 
-	packed_header_buffer_size = ( sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint16_t) );
+	packed_header_buffer_size = ( sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint32_t) );
 	*out_buffer = (unsigned char *)malloc( packed_header_buffer_size );
 	memset( *out_buffer, 0, packed_header_buffer_size );
 

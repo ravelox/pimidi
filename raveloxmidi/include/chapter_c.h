@@ -21,7 +21,7 @@
 #ifndef CHAPTER_C_JOURNAL_H
 #define CHAPTER_C_JOURNAL_H
 
-#define MAX_CHAPTER_C_CONTROLLERS	127
+#define MAX_CHAPTER_C_CONTROLLERS	128
 
 typedef struct controller_log_t {
 	uint8_t S;

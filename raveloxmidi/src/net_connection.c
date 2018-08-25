@@ -109,9 +109,6 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 		free( ctx->ip_address );
 	}
 	ctx->ip_address = ( char *) strdup( ip_address );
-
-	journal_init( &journal );
-	ctx->journal = journal;
 }
 
 static net_ctx_t * net_ctx_create( void )
@@ -251,6 +248,14 @@ void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
 	if( ! midi_control ) return;
 	if( !ctx ) return;
 	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
+	net_ctx_journal_dump( ctx );
+}
+
+void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
+{
+	if( !midi_program ) return;
+	if( !ctx ) return;
+	midi_journal_add_program( ctx->journal, ctx->seq, midi_program );
 	net_ctx_journal_dump( ctx );
 }
 

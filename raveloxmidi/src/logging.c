@@ -196,7 +196,7 @@ void logging_init(void)
 	pthread_mutex_unlock( &logging_mutex );
 }
 
-void logging_stop(void)
+void logging_teardown(void)
 {
 	pthread_mutex_lock( &logging_mutex);
 
