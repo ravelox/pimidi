@@ -1,4 +1,4 @@
-Summary: Simple rtpMIDI NoteOn/NoteOff/ControlChange proxy
+Summary: Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -8,7 +8,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 
 %description
-Simple rtpMIDI NoteOn/NoteOff/ControlChange proxy
+Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
 
 %prep
 %setup -q

@@ -1,6 +1,6 @@
 .TH raveloxmidi "@VERSION@"
 .SH NAME
-raveloxmidi - RTP MIDI NoteOn/NoteOff/ControlChange proxy
+raveloxmidi - RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
 .B raveloxmidi
 [-c filename] [-d|-I] [-N] [-P filename] [-R] [-h]
@@ -9,7 +9,7 @@ raveloxmidi - RTP MIDI NoteOn/NoteOff/ControlChange proxy
 [--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help]
 .SH DESCRIPTION
 .BR raveloxmidi
-provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff and ControlChange events to a remote MIDI device.
+provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
 .SH OPTIONS
 .TP
 .B -c filename
@@ -84,6 +84,17 @@ Name of file to write inbound MIDI events to. This file is governed by the secur
 .TP
 .B file_mode
 File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0640.
+.TP
+.B The following options are available if raveloxmidi is built with ALSA support:
+.TP
+.B alsa.output_device
+Name of the rawmidi ALSA device to send MIDI events to.
+.TP
+.B alsa.input_device
+Name of the rawmidi ALSA device to read MIDI events from.
+.TP
+.B alsa.input_buffer_size
+Size of the buffer to use for reading data from the input device. Default is 4096. Maximum is 65535.
 .fi
 .SH AUTHOR
 .B raveloxmidi
