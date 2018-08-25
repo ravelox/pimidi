@@ -1,9 +1,7 @@
-See http://www.raveloxprojects.com/blog/?cat=5 for the reason I'm doing this.
-
 The original reason for writing this was to send NoteOn/NoteOff MIDI events from
 a self-built drum pad interface through a Raspberry Pi to Logic Pro X on OS X.
 
-This has evolved into a proxy for Note and Control events.
+This has evolved into a proxy for Note and Control events with ALSA support.
 
 I'm doing this purely for fun and don't expect anyone else to use
 it but I'm happy to accept suggestions if you ever come across

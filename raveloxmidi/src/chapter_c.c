@@ -127,12 +127,10 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 
 	// Ensure the len field is correct
 	chapter_c->len = 0;
-	logging_printf(LOGGING_DEBUG, "chapter_c_pack: Active controllers are:\n");
 	for( index=0; index < MAX_CHAPTER_C_CONTROLLERS; index++ )
 	{
 		if( chapter_c->controller_log[index].number == index )
 		{
-			logging_printf(LOGGING_DEBUG, "\t%u\n", index);
 			chapter_c->len++;
 		}
 	}
