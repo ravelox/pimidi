@@ -216,6 +216,7 @@ void chapter_c_reset( chapter_c_t *chapter_c )
 void chapter_c_dump( chapter_c_t *chapter_c )
 {
 	uint8_t index;
+	DEBUG_ONLY;
 	if(! chapter_c) return;
 
 	logging_printf(LOGGING_DEBUG, "chapter_c: S=%u,len=%u\n", chapter_c->S, chapter_c->len);
@@ -264,6 +265,7 @@ void controller_log_reset( controller_log_t *controller_log )
 
 void controller_log_dump( controller_log_t *controller_log )
 {
+	DEBUG_ONLY;
 	if( ! controller_log ) return;
 
 	logging_printf(LOGGING_DEBUG, "controller_log: S=%u,number=%u,A=%u,T=%u,value=%u\n",

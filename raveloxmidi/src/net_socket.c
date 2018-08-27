@@ -269,6 +269,7 @@ int net_socket_listener( void )
 				initial_midi_payload = midi_payload_create();
 				midi_payload_set_buffer( initial_midi_payload, packet + 1 , &midi_payload_len );
 				midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
+				midi_payload_destroy( &initial_midi_payload );
 
 				for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 				{
@@ -323,7 +324,6 @@ int net_socket_listener( void )
 						// and the flag to indicate the journal being present is in the payload
 						midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
 						logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
-						hex_dump( packed_payload, packed_payload_len );
 
 						// Join the packed MIDI payload and the journal together
 						packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
@@ -331,7 +331,6 @@ int net_socket_listener( void )
 						memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
 						memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
 						logging_printf(LOGGING_DEBUG, "packed_rtp_payload\n");
-						hex_dump( packed_rtp_payload, packed_payload_len + packed_journal_len );
 
 						rtp_packet = rtp_packet_create();
 						net_ctx_increment_seq( current_ctx );
@@ -484,15 +483,6 @@ static void set_shutdown_lock( int i )
 	pthread_mutex_unlock( &shutdown_lock );
 }
 
-static int get_shutdown_lock ( void )
-{
-	int i = 0;
-	pthread_mutex_lock( &shutdown_lock );
-	i = net_socket_shutdown;
-	pthread_mutex_unlock( &shutdown_lock );
-	return i;
-}
-
 int net_socket_loop( unsigned int interval )
 {
         int ret = 0;
@@ -509,7 +499,7 @@ int net_socket_loop( unsigned int interval )
 
 		net_socket_listener();
 
-	} while( get_shutdown_lock() == 0 );
+	} while( net_socket_shutdown == 0 );
 
 	pthread_mutex_destroy( &shutdown_lock );
 

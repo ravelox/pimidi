@@ -21,8 +21,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <sys/time.h>
-
 uint64_t ntohll(const uint64_t value);
 uint64_t htonll(const uint64_t value);
 void get_uint16( void *dest, unsigned char **src, size_t *len );
@@ -36,8 +34,6 @@ void FREENULL( const char *description, void **ptr );
 int check_file_security( const char *filepath );
 int is_yes( const char *value );
 int is_no( const char *value );
-
-void profile_duration( char *label, suseconds_t start_time );
 
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )

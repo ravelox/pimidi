@@ -104,6 +104,7 @@ int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buff
 
 void midi_note_dump( midi_note_t *midi_note )
 {
+	DEBUG_ONLY;
 	if(! midi_note ) return;
 
 	logging_printf( LOGGING_DEBUG, "MIDI Note(command=%d,channel=%d,note=%d,velocity=%d)\n",

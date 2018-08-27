@@ -126,6 +126,7 @@ void midi_command_dump( midi_command_t *command )
 	char *description = NULL;
 	enum midi_message_type_t message_type;
 
+	DEBUG_ONLY;
 	if( ! command ) return;
 
 	midi_command_map( command, &description, &message_type );

@@ -190,7 +190,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 	unsigned char c = 0 ;
 
 /* Only do a hex dump at debug level */
-	if( ! logging_is_debug() ) return;
+	DEBUG_ONLY;
 
 	logging_prefix_disable();
 
@@ -265,12 +265,4 @@ int is_no( const char *value )
 	if( strcasecmp( value, "0" ) == 0 ) return 1;
 
 	return 0;
-}
-
-void profile_duration( char *label, suseconds_t start_time )
-{
-	struct timeval end_time;
-
-	gettimeofday(&end_time, NULL);
-	logging_printf(LOGGING_INFO, "Profile: %s, duration=%ld\n", label, end_time.tv_usec - start_time);
 }

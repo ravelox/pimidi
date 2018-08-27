@@ -101,7 +101,8 @@ void chapter_p_destroy( chapter_p_t **chapter_p )
 
 void chapter_p_dump( chapter_p_t *chapter_p )
 {
-	logging_printf(LOGGING_INFO," chapter_p: S=%u,program=%u,B=%u,msb=%u,X=%u,lsb=%u\n",
+	DEBUG_ONLY;
+	logging_printf(LOGGING_DEBUG," chapter_p: S=%u,program=%u,B=%u,msb=%u,X=%u,lsb=%u\n",
 		chapter_p->S, chapter_p->program, chapter_p->B, chapter_p->bank_msb, chapter_p->X, chapter_p->bank_lsb);
 }
 

@@ -15,8 +15,13 @@ typedef struct {
 #define LOGGING_WARN	3
 #define LOGGING_ERROR	4
 
+#ifdef INSIDE_LOGGING
+int logging_threshold = 3;
+#else
+extern int logging_threshold;
+#define DEBUG_ONLY	if(logging_threshold==LOGGING_DEBUG) return;
+#endif
 
-int logging_is_debug( void );
 int logging_name_to_value(name_map_t *map, const char *name);
 char *logging_value_to_name(name_map_t *map, int value);
 void logging_printf(int level, const char *format, ...);

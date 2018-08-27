@@ -159,6 +159,7 @@ void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *
 
 void rtp_packet_dump( rtp_packet_t *packet )
 {
+	DEBUG_ONLY;
 	if( ! packet ) return;
 
 	logging_printf( LOGGING_DEBUG, "rtp_packet_dump: v=%u,p=%u,x=%u,cc=%u,m=%u,pt=%u,seq=%u,timestamp=0x%08x,ssrc=0x%08x,payload_length=%u,payload=%p\n",

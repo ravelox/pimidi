@@ -33,10 +33,11 @@
 
 #include "utils.h"
 #include "raveloxmidi_config.h"
+
+#define INSIDE_LOGGING
 #include "logging.h"
 
 extern int errno;
-
 static name_map_t loglevel_map[] = {
 	{ "DEBUG" , 0 },
 	{ "INFO", 1 },
@@ -49,14 +50,8 @@ static name_map_t loglevel_map[] = {
 static pthread_mutex_t	logging_mutex;
 
 static int logging_enabled = 0;
-static int logging_threshold = 3;
 static char *logging_file_name = NULL;
 static unsigned char prefix_disabled = 0;
-
-int logging_is_debug( void )
-{
-	return ( logging_threshold == 0 ? 1 : 0);
-}
 
 int logging_name_to_value(name_map_t *map, const char *name)
 {

@@ -187,7 +187,6 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 // The order of chapters is: PCMWNETA
 	if( packed_chapter_p_size > 0 )
 	{
-		hex_dump( packed_chapter_p, packed_chapter_p_size );
 		memcpy( p, packed_chapter_p, packed_chapter_p_size );
 		*size += packed_chapter_p_size;
 		p += packed_chapter_p_size;
@@ -550,6 +549,7 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t 
 
 void channel_header_dump( channel_header_t *header )
 {
+	DEBUG_ONLY;
 	if( ! header ) return;
 
 	logging_printf( LOGGING_DEBUG, "Channel #%d (Header: S=%d,H=%d,len=%u,bitfield=%02x)\n", header->chan, header->S, header->H, header->len, header->bitfield);
@@ -567,6 +567,7 @@ void channel_header_reset( channel_header_t *header )
 
 void channel_journal_dump( channel_t *channel )
 {
+	DEBUG_ONLY;
 	if( ! channel ) return;
 
 	logging_printf(LOGGING_DEBUG,"channel_journal_dump\n");
@@ -609,6 +610,7 @@ int journal_has_data( journal_t *journal )
 
 void journal_header_dump( journal_header_t *header )
 {
+	DEBUG_ONLY;
 	if( ! header ) return;
 
 	logging_printf( LOGGING_DEBUG, "Journal (Header: bitfield=%02x totchan=%d seq=%04x)\n", header->bitfield, header->totchan, header->seq);
@@ -627,6 +629,7 @@ void journal_header_reset( journal_header_t *header )
 void journal_dump( journal_t *journal )
 {
 	unsigned int i = 0;
+	DEBUG_ONLY;
 	if( ! journal ) return;
 
 	journal_header_dump( journal->header );

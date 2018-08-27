@@ -243,6 +243,7 @@ void chapter_n_destroy( chapter_n_t **chapter_n )
 
 void chapter_n_header_dump( chapter_n_header_t *header )
 {
+	DEBUG_ONLY;
 	if( ! header ) return;
 
 	logging_printf( LOGGING_DEBUG, "Chapter N(header): B=%d len=%u low=%u high=%u\n", header->B, header->len, header->low, header->high);
@@ -262,9 +263,8 @@ void chapter_n_dump( chapter_n_t *chapter_n )
 {
 	uint16_t i = 0;
 
+	DEBUG_ONLY;
 	if( ! chapter_n ) return;
-
-	chapter_n_header_dump( chapter_n->header );
 
 	for( i = 0 ; i < chapter_n->num_notes ; i++ )
 	{
@@ -342,6 +342,7 @@ chapter_n_note_t * chapter_n_note_create( void )
 
 void chapter_n_note_dump( chapter_n_note_t *note )
 {
+	DEBUG_ONLY;
 	if( ! note ) return;
 
 	logging_printf( LOGGING_DEBUG, "chapter_n_note: S=%d num=%u Y=%d velocity=%u\n", note->S, note->num, note->Y, note->velocity);

@@ -109,6 +109,7 @@ int midi_program_pack( midi_program_t *midi_program, unsigned char **buffer, siz
 
 void midi_program_dump( midi_program_t *midi_program )
 {
+	DEBUG_ONLY;
 	if(! midi_program ) return;
 
 	logging_printf( LOGGING_DEBUG, "MIDI Program Change: command=0x%02x, channel=0x%02x, S=%d program=%d B=%d, bank_msb=0x%02x, X=%d, bank_lsb=0x%02x\n",

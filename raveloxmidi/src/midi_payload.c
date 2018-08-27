@@ -188,6 +188,7 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 
 void midi_payload_header_dump( midi_payload_header_t *header )
 {
+	DEBUG_ONLY;
 	if( ! header ) return;
 
 	logging_printf( LOGGING_DEBUG, "MIDI Payload(B=%d,J=%d,Z=%d,P=%d,payload_length=%u)\n",
@@ -334,7 +335,6 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	current_len = payload->header->len;
 
 	logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: payload->header->len=%zu\n", payload->header->len);
-
 	hex_dump( p, current_len );
 	
 	do 
