@@ -23,8 +23,10 @@ if test "$have_alsa" == "yes"
 then
    ALSA_LIBS="`pkg-config --libs alsa`"
    ALSA_CFLAGS="`pkg-config --cflags alsa`"
+   ALSA_DEPS=",libasound2"
    AC_SUBST(ALSA_LIBS)
    AC_SUBST(ALSA_CFLAGS)
+   AC_SUBST(ALSA_DEPS)
    AC_DEFINE(HAVE_ALSA, 1, [ALSA has been detected])
 fi
 
