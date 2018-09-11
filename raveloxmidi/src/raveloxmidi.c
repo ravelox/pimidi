@@ -87,7 +87,15 @@ int main(int argc, char *argv[])
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
-		net_socket_loop( config_int_get("network.socket_interval") );
+		net_socket_loop_init();
+#ifdef HAVE_ALSA
+		net_socket_alsa_loop();
+#endif
+		net_socket_fd_loop();
+#ifdef HAVE_ALSA
+		net_socket_wait_for_alsa();
+#endif
+		net_socket_loop_teardown();
 	}
 
 	net_socket_teardown();

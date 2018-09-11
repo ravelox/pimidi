@@ -49,8 +49,8 @@ Port to listen on for RTSP events from remote clients ( default is 5005 )
 Port to listen on for local MIDI  ( default is 5006 )
 network.note.port = 5006
 .TP
-.B network.socket_interval
-Polling interval (in microseconds) to listen for network events ( default is 5000 )
+.B network.socket_timeout_
+Polling interval (in seconds) to listen for network events ( default is 30 )
 .TP
 .B network.max_connections
 Number of connections that can be made to @PACKAGE@. Maximum is 255. Minimum is 1. ( default is 8 ).

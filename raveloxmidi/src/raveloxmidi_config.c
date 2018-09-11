@@ -42,7 +42,7 @@ static void config_set_defaults( void )
 	config_add_item("network.control.port", "5004");
 	config_add_item("network.data.port", "5005");
 	config_add_item("network.local.port", "5006");
-	config_add_item("network.socket_interval" , "5000" );
+	config_add_item("network.socket_timeout" , "30" );
 	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
 	config_add_item("run_as_daemon", "yes");
@@ -239,6 +239,16 @@ int config_int_get( char *key )
 	return atoi( item_string );
 }
 	
+long config_long_get( char *key )
+{
+	char *item_string = NULL;
+
+	item_string = config_string_get( key );
+	if( ! item_string ) return 0;
+	if( strlen( item_string ) == 0 ) return 0;
+	return atol( item_string );
+}
+
 static raveloxmidi_config_t *config_get_item( char *key )
 {
 	int i = 0 ;

@@ -90,8 +90,8 @@ network.max_connections
 	Maximum number of incoming connections that can be stored. Default is 8.
 service.name
 	Name used in the zeroconf definition for the RTP MIDI service. Default is 'raveloxmidi'.
-network.socket_interval
-	Polling interval for the listening sockets. Default is 5000 microseconds.
+network.socket_timeout_
+	Polling interval for the listening sockets. Default is 30 seconds.
 run_as_daemon
 	Specifies that raveloxmidi should run in the background. Default is yes.
 daemon.pid_file

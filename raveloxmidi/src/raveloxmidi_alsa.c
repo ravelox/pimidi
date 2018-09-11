@@ -29,12 +29,20 @@
 
 #include <asoundlib.h>
 
+#include <signal.h>
+
 #include "raveloxmidi_alsa.h"
 #include "utils.h"
 #include "logging.h"
 
 static snd_rawmidi_t *input_handle = NULL;
 static snd_rawmidi_t *output_handle = NULL;
+
+static int pd_count = 0;
+static struct pollfd *poll_descriptors = NULL;
+
+extern int errno;
+
 
 void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer_size)
 {
@@ -45,7 +53,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		ret = snd_rawmidi_open( &input_handle, NULL, input_name, SND_RAWMIDI_NONBLOCK );
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init input: device=%s ret=%d %s\n", input_name, ret, snd_strerror( ret ) );
 		
-		if( ret > 0 )
+		if( ret == 0 )
 		{
 			if( (buffer_size > RAVELOXMIDI_ALSA_DEFAULT_BUFFER) && (buffer_size <= RAVELOXMIDI_ALSA_MAX_BUFFER) )
 			{
@@ -56,7 +64,9 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 				snd_rawmidi_params( input_handle, params );
 				snd_rawmidi_params_free( params );
 			}
+
 			raveloxmidi_alsa_dump_rawmidi( input_handle );
+
 		}
 	}
 
@@ -64,7 +74,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 	{
 		ret = snd_rawmidi_open( NULL, &output_handle, output_name, SND_RAWMIDI_NONBLOCK );
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", output_name, ret, snd_strerror( ret ) );
-		if( ret > 0 ) 
+		if( ret == 0 ) 
 		{
 			raveloxmidi_alsa_dump_rawmidi( output_handle );
 		}
@@ -83,6 +93,8 @@ void raveloxmidi_alsa_teardown( void )
 {
 	raveloxmidi_alsa_handle_destroy( input_handle );
 	raveloxmidi_alsa_handle_destroy( output_handle );
+
+	FREENULL( "poll_descriptors", (void **)&poll_descriptors );
 
 	input_handle = NULL;
 	output_handle = NULL;
@@ -122,12 +134,12 @@ void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
 	logging_printf(LOGGING_DEBUG, "\tavailable_min=%lu, buffer_size=%lu, active_sensing=%d\n", available_min, buffer_size, active_sensing);
 	snd_rawmidi_params_free( params );
 }
-int raveloxmidi_alsa_output_available( void )
+int raveloxmidi_alsa_out_available( void )
 {
 	return output_handle != NULL;
 }
 
-int raveloxmidi_alsa_input_available( void )
+int raveloxmidi_alsa_in_available( void )
 {
 	return input_handle != NULL;
 }
@@ -172,6 +184,52 @@ int raveloxmidi_alsa_read( unsigned char *buffer, size_t buffer_size )
 	}
 
 	return bytes_read;
+}
+
+
+int raveloxmidi_alsa_poll( int timeout )
+{
+	int err = 0;
+	int ret = 0;
+	short int revents = 0;
+
+	if( !poll_descriptors ) return 0;
+	if( ! raveloxmidi_alsa_in_available() ) return 0; 
+ 
+	err = poll( poll_descriptors, pd_count + 1, timeout );
+
+	if( (errno != 0) && (errno != EAGAIN) )
+	{
+		logging_printf( LOGGING_WARN, "raveloxmidi_alsa_poll: %s\n", strerror( errno ) );
+	} 
+
+	if( err > 0 )
+	{
+		err = snd_rawmidi_poll_descriptors_revents( input_handle, poll_descriptors, pd_count , &revents );
+		if( revents & POLLIN ) ret = 1;
+	}
+
+	return ret;
+}
+
+void raveloxmidi_alsa_set_poll_fds( int fd )
+{
+	if( ! input_handle ) return;
+
+	pd_count = snd_rawmidi_poll_descriptors_count( input_handle );
+	poll_descriptors = (struct pollfd *)malloc( (pd_count+1) * sizeof( struct pollfd ) );
+	memset( poll_descriptors, 0, (pd_count+1) * sizeof( struct pollfd ) );
+	if(snd_rawmidi_poll_descriptors( input_handle, poll_descriptors, pd_count ) == pd_count )
+	{
+		for( int fd = 0 ; fd < pd_count; fd++ )
+		{
+			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_init: poll_descriptor[%u]=%u\n", fd, poll_descriptors[fd].fd);
+			poll_descriptors[fd].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
+		}
+	}
+
+	poll_descriptors[pd_count].fd = fd;
+	poll_descriptors[pd_count].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
 }
 
 #endif

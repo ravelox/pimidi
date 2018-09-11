@@ -19,7 +19,7 @@ typedef struct {
 int logging_threshold = 3;
 #else
 extern int logging_threshold;
-#define DEBUG_ONLY	if(logging_threshold==LOGGING_DEBUG) return;
+#define DEBUG_ONLY	if(logging_threshold!=LOGGING_DEBUG) return;
 #endif
 
 int logging_name_to_value(name_map_t *map, const char *name);

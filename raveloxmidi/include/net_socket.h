@@ -28,10 +28,15 @@ int net_socket_create( unsigned int port );
 int net_socket_init( void );
 int net_socket_teardown( void );
 
-int net_socket_listener( void );
-int net_socket_loop( unsigned int interval );
+int net_socket_listener( int fd );
+void net_socket_loop_init(void);
+void net_socket_loop_teardown(void);
+int net_socket_fd_loop(void);
+int net_socket_alsa_loop(void);
+void net_socket_wait_for_alsa(void);
 void net_socket_loop_shutdown(int signal);
 
+void net_socket_set_fds( void );
 extern uint8_t _max_ctx;
 
 /* Indicate which socket should be the data port */
