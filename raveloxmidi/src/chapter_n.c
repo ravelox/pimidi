@@ -308,12 +308,12 @@ void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size
 	memset( *packed, 0, CHAPTER_N_NOTE_PACKED_SIZE );
 	p = *packed;
 
-	*p = ( note->S << 7 ) & ( note->num & 0x7f );
+	*p = ( note->S << 7 ) | ( note->num & 0x7f );
 
 	p += sizeof( char );
 	*size += sizeof( char );
 
-	*p = ( note->Y << 7 ) & ( note->velocity & 0x7f );
+	*p = ( note->Y << 7 ) | ( note->velocity & 0x7f );
 
 	*size += sizeof( char );
 }
