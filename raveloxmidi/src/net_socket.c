@@ -621,7 +621,7 @@ int net_socket_init( void )
 }
 
 #ifdef HAVE_ALSA
-static void *net_socket_alsa_listener( void *data )
+static void * net_socket_alsa_listener( void *data )
 {
 	logging_printf(LOGGING_DEBUG, "net_socket_alsa_listener: Thread started\n");
 	raveloxmidi_alsa_set_poll_fds( pipe_fd[0] );
@@ -633,6 +633,8 @@ static void *net_socket_alsa_listener( void *data )
 		}
 	} while (net_socket_shutdown == 0 );
 	logging_printf(LOGGING_DEBUG, "net_socket_alsa_listener: Thread stopped\n");
+
+	return NULL;
 }
 
 int net_socket_alsa_loop()

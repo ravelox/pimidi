@@ -12,11 +12,12 @@ AC_PROG_INSTALL
 
 AC_SYS_LARGEFILE
 
-ACX_PTHREAD([],[])
 
 PKG_PROG_PKG_CONFIG
 
 PKG_CHECK_MODULES(AVAHI, avahi-client )
+
+ACX_PTHREAD([],[])
 
 AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes")
 if test "$have_alsa" == "yes"

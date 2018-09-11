@@ -191,7 +191,7 @@ int raveloxmidi_alsa_poll( int timeout )
 {
 	int err = 0;
 	int ret = 0;
-	short int revents = 0;
+	unsigned short int revents = 0;
 
 	if( !poll_descriptors ) return 0;
 	if( ! raveloxmidi_alsa_in_available() ) return 0; 
