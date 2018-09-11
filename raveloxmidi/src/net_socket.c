@@ -504,15 +504,22 @@ static void set_shutdown_lock( int i )
 
 void net_socket_loop_init()
 {
+	int err = 0;
+
 	pthread_mutex_init( &shutdown_lock, NULL);
 	pthread_mutex_init( &socket_mutex, NULL );
 	set_shutdown_lock(0);
 	socket_timeout = config_long_get("network.socket_timeout");
 
 // Set up a pipe as a shutdown signal
-	pipe( pipe_fd );
-	logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", pipe_fd[0], pipe_fd[1]);
-	FD_SET( pipe_fd[1], &read_fds );
+	err=pipe( pipe_fd );
+	if( err < 0 )
+	{
+		logging_printf( LOGGING_ERROR, "net_socket_loop_init: pipe error: %s\n", strerror(errno));
+	} else {
+		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", pipe_fd[0], pipe_fd[1]);
+		FD_SET( pipe_fd[1], &read_fds );
+	}
 }
 
 void net_socket_loop_teardown()
