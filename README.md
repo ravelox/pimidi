@@ -85,7 +85,8 @@ network.bind_address
 	IP address that raveloxmidi listens on.
 	Default is 0.0.0.0 ( meaning all interfaces ).
 network.control.port
-	Main RTP MIDI listening port for new connections and shutdowns. Used in the zeroconf definition for the RTP MIDI service.
+	Main RTP MIDI listening port for new connections and shutdowns.
+	Used in the zeroconf definition for the RTP MIDI service.
 	Default is 5004.
 network.data.port
 	Listening port for all other data in the conversation.
@@ -153,8 +154,8 @@ The following steps can be taken to test everything is working:
 
 2. Verify the device names
 
+```sudo amidi -l``` will give output like 
 ```
-sudo amidi -l
 Dir Device Name
 IO hw:0,0 ES1371
 IO hw:1,0 Virtual Raw MIDI (16 subdevices)
@@ -165,11 +166,11 @@ IO hw:1,3 Virtual Raw MIDI (16 subdevices)
 
 3. Install timidity and run it with the ALSA interface
 
-```timidity -iA```
+```timidity -iA``` will output the available ports to connect to (for example):
 
-This will output the available ports to connect to (for example):
-
-```Opening sequencer port: 128:0 128:1 128:2 128:3```
+```
+Opening sequencer port: 128:0 128:1 128:2 128:3
+```
 
 4. In a raveloxmidi config file, add the option:
 
@@ -230,9 +231,7 @@ The device name will vary depending on the setup but it MUST be different from t
 ```
 4. Determine the port number for ```hw:1,1,0``` using aconnect
 
-```aconnect -l```
-
-This will show output like:
+```aconnect -l``` will show output like:
 ```
 client 0: 'System' [type=kernel]
 0 'Timer '
