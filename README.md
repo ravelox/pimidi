@@ -124,7 +124,8 @@ inbound_midi
         Name of file to write inbound MIDI events to. This file is governed by the security check option.
 	Default is /dev/sequencer
 file_mode
-        File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0640.
+        File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. 
+	Default is 0640.
 ```
 
 If ALSA is detected, the following options are also available:
