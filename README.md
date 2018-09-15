@@ -1,5 +1,4 @@
-Introduction
-- - - - - - -
+# RaveloxMIDI
 
 raveloxmidi is a simple proxy to send MIDI NoteOn, NoteOff, Control Change (CC) and Program Change (PC) events from the local machine via RTP MIDI or to receive any MIDI events from a remote source via RTP MIDI and write them to a file.
 
@@ -24,14 +23,10 @@ this code.
 If you are using raveloxmidi, please drop me a line with some detail and I'll add your name to a list
 with a link to your project.
 
-Description
-- - - - - - 
-
+## Description
 There are a number of stages in the general RTP MIDI protocol, SIP, MIDI and feedback. The lazzaro document talks about SIP and feedback in terms of RTP but Apple has their own packet format for that information. raveloxmidi makes assumptions that may or may not be correct but the Apple MIDI SIP process isn't documented.
 
-Stage 1 - SIP
-- - - - - - - 
-
+### Stage 1 - SIP
 Audio MIDI setup needs to know which server to connect to. In order to do that, the raveloxmidi announces the Apple MIDI service (_apple-midi._udp). By default, the announcement is for connections on port 5004. This also implies port 5005 is open for connections too.
 
 The connecting server will sent 2 connection (INV) requests containing its name, its IP address and the port that connections can be made on.
@@ -44,42 +39,35 @@ The connecting server will send SYNC packets to raveloxmidi. According to http:/
 
 SYNC packets are sent from the connecting server on a regular basis.
 
-Stage 2 - MIDI
-- - - - - - - 
-
+### Stage 2 - MIDI
 This stage uses the defined MIDI RTP payload. raveloxmidi opens an additional listening port (by default 5006) which will accept a simple data packet containing note information. Where Apple MIDI packets are prefixed with a single byte 0xff, note data packets are expected to be prefixed with 0xaa. The rest of data packet is expected to be a MIDI Note or ControlChange command.
 
-Command: 4 bits ( NoteOn = 0x09, NoteOff = 0x08 , ControlChange = 0x0B )
-Channel: 4 bits ( 0 - 15 )
+*Command: 4 bits ( NoteOn = 0x09, NoteOff = 0x08 , ControlChange = 0x0B )
+*Channel: 4 bits ( 0 - 15 )
 
 Note events are defined as:
-Note: 8 bits ( -127 to 127 )
-Velocity: 8 bits ( 0 to 127 )
+*Note: 8 bits ( -127 to 127 )
+*Velocity: 8 bits ( 0 to 127 )
 
 Control Change events are defined as:
-Controller Number: 8 bits (0 to 127 with 120-127 as Channel Mode messages)
-Controller Value : 8 bits (0 to 127).
+*Controller Number: 8 bits (0 to 127 with 120-127 as Channel Mode messages)
+*Controller Value : 8 bits (0 to 127).
 
 When raveloxmidi receives the command packet, it will send that MIDI command to any  active connections in the connection table. 
 
 The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note and control change events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn, NoteOff and ControlChange events, only Chapter N and Chapter C journal entries are stored.
 
-Stage 3 - Feedback
-- - - - - - - - - 
-
+### Stage 3 - Feedback
 The Apple MIDI implementation sends a feedback packet (RS) from the connecting server. This packet contains a RTP sequence number to indicate that the connecting server is acknowledging that it has received packets with a sequence number up to and including that particular value.
 
 This tells the receiving server that it doesn't need to send journal events for any packets with a sequence number lower than that value.
 
 raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
 
-Inbound MIDI commands 
-- - - - - - - - - - -
-
+## Inbound MIDI commands 
 raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection. A Feedback response is sent back when inbound midi events are received.
 
-Configuration
-- - - - - - -
+## Configuration
 raveloxmidi can be run with a -c parameter to specify a configuration file with the options listed below.
 Where the option isn't specified, a default value is used.
 
@@ -126,8 +114,7 @@ alsa.input_device
 alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device. Default is 4096. Maximum is 65535.
 
-ALSA Support
-------------
+## ALSA Support
 
 The autotools configure script will automatically detect the presence of ALSA libraries and will build the code for support.
 raveloxmidi uses the rawmidi interface so the snd-virmidi module must be loaded.
