@@ -371,6 +371,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 
 		(*commands)[index].delta = current_delta;
 		(*commands)[index].data_len = 0;
+		(*commands)[index].data = NULL;
 
 		// Get the status byte. If bit 7 is not set, use the running status
 		if( current_len > 0 )
