@@ -91,8 +91,8 @@ network.control.port
 network.data.port
 	Listening port for all other data in the conversation.
 	Default is 5005.
-network.note.port
-	Listening port for accepting MIDI notes.
+network.local.port
+	Local listening port for accepting MIDI events.
 	Default is 5006.
 network.max_connections
 	Maximum number of incoming connections that can be stored.
