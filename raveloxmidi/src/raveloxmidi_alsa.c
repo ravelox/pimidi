@@ -214,6 +214,8 @@ int raveloxmidi_alsa_poll( int timeout )
 
 void raveloxmidi_alsa_set_poll_fds( int fd )
 {
+	int i = 0;
+
 	if( ! input_handle ) return;
 
 	pd_count = snd_rawmidi_poll_descriptors_count( input_handle );
@@ -221,10 +223,10 @@ void raveloxmidi_alsa_set_poll_fds( int fd )
 	memset( poll_descriptors, 0, (pd_count+1) * sizeof( struct pollfd ) );
 	if(snd_rawmidi_poll_descriptors( input_handle, poll_descriptors, pd_count ) == pd_count )
 	{
-		for( int fd = 0 ; fd < pd_count; fd++ )
+		for( i = 0 ; i < pd_count; i++ )
 		{
-			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_init: poll_descriptor[%u]=%u\n", fd, poll_descriptors[fd].fd);
-			poll_descriptors[fd].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
+			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_init: poll_descriptor[%u]=%u\n", fd, poll_descriptors[i].fd);
+			poll_descriptors[i].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
 		}
 	}
 
