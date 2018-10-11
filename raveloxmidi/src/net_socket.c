@@ -80,6 +80,8 @@ pthread_t alsa_listener_thread;
 int socket_timeout = 0;
 int pipe_fd[2];
 
+static void set_shutdown_lock( int i );
+
 void net_socket_add( int new_socket )
 {
 	int *new_socket_list = NULL;
@@ -245,6 +247,27 @@ int net_socket_read( int fd )
 			}
 
 			net_applemidi_cmd_destroy( &command );
+		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"STAT",4)==0) )
+		// Heartbeat request
+		{
+			unsigned char *buffer="OK";
+			size_t bytes_written = 0;
+			pthread_mutex_lock( &socket_mutex );
+			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (struct sockaddr *)&from_addr, from_len);
+			pthread_mutex_unlock( &socket_mutex );
+			logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
+		
+		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"QUIT",4)==0) )
+		// Shutdown request
+		{
+			unsigned char *buffer="QT";
+			size_t bytes_written = 0;
+			pthread_mutex_lock( &socket_mutex );
+			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (struct sockaddr *)&from_addr, from_len);
+			pthread_mutex_unlock( &socket_mutex );
+			logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
+			logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
+			set_shutdown_lock(1);
 #ifdef HAVE_ALSA
 		} else if( (packet[0]==0xaa) || (fd==RAVELOXMIDI_ALSA_INPUT) )
 #else
