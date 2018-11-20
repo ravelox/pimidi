@@ -129,6 +129,7 @@ static void config_load_file( char *filename )
 
 void config_init( int argc, char *argv[] )
 {
+	int dump_config = 0;
 	static struct option long_options[] = {
 		{"config",   required_argument, NULL, 'c'},
 		{"debug",    no_argument, NULL, 'd'},
@@ -136,6 +137,7 @@ void config_init( int argc, char *argv[] )
 		{"nodaemon", no_argument, NULL, 'N'},
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
+		{"dumpconfig", no_argument, NULL, 'C'},
 #ifdef HAVE_ALSA
 		{"listinterfaces", no_argument, NULL, 'L'},
 #endif
@@ -143,9 +145,9 @@ void config_init( int argc, char *argv[] )
 		{0,0,0,0}
 	};
 #ifdef HAVE_ALSA
-	const char *short_options = "c:dIhNP:RL";
+	const char *short_options = "c:dIhNP:RLC";
 #else
-	const char *short_options = "c:dIhNP:R";
+	const char *short_options = "c:dIhNP:RC";
 #endif
 	int c;
 	config_items = NULL;
@@ -172,6 +174,7 @@ void config_init( int argc, char *argv[] )
 			case 'd':
 				config_add_item("logging.enabled", "yes");
 				config_add_item("logging.log_level", "debug");
+				dump_config = 1;
 				break;
 			/* This option exits */
 			case 'h':
@@ -186,12 +189,15 @@ void config_init( int argc, char *argv[] )
 			case 'R':
 				config_add_item("readonly", "yes");
 				break;
+			case 'C':
+				dump_config = 1;
+				break;
 		}
 	} 
 
 	config_load_file( config_string_get("config.file") );
 
-	if( strcasecmp( config_string_get("logging.log_level"), "debug" ) == 0 )
+	if( dump_config == 1 )
 	{
 		config_dump();
 	}
