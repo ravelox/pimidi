@@ -330,9 +330,9 @@ void config_dump( void )
 void config_usage( void )
 {
 	fprintf( stderr, "Usage:\n");
-	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-h]");
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-C] [-h]");
 	fprintf( stderr, "\n");
-	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--help]");
+	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--help]");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "-c filename\tName of config file to use\n");
@@ -340,6 +340,7 @@ void config_usage( void )
 	fprintf( stderr, "-d\t\tRun in debug mode\n");
 	fprintf( stderr, "-N\t\tDo not run in the background\n");
 	fprintf( stderr, "-P filename\tName of file to write background pid\n");
+	fprintf( stderr, "-C\t\tDump the current config to stderr\n");
 	fprintf( stderr, "-h\t\tThis output\n");
 	fprintf( stderr, "\nThe following configuration file items are default:\n");
 	config_dump();
