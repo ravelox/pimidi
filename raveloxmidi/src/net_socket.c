@@ -113,8 +113,8 @@ int net_socket_create( unsigned int port )
 	socket_address.sin_family = AF_INET;   
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	if (inet_aton( config_string_get("network.bind_address") , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_string_get("network.bind_address") );
+	if (inet_aton( config_string_get("network.bind_ipv4_address") , &(socket_address.sin_addr)) == 0) {
+		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_string_get("network.bind_ipv4_address") );
 		return errno;
 	}
 
@@ -123,6 +123,49 @@ int net_socket_create( unsigned int port )
 		sizeof(struct sockaddr)) < 0)
 	{       
 		return errno;
+        } 
+
+	net_socket_add( new_socket );
+
+	fcntl(new_socket, F_SETFL, O_NONBLOCK);
+
+	return 0;
+}
+
+int net_socket_ipv6_create( unsigned int port )
+{
+	int new_socket;
+	struct sockaddr_in6 socket_address;
+	int return_val = 0;
+	char ipv6_string[ INET6_ADDRSTRLEN ];
+
+	logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: Creating socket for port %u\n", port );
+	new_socket = socket(AF_INET6, SOCK_DGRAM, 0);
+	if( new_socket < 0 )
+	{
+		return_val = errno;
+		logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: %s\n", strerror( return_val ) );
+		return return_val;
+	}
+
+	memset( &socket_address, 0, sizeof( socket_address ) );
+	socket_address.sin6_family = AF_INET6;
+	socket_address.sin6_addr = in6addr_any;
+
+	if (inet_pton( AF_INET6, config_string_get("network.bind_ipv6_address") , &(socket_address.sin6_addr)) == 0) {
+		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: Invalid address: %s\n", config_string_get("network.bind_ipv6_address") );
+		return errno;
+	}
+
+	inet_ntop( AF_INET6, &(socket_address.sin6_addr), ipv6_string, INET6_ADDRSTRLEN );
+	logging_printf( LOGGING_DEBUG, "net_socket_ipv6_create: Address: [%s]\n", ipv6_string );
+
+	socket_address.sin6_port = htons(port);
+	if (bind(new_socket, (const struct sockaddr  *)&socket_address, sizeof(socket_address)) < 0)
+	{       
+		return_val = errno;
+		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: bind error %s\n", strerror( return_val ) );
+		return return_val;
         } 
 
 	net_socket_add( new_socket );
@@ -596,13 +639,26 @@ int net_socket_init( void )
 	max_fd = 0;
 	FD_ZERO( &read_fds );
 
+	/* Create the IPv4 sockets */
 	if(
 		net_socket_create( config_int_get("network.control.port") ) ||
 		net_socket_create( config_int_get("network.data.port") ) ||
 		net_socket_create( config_int_get("network.local.port") ) )
 	{
-		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create socket: %s\n", strerror( errno ) );
+		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create IPv4 socket: %s\n", strerror( errno ) );
 		return -1;
+	}
+
+	/* Only create IPv6 sockets if enabled */
+	if( is_yes( config_string_get("network.ipv6") ) )
+	{
+		if(
+			net_socket_ipv6_create( config_int_get("network.control.port") ) ||
+			net_socket_ipv6_create( config_int_get("network.data.port") ) ||
+			net_socket_ipv6_create( config_int_get("network.local.port") ) )
+		{
+			logging_printf(LOGGING_WARN, "net_socket_setup: Cannot create IPv6 socket: %s\n", strerror( errno ) );
+		}
 	}
 
 	// If a file name is defined, open up the file handle to write inbound MIDI events
