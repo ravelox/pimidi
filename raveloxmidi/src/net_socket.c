@@ -98,77 +98,36 @@ void net_socket_add( int new_socket )
 	sockets[num_sockets - 1 ] = new_socket;
 }
 
-int net_socket_create( char *bind_address, unsigned int port )
-{
-	int new_socket;
-	struct sockaddr_in socket_address;
-
-	if (inet_aton( bind_address , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", bind_address );
-		return errno;
-	}
-
-	logging_printf(LOGGING_DEBUG, "net_socket_create: Creating socket for [%s]:%u\n", bind_address, port );
-	new_socket = socket(PF_INET, SOCK_DGRAM, 0);
-	if( new_socket < 0 )
-	{
-		return errno;
-	}
-
-	memset(&(socket_address.sin_zero), 0, sizeof( socket_address.sin_zero) );    
-	socket_address.sin_family = AF_INET;   
-	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	socket_address.sin_port = htons(port);
-	if (bind(new_socket, (struct sockaddr *)&socket_address,
-		sizeof(struct sockaddr)) < 0)
-	{       
-		return errno;
-        } 
-
-	net_socket_add( new_socket );
-
-	fcntl(new_socket, F_SETFL, O_NONBLOCK);
-
-	return 0;
-}
-
-int net_socket_ipv6_create( char *bind_address, unsigned int port )
+int net_socket_create(int family, char *bind_address, unsigned int port )
 {
 	int new_socket;
 	struct sockaddr_in6 socket_address;
-	int return_val = 0;
+	socklen_t addr_len = 0;
 	int optionvalue = 0;
 
-	if (inet_pton( AF_INET6, bind_address, &(socket_address.sin6_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: Invalid address: %s\n", bind_address );
+	logging_printf(LOGGING_DEBUG, "net_socket_create: Creating socket for [%s]:%u, family=%d\n", bind_address, port, family);
+
+	new_socket = socket(family, SOCK_DGRAM, 0);
+	if( new_socket < 0 )
+	{
 		return errno;
 	}
 
-	logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: Creating socket for [%s]:%u\n", bind_address, port );
-	new_socket = socket(PF_INET6, SOCK_DGRAM, 0);
-	if( new_socket < 0 )
+	switch( family )
 	{
-		return_val = errno;
-		logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: %s\n", strerror( return_val ) );
-		return return_val;
+		case AF_INET6:
+			optionvalue = 0;
+			setsockopt( new_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&optionvalue, sizeof( optionvalue ) );
+			break;
+		default:
+			break;
 	}
+			
+	get_sock_addr( bind_address, port, (struct sockaddr *)&socket_address, &addr_len);
 
-	optionvalue = 0;
-	setsockopt( new_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&optionvalue, sizeof( optionvalue ) );
-
-	socket_address.sin6_family = AF_INET6;
-	socket_address.sin6_addr = in6addr_any;
-
-	socket_address.sin6_port = htons(port);
-	socket_address.sin6_scope_id = 0;
-	socket_address.sin6_flowinfo = 0;
-
-	if (bind(new_socket, (struct sockaddr  *)&socket_address, sizeof(socket_address)) < 0)
+	if ( bind(new_socket, (struct sockaddr *)&socket_address, addr_len) < 0 )
 	{       
-		return_val = errno;
-		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: bind error %s\n", strerror( return_val ) );
-		return return_val;
+		return errno;
         } 
 
 	net_socket_add( new_socket );
@@ -659,22 +618,13 @@ int net_socket_init( void )
 	switch( address_family )
 	{
 		case AF_INET: 
-			if(
-				net_socket_create( bind_address, control_port ) ||
-				net_socket_create( bind_address, data_port ) ||
-				net_socket_create( bind_address, local_port ) )
-			{
-				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create IPv4 socket: %s\n", strerror( errno ) );
-				return -1;
-			}
-			break;
 		case AF_INET6:
 			if(
-				net_socket_ipv6_create( bind_address, control_port ) ||
-				net_socket_ipv6_create( bind_address, data_port ) ||
-				net_socket_ipv6_create( bind_address, local_port ) )
+				net_socket_create( address_family, bind_address, control_port ) ||
+				net_socket_create( address_family, bind_address, data_port ) ||
+				net_socket_create( address_family, bind_address, local_port ) )
 			{
-				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create IPv6 socket: %s\n", strerror( errno ) );
+				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create socket: %s\n", strerror( errno ) );
 				return -1;
 			}
 			break;

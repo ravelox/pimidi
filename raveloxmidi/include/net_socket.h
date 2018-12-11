@@ -24,7 +24,7 @@
 #include "config.h"
 
 void net_socket_add( int new_socket );
-int net_socket_create( char *bind_address, unsigned int port );
+int net_socket_create( int family, char *bind_address, unsigned int port );
 int net_socket_ipv6_create( char *bind_addres, unsigned int port );
 int net_socket_init( void );
 int net_socket_teardown( void );
