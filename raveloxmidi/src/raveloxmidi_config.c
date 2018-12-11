@@ -38,9 +38,6 @@ static raveloxmidi_config_t **config_items = NULL;
 
 static void config_set_defaults( void )
 {
-	config_add_item("network.bind_ipv4_address", "0.0.0.0");
-	config_add_item("network.bind_ipv6_address", "::");
-	config_add_item("network.ipv6", "yes");
 	config_add_item("network.control.port", "5004");
 	config_add_item("network.data.port", "5005");
 	config_add_item("network.local.port", "5006");

@@ -303,8 +303,9 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 
 void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len )
 {
-	struct sockaddr_in send_address;
+	struct sockaddr_in6 send_address;
 	ssize_t bytes_sent = 0;
+	socklen_t addr_len = 0;
 
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
@@ -315,15 +316,14 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 
 	/* Set up the destination address */
 	memset((char *)&send_address, 0, sizeof( send_address));
-	send_address.sin_family = AF_INET;
-	send_address.sin_port = htons( ctx->data_port ) ;
-	inet_aton( ctx->ip_address, &send_address.sin_addr );
+	get_sock_addr( ctx->ip_address, ctx->data_port, (struct sockaddr *)&send_address, &addr_len);
 
-	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, sizeof( send_address ) );
+	logging_printf(LOGGING_ERROR, "net_ctx_send: send_address size=%d\n", sizeof( send_address ) );
+	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, addr_len);
 
 	if( bytes_sent < 0 )
 	{
-		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to %s:%u\n%s\n", buffer_len, ctx->ip_address, ctx->data_port , strerror( errno ));
+		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to [%s]:%u\t%s\n", buffer_len, ctx->ip_address, ctx->data_port, strerror( errno ));
 	} else {
 		logging_printf( LOGGING_DEBUG, "net_ctx_send: write( bytes=%u,host=%s,port=%u)\n", bytes_sent, ctx->ip_address, ctx->data_port );
 	}

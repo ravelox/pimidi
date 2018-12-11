@@ -92,31 +92,32 @@ void net_socket_add( int new_socket )
 	new_socket_list = (int *) realloc( sockets, sizeof(int) * num_sockets );
 	if( ! new_socket_list )
 	{
-		logging_printf(LOGGING_ERROR, "net_socket_create: Insufficient memory to create socket %d\n", num_sockets );
+		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets );
 	}
 	sockets = new_socket_list;
 	sockets[num_sockets - 1 ] = new_socket;
 }
 
-int net_socket_create( unsigned int port )
+int net_socket_create( char *bind_address, unsigned int port )
 {
 	int new_socket;
 	struct sockaddr_in socket_address;
 
-	new_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	if (inet_aton( bind_address , &(socket_address.sin_addr)) == 0) {
+		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", bind_address );
+		return errno;
+	}
+
+	logging_printf(LOGGING_DEBUG, "net_socket_create: Creating socket for [%s]:%u\n", bind_address, port );
+	new_socket = socket(PF_INET, SOCK_DGRAM, 0);
 	if( new_socket < 0 )
 	{
 		return errno;
 	}
 
-	memset(&(socket_address.sin_zero), 0, 8);    
+	memset(&(socket_address.sin_zero), 0, sizeof( socket_address.sin_zero) );    
 	socket_address.sin_family = AF_INET;   
 	socket_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	if (inet_aton( config_string_get("network.bind_ipv4_address") , &(socket_address.sin_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_create: Invalid address: %s\n", config_string_get("network.bind_ipv4_address") );
-		return errno;
-	}
 
 	socket_address.sin_port = htons(port);
 	if (bind(new_socket, (struct sockaddr *)&socket_address,
@@ -132,15 +133,20 @@ int net_socket_create( unsigned int port )
 	return 0;
 }
 
-int net_socket_ipv6_create( unsigned int port )
+int net_socket_ipv6_create( char *bind_address, unsigned int port )
 {
 	int new_socket;
 	struct sockaddr_in6 socket_address;
 	int return_val = 0;
-	char ipv6_string[ INET6_ADDRSTRLEN ];
+	int optionvalue = 0;
 
-	logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: Creating socket for port %u\n", port );
-	new_socket = socket(AF_INET6, SOCK_DGRAM, 0);
+	if (inet_pton( AF_INET6, bind_address, &(socket_address.sin6_addr)) == 0) {
+		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: Invalid address: %s\n", bind_address );
+		return errno;
+	}
+
+	logging_printf(LOGGING_DEBUG, "net_socket_ipv6_create: Creating socket for [%s]:%u\n", bind_address, port );
+	new_socket = socket(PF_INET6, SOCK_DGRAM, 0);
 	if( new_socket < 0 )
 	{
 		return_val = errno;
@@ -148,20 +154,17 @@ int net_socket_ipv6_create( unsigned int port )
 		return return_val;
 	}
 
-	memset( &socket_address, 0, sizeof( socket_address ) );
+	optionvalue = 0;
+	setsockopt( new_socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&optionvalue, sizeof( optionvalue ) );
+
 	socket_address.sin6_family = AF_INET6;
 	socket_address.sin6_addr = in6addr_any;
 
-	if (inet_pton( AF_INET6, config_string_get("network.bind_ipv6_address") , &(socket_address.sin6_addr)) == 0) {
-		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: Invalid address: %s\n", config_string_get("network.bind_ipv6_address") );
-		return errno;
-	}
-
-	inet_ntop( AF_INET6, &(socket_address.sin6_addr), ipv6_string, INET6_ADDRSTRLEN );
-	logging_printf( LOGGING_DEBUG, "net_socket_ipv6_create: Address: [%s]\n", ipv6_string );
-
 	socket_address.sin6_port = htons(port);
-	if (bind(new_socket, (const struct sockaddr  *)&socket_address, sizeof(socket_address)) < 0)
+	socket_address.sin6_scope_id = 0;
+	socket_address.sin6_flowinfo = 0;
+
+	if (bind(new_socket, (struct sockaddr  *)&socket_address, sizeof(socket_address)) < 0)
 	{       
 		return_val = errno;
 		logging_printf(LOGGING_ERROR, "net_socket_ipv6_create: bind error %s\n", strerror( return_val ) );
@@ -198,17 +201,18 @@ int net_socket_teardown( void )
 int net_socket_read( int fd )
 {
 	int recv_len;
-	unsigned from_len;
-	struct sockaddr_in from_addr;
-	char *ip_address = NULL;
+	unsigned from_len = 0;
+	struct sockaddr_storage from_addr;
 	int output_enabled = 0;
+	char ip_address[ INET6_ADDRSTRLEN ];
+	int from_port = 0;
 
 	net_applemidi_command *command;
 	int ret = 0;
 
-	from_len = sizeof( struct sockaddr );
+	memset( ip_address, 0, INET6_ADDRSTRLEN );
+	from_len = sizeof( from_addr );
 
-	memset( &from_addr, 0, from_len );
 	while( 1 )
 	{
 		memset( packet, 0, packet_size + 1 );
@@ -218,8 +222,10 @@ int net_socket_read( int fd )
 			recv_len = raveloxmidi_alsa_read( packet, alsa_buffer_size);
 		} else {
 #endif
-			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0,  (struct sockaddr *)&from_addr, &from_len );
-			ip_address = inet_ntoa(from_addr.sin_addr);	
+			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
+			logging_printf(LOGGING_DEBUG, "net_socket_read: from_len=%u\n", from_len );
+			get_ip_string( (struct sockaddr *)&from_addr, ip_address, INET6_ADDRSTRLEN );
+			from_port = ntohs( ((struct sockaddr_in *)&from_addr)->sin_port );
 #ifdef HAVE_ALSA
 		}
 #endif
@@ -238,7 +244,7 @@ int net_socket_read( int fd )
 		if( fd != RAVELOXMIDI_ALSA_INPUT )
 		{
 #endif
-			logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=%d, bytes=%u, host=%s, port=%u, first_byte=%02x)\n", fd, recv_len,ip_address, ntohs( from_addr.sin_port ), packet[0]);
+			logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=%d, bytes=%u, host=%s, port=%u, first_byte=%02x)\n", fd, recv_len,ip_address, from_port, packet[0]);
 
 #ifdef HAVE_ALSA
 		} else {
@@ -259,7 +265,7 @@ int net_socket_read( int fd )
 			switch( command->command )
 			{
 				case NET_APPLEMIDI_CMD_INV:
-					response = cmd_inv_handler( ip_address, ntohs( from_addr.sin_port ), command->data );
+					response = cmd_inv_handler( ip_address, from_port, command->data );
 					break;
 				case NET_APPLEMIDI_CMD_ACCEPT:
 					break;
@@ -283,9 +289,9 @@ int net_socket_read( int fd )
 			{
 				size_t bytes_written = 0;
 				pthread_mutex_lock( &socket_mutex );
-				bytes_written = sendto( fd, response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
 				pthread_mutex_unlock( &socket_mutex );
-				logging_printf( LOGGING_DEBUG, "net_socket_read: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, ntohs( from_addr.sin_port ));	
+				logging_printf( LOGGING_DEBUG, "net_socket_read: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 				net_response_destroy( &response );
 			}
 
@@ -296,7 +302,7 @@ int net_socket_read( int fd )
 			unsigned char *buffer="OK";
 			size_t bytes_written = 0;
 			pthread_mutex_lock( &socket_mutex );
-			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (struct sockaddr *)&from_addr, from_len);
+			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
 			pthread_mutex_unlock( &socket_mutex );
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		
@@ -306,7 +312,7 @@ int net_socket_read( int fd )
 			unsigned char *buffer="QT";
 			size_t bytes_written = 0;
 			pthread_mutex_lock( &socket_mutex );
-			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (struct sockaddr *)&from_addr, from_len);
+			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
 			pthread_mutex_unlock( &socket_mutex );
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 			logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
@@ -503,9 +509,9 @@ int net_socket_read( int fd )
 			{
 				size_t bytes_written = 0;
 				pthread_mutex_lock( &socket_mutex );
-				bytes_written = sendto( fd, response->buffer, response->len , 0 , (struct sockaddr *)&from_addr, from_len);
+				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
 				pthread_mutex_unlock( &socket_mutex );
-				logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, ntohs( from_addr.sin_port ));
+				logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 				net_response_destroy( &response );
 			}
 
@@ -634,31 +640,47 @@ void net_socket_loop_shutdown(int signal)
 int net_socket_init( void )
 {
 	char *inbound_midi_filename = NULL;
+	char *bind_address = NULL;
+	int address_family = 0;
+	int control_port, data_port, local_port;
 
 	num_sockets = 0;
 	max_fd = 0;
 	FD_ZERO( &read_fds );
 
-	/* Create the IPv4 sockets */
-	if(
-		net_socket_create( config_int_get("network.control.port") ) ||
-		net_socket_create( config_int_get("network.data.port") ) ||
-		net_socket_create( config_int_get("network.local.port") ) )
-	{
-		logging_printf(LOGGING_ERROR, "net_socket_setup: Cannot create IPv4 socket: %s\n", strerror( errno ) );
-		return -1;
-	}
+	control_port = config_int_get("network.control.port");
+	data_port = config_int_get("network.data.port");
+	local_port = config_int_get("network.local.port");
 
-	/* Only create IPv6 sockets if enabled */
-	if( is_yes( config_string_get("network.ipv6") ) )
+	bind_address = config_string_get("network.bind_address");
+	address_family = get_addr_family( bind_address , control_port );
+	logging_printf(LOGGING_DEBUG, "net_socket_init: network.bind_address=[%s], family=%d\n", bind_address, address_family);
+
+	switch( address_family )
 	{
-		if(
-			net_socket_ipv6_create( config_int_get("network.control.port") ) ||
-			net_socket_ipv6_create( config_int_get("network.data.port") ) ||
-			net_socket_ipv6_create( config_int_get("network.local.port") ) )
-		{
-			logging_printf(LOGGING_WARN, "net_socket_setup: Cannot create IPv6 socket: %s\n", strerror( errno ) );
-		}
+		case AF_INET: 
+			if(
+				net_socket_create( bind_address, control_port ) ||
+				net_socket_create( bind_address, data_port ) ||
+				net_socket_create( bind_address, local_port ) )
+			{
+				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create IPv4 socket: %s\n", strerror( errno ) );
+				return -1;
+			}
+			break;
+		case AF_INET6:
+			if(
+				net_socket_ipv6_create( bind_address, control_port ) ||
+				net_socket_ipv6_create( bind_address, data_port ) ||
+				net_socket_ipv6_create( bind_address, local_port ) )
+			{
+				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create IPv6 socket: %s\n", strerror( errno ) );
+				return -1;
+			}
+			break;
+		default:
+			logging_printf(LOGGING_ERROR, "net_socket_init: Invalid address family [%s][%d]\n", bind_address, address_family);
+			return -1;
 	}
 
 	// If a file name is defined, open up the file handle to write inbound MIDI events

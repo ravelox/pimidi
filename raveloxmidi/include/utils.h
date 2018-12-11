@@ -21,6 +21,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <netinet/in.h>
+
 uint64_t ntohll(const uint64_t value);
 uint64_t htonll(const uint64_t value);
 void get_uint16( void *dest, unsigned char **src, size_t *len );
@@ -34,6 +36,10 @@ void FREENULL( const char *description, void **ptr );
 int check_file_security( const char *filepath );
 int is_yes( const char *value );
 int is_no( const char *value );
+
+char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen );
+int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen);
+int get_addr_family(char *ip_address, int port);
 
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )

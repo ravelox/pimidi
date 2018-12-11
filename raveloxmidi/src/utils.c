@@ -29,6 +29,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
 #include <errno.h>
 extern int errno;
 
@@ -265,4 +269,84 @@ int is_no( const char *value )
 	if( strcasecmp( value, "0" ) == 0 ) return 1;
 
 	return 0;
+}
+
+char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen )
+{
+        switch(sa->sa_family) {
+        case AF_INET:
+            inet_ntop(AF_INET, &(((struct sockaddr_in *)sa)->sin_addr), s, maxlen);
+            break;  
+        case AF_INET6:
+            inet_ntop(AF_INET6, &(((struct sockaddr_in6 *)sa)->sin6_addr), s, maxlen);
+            break;  
+        default:
+            strncpy(s, "Unknown AF", maxlen);
+            return NULL;
+        }       
+        return s;
+}
+
+int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen)
+{
+        struct addrinfo hints;
+        struct addrinfo *result;
+        int val;
+        char portaddr[32];
+	char tmp_address[ INET6_ADDRSTRLEN ];
+
+        if( ! ip_address ) return 1;
+	if( ! socket ) return 1;
+
+        memset( &hints, 0, sizeof( hints ) );
+        memset( portaddr, 0, sizeof( portaddr ) );
+        sprintf( portaddr, "%d", port ); 
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_DGRAM;
+
+        val = getaddrinfo(ip_address, portaddr, &hints, &result );
+	if( val )
+	{
+		logging_printf(LOGGING_WARN, "get_sock_addr: Invalid address: [%s]:%d\n", ip_address, port );
+		freeaddrinfo( result );
+		return 1;
+	}
+
+	memset( socket, 0, sizeof( struct sockaddr ) );
+	memcpy( socket, result->ai_addr, result->ai_addrlen );
+	*socklen = result->ai_addrlen;
+
+	freeaddrinfo( result );
+	return 0;
+}
+
+int get_addr_family(char *ip_address, int port)
+{
+        struct addrinfo hints;
+        struct addrinfo *result;
+        int val;
+        char portaddr[32];
+	char tmp_address[ INET6_ADDRSTRLEN ];
+	int family = AF_UNSPEC;
+
+        if( ! ip_address ) return AF_UNSPEC;
+
+        memset( &hints, 0, sizeof( hints ) );
+        memset( portaddr, 0, sizeof( portaddr ) );
+        sprintf( portaddr, "%d", port ); 
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_DGRAM;
+
+        val = getaddrinfo(ip_address, portaddr, &hints, &result );
+	if( val )
+	{
+		logging_printf(LOGGING_WARN, "get_addr_family: Invalid address: [%s]:%d\n", ip_address, port );
+		freeaddrinfo( result );
+		return AF_UNSPEC;
+	}
+
+	family = result->ai_family;
+	freeaddrinfo( result );
+	return family;
+
 }

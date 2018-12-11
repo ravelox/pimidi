@@ -82,8 +82,8 @@ For debugging, you can run ```raveloxmidi -N -d``` to keep raveloxmidi in the fo
 ### Options
 ```
 network.bind_address
-	IP address that raveloxmidi listens on.
-	Default is 0.0.0.0 ( meaning all interfaces ).
+	IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
+	Default is 0.0.0.0 ( meaning all interfaces ). IPv6 equivalent is ::
 network.control.port
 	Main RTP MIDI listening port for new connections and shutdowns.
 	Used in the zeroconf definition for the RTP MIDI service.
