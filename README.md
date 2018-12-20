@@ -1,5 +1,7 @@
 # RaveloxMIDI
 
+Please read **FAQ.md**
+
 raveloxmidi is a simple proxy to send MIDI NoteOn, NoteOff, Control Change (CC) and Program Change (PC) events from the local machine via RTP MIDI or to receive any MIDI events from a remote source via RTP MIDI and write them to a file.
 
 The reason for writing this was to generate note events from a Raspberry Pi to send them to Logic Pro X. In particular, using the Raspberry Pi to handle input from drum pads. As some people have started to use this, there have been several requests for the ability to send Control Change and Program Change events too. I've included some very basic python scripts for testing.
