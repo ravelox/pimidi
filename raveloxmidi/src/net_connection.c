@@ -318,7 +318,7 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 	memset((char *)&send_address, 0, sizeof( send_address));
 	get_sock_addr( ctx->ip_address, ctx->data_port, (struct sockaddr *)&send_address, &addr_len);
 
-	logging_printf(LOGGING_ERROR, "net_ctx_send: send_address size=%d\n", sizeof( send_address ) );
+	logging_printf(LOGGING_DEBUG, "net_ctx_send: send_address size=%d\n", sizeof( send_address ) );
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, addr_len);
 
 	if( bytes_sent < 0 )
