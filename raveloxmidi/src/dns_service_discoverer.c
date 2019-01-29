@@ -162,7 +162,6 @@ void dns_discover_services( void )
     }
 
     avahi_threaded_poll_start(threaded_poll);
-    ret = 0;
     timeout.tv_sec = 10;
     timeout.tv_usec= 0;
     select( 0, NULL, NULL, NULL, &timeout );
