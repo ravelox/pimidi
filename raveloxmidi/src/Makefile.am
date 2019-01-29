@@ -3,6 +3,7 @@ bin_PROGRAMS = raveloxmidi
 raveloxmidi_SOURCES = \
 	raveloxmidi.c \
 	dns_service_publisher.c \
+	dns_service_discoverer.c \
 	cmd_end_handler.c \
 	cmd_inv_handler.c \
 	cmd_sync_handler.c \

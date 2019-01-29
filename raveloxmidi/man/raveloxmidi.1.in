@@ -59,6 +59,9 @@ Number of connections that can be made to @PACKAGE@. Maximum is 255. Minimum is 
 .B service.name
 Label to prepend to mDNS service name "_apple-midi._udp". ( default is raveloxmidi )
 .TP
+.B client.name
+Label to use when making a rtpMIDI connection to a remote service. ( default is raveloxremote )
+.TP
 .B run_as_daemon
 Run the binary in the background. Can be yes or no. ( default is yes ).
 .TP

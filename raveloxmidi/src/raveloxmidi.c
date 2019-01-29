@@ -33,6 +33,7 @@
 #include "utils.h"
 
 #include "dns_service_publisher.h"
+#include "dns_service_discoverer.h"
 
 #include "raveloxmidi_config.h"
 #include "daemon.h"
@@ -54,6 +55,12 @@ int main(int argc, char *argv[])
 
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
+
+	if( is_yes( config_string_get("discover.services" ) ) )
+	{
+		dns_discover_services();
+		goto daemon_stop;
+	}
 
 #ifdef HAVE_ALSA
 	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
@@ -115,7 +122,6 @@ daemon_stop:
 	config_teardown();
 
 	logging_teardown();
-
 
 	return 0;
 }

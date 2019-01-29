@@ -53,6 +53,7 @@ static void config_set_defaults( void )
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
+	config_add_Item("client.name", "raveloxremote");
 
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
@@ -190,6 +191,9 @@ void config_init( int argc, char *argv[] )
 				break;
 			case 'C':
 				dump_config = 1;
+				break;
+			case 'D':
+				config_add_item("discover.services", "yes");
 				break;
 		}
 	} 
@@ -329,9 +333,9 @@ void config_dump( void )
 void config_usage( void )
 {
 	fprintf( stderr, "Usage:\n");
-	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-C] [-h]");
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-C] [-D] [-h]");
 	fprintf( stderr, "\n");
-	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--help]");
+	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--discover] [--help]");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "-c filename\tName of config file to use\n");
@@ -340,6 +344,7 @@ void config_usage( void )
 	fprintf( stderr, "-N\t\tDo not run in the background\n");
 	fprintf( stderr, "-P filename\tName of file to write background pid\n");
 	fprintf( stderr, "-C\t\tDump the current config to stderr\n");
+	fprintf( stderr, "-D\t\tDiscover rtpMIDI services\n");
 	fprintf( stderr, "-h\t\tThis output\n");
 	fprintf( stderr, "\nThe following configuration file items are default:\n");
 	config_dump();
