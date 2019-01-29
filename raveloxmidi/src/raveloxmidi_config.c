@@ -53,7 +53,7 @@ static void config_set_defaults( void )
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
-	config_add_Item("client.name", "raveloxremote");
+	config_add_item("client.name", "raveloxremote");
 
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
