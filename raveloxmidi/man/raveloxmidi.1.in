@@ -3,10 +3,10 @@
 raveloxmidi - RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
 .B raveloxmidi
-[-c filename] [-d|-I] [-N] [-P filename] [-R] [-h] [-C]
+[-c filename] [-d|-I] [-N] [-P filename] [-R] [-h] [-C] [-D]
 
 .B raveloxmidi
-[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig]
+[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig] [--discover]
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
@@ -35,6 +35,8 @@ Enable readonly mode. This doesn't write anything to disk.
 Display help information including default values for some parameters.
 .B -C
 Display the current config to stderr
+.B -D
+Discover available _apple-midi._udp services
 .SH NOTES
 The available options for the configuration file are as follows:
 .TP

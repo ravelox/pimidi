@@ -138,6 +138,7 @@ void config_init( int argc, char *argv[] )
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
+		{"discover", no_argument, NULL, 'D'},
 #ifdef HAVE_ALSA
 		{"listinterfaces", no_argument, NULL, 'L'},
 #endif
@@ -145,9 +146,9 @@ void config_init( int argc, char *argv[] )
 		{0,0,0,0}
 	};
 #ifdef HAVE_ALSA
-	const char *short_options = "c:dIhNP:RLC";
+	const char *short_options = "c:dIhNP:RLCD";
 #else
-	const char *short_options = "c:dIhNP:RC";
+	const char *short_options = "c:dIhNP:RCD";
 #endif
 	int c;
 	config_items = NULL;
