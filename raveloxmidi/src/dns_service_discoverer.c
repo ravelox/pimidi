@@ -142,7 +142,6 @@ void dns_discover_services( void )
 {
     AvahiServiceBrowser *sb = NULL;
     int error;
-    int ret = 1;
     struct timeval timeout;
 
     if (!(threaded_poll = avahi_threaded_poll_new())) {
@@ -176,5 +175,4 @@ fail:
     if (client) avahi_client_free(client);
 
     if (threaded_poll) avahi_threaded_poll_free( threaded_poll );
-    return ret;
 }
