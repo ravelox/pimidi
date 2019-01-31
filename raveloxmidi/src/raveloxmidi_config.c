@@ -133,22 +133,21 @@ void config_init( int argc, char *argv[] )
 	static struct option long_options[] = {
 		{"config",   required_argument, NULL, 'c'},
 		{"debug",    no_argument, NULL, 'd'},
-		{"info",    no_argument, NULL, 'I'},
+		{"info",    no_argument, NULL, 'i'},
 		{"nodaemon", no_argument, NULL, 'N'},
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
 		{"discover", no_argument, NULL, 'D'},
 #ifdef HAVE_ALSA
-		{"listinterfaces", no_argument, NULL, 'L'},
 #endif
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
 #ifdef HAVE_ALSA
-	const char *short_options = "c:dIhNP:RLCD";
+	const char *short_options = "c:dihNP:RCD";
 #else
-	const char *short_options = "c:dIhNP:RCD";
+	const char *short_options = "c:dihNP:RCD";
 #endif
 	int c;
 	config_items = NULL;
@@ -168,7 +167,7 @@ void config_init( int argc, char *argv[] )
 			case 'c':
 				config_add_item("config.file", optarg);
 				break;
-			case 'I':
+			case 'i':
 				config_add_item("logging.enabled", "yes");
 				config_add_item("logging.log_level", "info");
 				break;
@@ -334,14 +333,14 @@ void config_dump( void )
 void config_usage( void )
 {
 	fprintf( stderr, "Usage:\n");
-	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-C] [-D] [-h]");
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-i] [-R] [-N] [-P filename] [-C] [-D] [-h]");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--discover] [--help]");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "-c filename\tName of config file to use\n");
 	fprintf( stderr, "-d\t\tRun in debug mode\n");
-	fprintf( stderr, "-d\t\tRun in debug mode\n");
+	fprintf( stderr, "-i\t\tRun in info mode\n");
 	fprintf( stderr, "-N\t\tDo not run in the background\n");
 	fprintf( stderr, "-P filename\tName of file to write background pid\n");
 	fprintf( stderr, "-C\t\tDump the current config to stderr\n");

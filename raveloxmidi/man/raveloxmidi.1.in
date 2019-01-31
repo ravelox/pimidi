@@ -3,7 +3,7 @@
 raveloxmidi - RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
 .B raveloxmidi
-[-c filename] [-d|-I] [-N] [-P filename] [-R] [-h] [-C] [-D]
+[-c filename] [-d|-i] [-N] [-P filename] [-R] [-h] [-C] [-D]
 
 .B raveloxmidi
 [--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig] [--discover]
@@ -18,7 +18,7 @@ Name of configuration file to use. If no configuration file is provided, some de
 .B -d
 Run in debug mode. This will provide debug-level output to either stdout or the configured log file.
 .TP
-.B -I
+.B -i
 Run in info mode. This will provide info-level output to either stdout or the configured log file.
 .TP
 .B -N
