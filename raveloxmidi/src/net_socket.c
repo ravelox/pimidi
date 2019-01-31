@@ -231,13 +231,13 @@ int net_socket_read( int fd )
 				case NET_APPLEMIDI_CMD_REJECT:
 					break;
 				case NET_APPLEMIDI_CMD_END:
-					response = cmd_end_handler( command->data );
+					response = applemidi_by_responder( command->data );
 					break;
 				case NET_APPLEMIDI_CMD_SYNC:
 					response = cmd_sync_handler( command->data );
 					break;
 				case NET_APPLEMIDI_CMD_FEEDBACK:
-					response = cmd_feedback_handler( command->data );
+					response = applemidi_feedback_responder( command->data );
 					break;
 				case NET_APPLEMIDI_CMD_BITRATE:
 					break;

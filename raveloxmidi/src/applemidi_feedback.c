@@ -45,7 +45,7 @@ extern int errno;
 
 #include "logging.h"
 
-net_response_t * cmd_feedback_handler( void *data )
+net_response_t * applemidi_feedback_responder( void *data )
 {
 	net_applemidi_feedback  *feedback;
 	net_ctx_t *ctx = NULL;
@@ -58,21 +58,21 @@ net_response_t * cmd_feedback_handler( void *data )
 
 	if( ! ctx )
 	{
-		logging_printf(LOGGING_DEBUG,"cmd_feedback_handler: No context found (search=%u)\n", feedback->rtp_seq[1]);
+		logging_printf(LOGGING_DEBUG,"applemidi_feedback_responder: No context found (search=%u)\n", feedback->rtp_seq[1]);
 		return NULL;
 	}
 
-	logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
+	logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
-		logging_printf( LOGGING_DEBUG, "cmd_feedback_handler: Resetting journal\n" );
+		logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Resetting journal\n" );
 		journal_reset( ctx->journal );
 	}
 
 	return NULL;
 }
 
-net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
+net_response_t *applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
 {
 	net_applemidi_command *cmd = NULL;
 	net_applemidi_feedback *feedback = NULL;

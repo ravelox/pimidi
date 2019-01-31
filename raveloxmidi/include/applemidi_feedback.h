@@ -18,10 +18,10 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_feedback_HANDLER_H
-#define CMD_feedback_HANDLER_H
+#ifndef APPLEMIDI_FEEDBACK_H
+#define APPLEMIDI_FEEDBACK_H
 
-net_response_t * cmd_feedback_handler( void *data );
-net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq );
+net_response_t * applemidi_feedback_handler( void *data );
+net_response_t * applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq );
 
 #endif
