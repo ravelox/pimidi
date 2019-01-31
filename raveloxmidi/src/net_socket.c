@@ -43,7 +43,7 @@ extern int errno;
 #include "net_connection.h"
 
 #include "applemidi_inv.h"
-#include "cmd_sync_handler.h"
+#include "applemidi_sync.h"
 #include "applemidi_feedback.h"
 #include "applemidi_by.h"
 
