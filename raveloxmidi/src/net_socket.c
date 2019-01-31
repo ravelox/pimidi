@@ -463,7 +463,7 @@ int net_socket_read( int fd )
 			midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands, &num_midi_commands );
 
 			// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
-			response = cmd_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
+			response = applemidi_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
 			if( response )
 			{
 				size_t bytes_written = 0;

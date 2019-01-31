@@ -21,7 +21,7 @@
 #ifndef APPLEMIDI_FEEDBACK_H
 #define APPLEMIDI_FEEDBACK_H
 
-net_response_t * applemidi_feedback_handler( void *data );
+net_response_t * applemidi_feedback_responder( void *data );
 net_response_t * applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq );
 
 #endif
