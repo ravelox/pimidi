@@ -44,7 +44,7 @@ extern int errno;
 
 #include "applemidi_inv.h"
 #include "cmd_sync_handler.h"
-#include "cmd_feedback_handler.h"
+#include "applemidi_feedback.h"
 #include "applemidi_by.h"
 
 #include "midi_note.h"
