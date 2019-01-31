@@ -42,7 +42,7 @@ extern int errno;
 
 #include "logging.h"
 
-net_response_t * cmd_end_handler( void *data )
+net_response_t * applemidi_by_responder( void *data )
 {
 	net_applemidi_inv *inv = NULL;
 	net_ctx_t *ctx = NULL;
@@ -55,7 +55,7 @@ net_response_t * cmd_end_handler( void *data )
 
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_WARN, "cmd_end_handler:No existing connection found\n");
+		logging_printf( LOGGING_WARN, "applemidi_by_responder:No existing connection found\n");
 		return NULL;
 	}
 

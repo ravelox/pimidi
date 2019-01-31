@@ -4,8 +4,8 @@ raveloxmidi_SOURCES = \
 	raveloxmidi.c \
 	dns_service_publisher.c \
 	dns_service_discoverer.c \
-	cmd_end_handler.c \
 	applemidi_inv.c \
+	applemidi_by.c \
 	cmd_sync_handler.c \
 	cmd_feedback_handler.c \
 	midi_journal.c \

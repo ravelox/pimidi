@@ -18,9 +18,9 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_END_HANDLER_H
-#define CMD_END_HANDLER_H
+#ifndef APPLEMIDI_BY_H
+#define APPLEMIDI_BY_H
 
-net_response_t * cmd_end_handler( void *data );
+net_response_t * applemidi_by_responder( void *data );
 
 #endif
