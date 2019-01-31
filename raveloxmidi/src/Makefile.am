@@ -7,7 +7,7 @@ raveloxmidi_SOURCES = \
 	applemidi_inv.c \
 	applemidi_by.c \
 	applemidi_feedback.c \
-	cmd_sync_handler.c \
+	applemidi_sync.c \
 	midi_journal.c \
 	chapter_p.c \
 	chapter_n.c \

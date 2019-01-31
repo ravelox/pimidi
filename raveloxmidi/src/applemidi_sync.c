@@ -43,7 +43,7 @@ extern int errno;
 
 #include "logging.h"
 
-net_response_t * cmd_sync_handler( void *data )
+net_response_t * applemidi_sync_responder( void *data )
 {
 	net_applemidi_command *cmd = NULL;
 	net_applemidi_sync *sync = NULL;
@@ -64,14 +64,14 @@ net_response_t * cmd_sync_handler( void *data )
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync command\n");
+		logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to allocate memory for sync command\n");
 		return NULL;
 	}
 
 	sync_resp = net_applemidi_sync_create();
 	
 	if( ! sync_resp ) {
-		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync_resp command data\n");
+		logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to allocate memory for sync_resp command data\n");
 		free( cmd );
 		return NULL;
 	}
@@ -109,7 +109,7 @@ net_response_t * cmd_sync_handler( void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to pack response to sync command\n");
+			logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to pack response to sync command\n");
 			net_response_destroy( &response );
 		}
 	}
