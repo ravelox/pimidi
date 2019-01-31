@@ -42,7 +42,7 @@ extern int errno;
 #include "net_socket.h"
 #include "net_connection.h"
 
-#include "cmd_inv_handler.h"
+#include "applemidi_inv.h"
 #include "cmd_sync_handler.h"
 #include "cmd_feedback_handler.h"
 #include "cmd_end_handler.h"
@@ -224,7 +224,7 @@ int net_socket_read( int fd )
 			switch( command->command )
 			{
 				case NET_APPLEMIDI_CMD_INV:
-					response = cmd_inv_handler( ip_address, from_port, command->data );
+					response = applemidi_inv_responder( ip_address, from_port, command->data );
 					break;
 				case NET_APPLEMIDI_CMD_ACCEPT:
 					break;

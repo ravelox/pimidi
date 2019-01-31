@@ -18,9 +18,9 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_INV_HANDLER_H
-#define CMD_INV_HANDLER_H
+#ifndef APPLEMIDI_INV_H
+#define APPLEMIDI_INV_H
 
-net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data );
+net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void *data );
 
 #endif
