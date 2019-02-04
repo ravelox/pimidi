@@ -54,7 +54,7 @@ static void config_set_defaults( void )
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
 	config_add_item("client.name", "raveloxremote");
-
+	config_add_item("discover.timeout","10");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 #endif
@@ -139,15 +139,16 @@ void config_init( int argc, char *argv[] )
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
 		{"discover", no_argument, NULL, 'D'},
+		{"discover-timeout", required_argument, NULL, 'T'},
 #ifdef HAVE_ALSA
 #endif
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
 #ifdef HAVE_ALSA
-	const char *short_options = "c:dihNP:RCD";
+	const char *short_options = "c:dihNP:RCDT:";
 #else
-	const char *short_options = "c:dihNP:RCD";
+	const char *short_options = "c:dihNP:RCDT:";
 #endif
 	int c;
 	config_items = NULL;
@@ -194,6 +195,9 @@ void config_init( int argc, char *argv[] )
 				break;
 			case 'D':
 				config_add_item("discover.services", "yes");
+				break;
+			case 'T':
+				config_add_item("discover.timeout", optarg);
 				break;
 		}
 	} 
@@ -256,6 +260,11 @@ long config_long_get( char *key )
 	if( ! item_string ) return 0;
 	if( strlen( item_string ) == 0 ) return 0;
 	return atol( item_string );
+}
+
+int config_is_set( char *key )
+{
+	return ( config_get_item( key ) != NULL );
 }
 
 static raveloxmidi_config_t *config_get_item( char *key )

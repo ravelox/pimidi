@@ -33,7 +33,7 @@
 #include "utils.h"
 
 #include "dns_service_publisher.h"
-#include "dns_service_discoverer.h"
+#include "dns_service_discover.h"
 
 #include "raveloxmidi_config.h"
 #include "daemon.h"
@@ -56,9 +56,19 @@ int main(int argc, char *argv[])
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
-	if( is_yes( config_string_get("discover.services" ) ) )
+	dns_discover_init();
+
+	if( config_is_set("discover.services" ) )
 	{
-		dns_discover_services();
+		int services_found = 0;
+		services_found = dns_discover_services();
+
+		if( services_found > 0 )
+		{
+			dns_discover_dump();
+		} else {
+			logging_printf( LOGGING_INFO, "No remote services found\n");
+		}
 		goto daemon_stop;
 	}
 
@@ -105,13 +115,14 @@ int main(int argc, char *argv[])
 		net_socket_loop_teardown();
 	}
 
+	dns_service_publisher_stop();
+
 	net_socket_teardown();
 	net_ctx_teardown();
 
 #ifdef HAVE_ALSA
 	raveloxmidi_alsa_teardown();
 #endif
-	dns_service_publisher_stop();
 
 daemon_stop:
 	if( running_as_daemon )

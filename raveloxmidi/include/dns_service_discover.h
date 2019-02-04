@@ -21,6 +21,19 @@
 #ifndef DNS_SERVICE_DISCOVERER_H
 #define DNS_SERVICE_DISCOVERER_H
 
-void dns_discover_services( void );
+typedef struct dns_service_t {
+	char *name;
+	char *ip_address;
+	int port;
+} dns_service_t;
+
+int dns_discover_services( void );
+void dns_discover_add( char *name, char *address, int port );
+void dns_discover_free_services( void );
+void dns_discover_init( void );
+void dns_discover_teardown( void );
+
+void dns_discover_dump( void );
+
 
 #endif

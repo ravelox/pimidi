@@ -293,7 +293,6 @@ int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_
         struct addrinfo *result;
         int val;
         char portaddr[32];
-	char tmp_address[ INET6_ADDRSTRLEN ];
 
         if( ! ip_address ) return 1;
 	if( ! socket ) return 1;
@@ -326,7 +325,6 @@ int get_addr_family(char *ip_address, int port)
         struct addrinfo *result;
         int val;
         char portaddr[32];
-	char tmp_address[ INET6_ADDRSTRLEN ];
 	int family = AF_UNSPEC;
 
         if( ! ip_address ) return AF_UNSPEC;

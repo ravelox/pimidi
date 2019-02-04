@@ -258,7 +258,7 @@ int net_socket_read( int fd )
 		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"STAT",4)==0) )
 		// Heartbeat request
 		{
-			unsigned char *buffer="OK";
+			char *buffer="OK";
 			size_t bytes_written = 0;
 			pthread_mutex_lock( &socket_mutex );
 			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
@@ -268,7 +268,7 @@ int net_socket_read( int fd )
 		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"QUIT",4)==0) )
 		// Shutdown request
 		{
-			unsigned char *buffer="QT";
+			char *buffer="QT";
 			size_t bytes_written = 0;
 			pthread_mutex_lock( &socket_mutex );
 			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);

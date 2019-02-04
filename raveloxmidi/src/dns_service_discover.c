@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/select.h>
+#include <string.h>
 
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
@@ -34,6 +35,20 @@
 #include <avahi-common/thread-watch.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
+
+#include <pthread.h>
+
+#include "dns_service_discover.h"
+
+#include "logging.h"
+#include "utils.h"
+
+#include "raveloxmidi_config.h"
+
+static pthread_mutex_t	discover_mutex;
+
+static dns_service_t **services = NULL;
+static int num_services = 0;
 
 static AvahiThreadedPoll *threaded_poll = NULL;
 static AvahiClient *client = NULL;
@@ -57,32 +72,13 @@ static void resolve_callback(
 
     /* Called whenever a service has been resolved successfully or timed out */
     switch (event) {
-        case AVAHI_RESOLVER_FAILURE:
-            fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
-            break;
+	case AVAHI_RESOLVER_FAILURE:
+		logging_printf(LOGGING_WARN, "Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
+		break;
         case AVAHI_RESOLVER_FOUND: {
-            char a[AVAHI_ADDRESS_STR_MAX], *t;
-            fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
-            avahi_address_snprint(a, sizeof(a), address);
-            t = avahi_string_list_to_string(txt);
-            fprintf(stderr,
-                    "\t%s:%u (%s)\n"
-                    "\tTXT=%s\n"
-                    "\tcookie is %u\n"
-                    "\tis_local: %i\n"
-                    "\tour_own: %i\n"
-                    "\twide_area: %i\n"
-                    "\tmulticast: %i\n"
-                    "\tcached: %i\n",
-                    host_name, port, a,
-                    t,
-                    avahi_string_list_get_service_cookie(txt),
-                    !!(flags & AVAHI_LOOKUP_RESULT_LOCAL),
-                    !!(flags & AVAHI_LOOKUP_RESULT_OUR_OWN),
-                    !!(flags & AVAHI_LOOKUP_RESULT_WIDE_AREA),
-                    !!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
-                    !!(flags & AVAHI_LOOKUP_RESULT_CACHED));
-            avahi_free(t);
+		char a[AVAHI_ADDRESS_STR_MAX];
+		avahi_address_snprint(a, sizeof(a), address);
+		dns_discover_add( name, a, port );
         }
     }
     avahi_service_resolver_free(r);
@@ -105,24 +101,17 @@ static void browse_callback(
     /* Called whenever a new services becomes available on the LAN or is removed from the LAN */
     switch (event) {
         case AVAHI_BROWSER_FAILURE:
-            fprintf(stderr, "(Browser) %s\n", avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(b))));
+            logging_printf(LOGGING_WARN, "%s\n", avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(b))));
             avahi_threaded_poll_quit( threaded_poll );
             return;
         case AVAHI_BROWSER_NEW:
-            fprintf(stderr, "(Browser) NEW: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
-            /* We ignore the returned resolver object. In the callback
-               function we free it. If the server is terminated before
-               the callback function is called the server will free
-               the resolver for us. */
             if (!(avahi_service_resolver_new(c, interface, protocol, name, type, domain, AVAHI_PROTO_UNSPEC, 0, resolve_callback, c)))
-                fprintf(stderr, "Failed to resolve service '%s': %s\n", name, avahi_strerror(avahi_client_errno(c)));
+                logging_printf( LOGGING_WARN, "Failed to resolve service '%s': %s\n", name, avahi_strerror(avahi_client_errno(c)));
             break;
         case AVAHI_BROWSER_REMOVE:
-            fprintf(stderr, "(Browser) REMOVE: service '%s' of type '%s' in domain '%s'\n", name, type, domain);
             break;
         case AVAHI_BROWSER_ALL_FOR_NOW:
         case AVAHI_BROWSER_CACHE_EXHAUSTED:
-            fprintf(stderr, "(Browser) %s\n", event == AVAHI_BROWSER_CACHE_EXHAUSTED ? "CACHE_EXHAUSTED" : "ALL_FOR_NOW");
             break;
     }
 }
@@ -133,36 +122,36 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 
     /* Called whenever the client or server state changes */
     if (state == AVAHI_CLIENT_FAILURE) {
-        fprintf(stderr, "Server connection failure: %s\n", avahi_strerror(avahi_client_errno(c)));
+        logging_printf(LOGGING_WARN, "Server connection failure: %s\n", avahi_strerror(avahi_client_errno(c)));
         avahi_threaded_poll_quit(threaded_poll);
     }
 }
 
-void dns_discover_services( void )
+int dns_discover_services( void )
 {
     AvahiServiceBrowser *sb = NULL;
     int error;
     struct timeval timeout;
 
     if (!(threaded_poll = avahi_threaded_poll_new())) {
-        fprintf(stderr, "Failed to create threaded poll object.\n");
+        logging_printf(LOGGING_WARN, "Failed to create threaded poll object.\n");
         goto fail;
     }
-    /* Allocate a new client */
+
     client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 
     if (!client) {
-        fprintf(stderr, "Failed to create client: %s\n", avahi_strerror(error));
+        logging_printf(LOGGING_WARN, "Failed to create client: %s\n", avahi_strerror(error));
         goto fail;
     }
 
     if (!(sb = avahi_service_browser_new(client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_apple-midi._udp", NULL, 0, browse_callback, client))) {
-        fprintf(stderr, "Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(client)));
+        logging_printf(LOGGING_WARN, "Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(client)));
         goto fail;
     }
 
     avahi_threaded_poll_start(threaded_poll);
-    timeout.tv_sec = 10;
+    timeout.tv_sec = config_int_get("discover.timeout");
     timeout.tv_usec= 0;
     select( 0, NULL, NULL, NULL, &timeout );
 
@@ -174,4 +163,71 @@ fail:
     if (client) avahi_client_free(client);
 
     if (threaded_poll) avahi_threaded_poll_free( threaded_poll );
+
+    return num_services;
+}
+
+void dns_discover_add( char *name, char *address, int port)
+{
+	dns_service_t **new_services_list = NULL;
+
+	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t) * ( num_services + 1 ) ) ;
+
+	if( new_services_list )	
+	{
+		dns_service_t *new_service;
+		services = new_services_list;
+
+		new_service = (dns_service_t *)malloc( sizeof( dns_service_t ) );
+
+		if( new_service )
+		{
+			new_service->name = (char *)strdup( name );
+			new_service->ip_address = ( char *)strdup( address );
+			new_service->port = port;
+			services[ num_services ] = new_service;
+			num_services++;
+		} else {
+			logging_printf(LOGGING_WARN, "dns_service_discover_add:  Unable to allocate memory for new service item\n");
+		}
+	} else {
+		logging_printf(LOGGING_WARN, "dns_service_discover_add: Unable to allocate memory for new service list\n");
+	}
+}
+
+void dns_discover_free_services( void )
+{
+	if( ! services ) return;
+	if( num_services <= 0 ) return;
+	for(int i = 0; i < num_services; i++)
+	{
+		FREENULL( "dns_service_t", (void **)&(services[i]) );
+	}
+	free(services);
+	services = NULL;
+}
+
+void dns_discover_init( void )
+{
+	pthread_mutex_init( &discover_mutex , NULL );
+	dns_discover_free_services();
+	num_services = 0;
+}
+
+void dns_discover_teardown( void )
+{
+	dns_discover_free_services();
+	num_services = 0;
+	pthread_mutex_destroy( &discover_mutex );
+}
+
+void dns_discover_dump( void )
+{
+	if( ! services ) return;
+	if( num_services <= 0 ) return;
+
+	for( int i = 0; i < num_services; i++ )
+	{
+		fprintf(stderr, "%03d) %s\t%s:%u\n", i, services[i]->name, services[i]->ip_address, services[i]->port );
+	}
 }

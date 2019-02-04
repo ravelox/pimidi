@@ -3,10 +3,10 @@
 raveloxmidi - RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
 .B raveloxmidi
-[-c filename] [-d|-i] [-N] [-P filename] [-R] [-h] [-C] [-D]
+[-c filename] [-d|-i] [-N] [-P filename] [-R] [-h] [-C] [-D] [-T seconds]
 
 .B raveloxmidi
-[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig] [--discover]
+[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig] [--discover] [--discover-timeout]
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
@@ -26,17 +26,23 @@ Do not run as a daemon.
 .TP
 .B -P pidfile
 File to store the pid of the running process. Default is
-.B raveloxmidi.pid in the current directory.
+.B raveloxmidi.pid 
+in the current directory.
 .TP
 .B -R
 Enable readonly mode. This doesn't write anything to disk.
 .TP
 .B -h
 Display help information including default values for some parameters.
+.TP
 .B -C
 Display the current config to stderr
+.TP
 .B -D
 Discover available _apple-midi._udp services
+.TP
+.B -T
+Timeout for service discovery. Default is 10 seconds.
 .SH NOTES
 The available options for the configuration file are as follows:
 .TP
@@ -60,6 +66,12 @@ Number of connections that can be made to @PACKAGE@. Maximum is 255. Minimum is 
 .TP
 .B service.name
 Label to prepend to mDNS service name "_apple-midi._udp". ( default is raveloxmidi )
+.TP
+.B discover.services
+List the available _apple-midi._udp services. This will exit once complete. Default is no.
+.TP
+.B discover.timeout
+Timeout for service discovery. Default is 10 seconds.
 .TP
 .B client.name
 Label to use when making a rtpMIDI connection to a remote service. ( default is raveloxremote )

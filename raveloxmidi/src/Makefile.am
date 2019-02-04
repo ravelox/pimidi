@@ -3,7 +3,7 @@ bin_PROGRAMS = raveloxmidi
 raveloxmidi_SOURCES = \
 	raveloxmidi.c \
 	dns_service_publisher.c \
-	dns_service_discoverer.c \
+	dns_service_discover.c \
 	applemidi_inv.c \
 	applemidi_by.c \
 	applemidi_feedback.c \
