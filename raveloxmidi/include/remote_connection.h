@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2018 Dave Kelly
+   Copyright (C) 2019 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,23 +18,10 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef DNS_SERVICE_DISCOVERER_H
-#define DNS_SERVICE_DISCOVERER_H
+#ifndef _REMOTE_CONNECTION_H
+#define _REMOTE_CONNECTION_H
 
-typedef struct dns_service_t {
-	char *name;
-	char *ip_address;
-	int port;
-} dns_service_t;
-
-int dns_discover_services( void );
-void dns_discover_add( const char *name, char *address, int port );
-dns_service_t *dns_discover_by_name( const char *name );
-void dns_discover_free_services( void );
-void dns_discover_init( void );
-void dns_discover_teardown( void );
-
-void dns_discover_dump( void );
-
+void remote_connect_init( void );
+void remote_connect_teardown( void );
 
 #endif

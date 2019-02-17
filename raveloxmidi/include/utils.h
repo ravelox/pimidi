@@ -41,6 +41,8 @@ char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen );
 int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen);
 int get_addr_family(char *ip_address, int port);
 
+int random_number( void );
+
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 

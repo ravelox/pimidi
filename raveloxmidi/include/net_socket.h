@@ -24,8 +24,8 @@
 #include "config.h"
 
 void net_socket_add( int new_socket );
-int net_socket_create( int family, char *bind_address, unsigned int port );
-int net_socket_ipv6_create( char *bind_addres, unsigned int port );
+int net_socket_create( int family, char *ip_address, unsigned int port );
+int net_socket_listener_create( int family, char *ip_address, unsigned int port );
 int net_socket_init( void );
 int net_socket_teardown( void );
 
@@ -36,6 +36,9 @@ int net_socket_fd_loop(void);
 int net_socket_alsa_loop(void);
 void net_socket_wait_for_alsa(void);
 void net_socket_loop_shutdown(int signal);
+
+int net_socket_get_data_socket( void );
+int net_socket_get_control_socket( void );
 
 void net_socket_set_fds( void );
 extern uint8_t _max_ctx;

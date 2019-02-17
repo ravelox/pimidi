@@ -109,7 +109,7 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->ip_address = ( char *) strdup( ip_address );
 }
 
-static net_ctx_t * net_ctx_create( void )
+net_ctx_t * net_ctx_create( void )
 {
 	net_ctx_t *new_ctx;
 	journal_t *journal;
@@ -194,7 +194,6 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	net_ctx_t *current_ctx = NULL;
 	net_ctx_t *last_ctx = NULL;
 	net_ctx_t *new_ctx = NULL;
-	time_t now = 0;
 	unsigned int send_ssrc = 0;
 
 	/* Check to see if the ssrc already exists */
@@ -216,8 +215,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	last_ctx = net_ctx_get_last();
 	if( ! _ctx_head ) _ctx_head = new_ctx;
 
-	now = time(NULL);
-	send_ssrc = rand_r( (unsigned int *)&now );
+	send_ssrc = random_number();
 
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address );
 	new_ctx->prev = last_ctx;

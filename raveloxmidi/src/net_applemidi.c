@@ -113,6 +113,21 @@ net_applemidi_inv * net_applemidi_inv_create( void )
 	return inv;
 }
 
+void net_applemidi_inv_destroy( net_applemidi_inv **inv )
+{
+	if(! inv ) return;
+	if(! *inv ) return;
+	
+	if( (*inv)->name )
+	{
+		free( (*inv)->name );
+		(*inv)->name = NULL;
+	}
+
+	free( *inv );
+	*inv = NULL;
+}
+
 net_applemidi_sync * net_applemidi_sync_create( void )
 {
 	net_applemidi_sync *sync = NULL;

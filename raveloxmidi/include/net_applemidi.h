@@ -86,4 +86,6 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **out_buffer, size_t *out_buffer_len );
 net_applemidi_command * net_applemidi_cmd_create( uint16_t command );
 
+void net_applemidi_inv_destroy( net_applemidi_inv **inv );
+
 #endif

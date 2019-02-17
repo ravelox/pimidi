@@ -167,9 +167,38 @@ fail:
     return num_services;
 }
 
-void dns_discover_add( char *name, char *address, int port)
+dns_service_t *dns_discover_by_name( const char *name )
+{
+	int i = 0;
+
+	if( num_services < 1 ) return NULL;
+	if( ! services ) return NULL;
+
+	for( i = 0; i < num_services; i++ )
+	{
+		if( strcmp( name, services[i]->name ) == 0 )
+		{
+			return services[i];
+		}
+	}
+
+	return NULL;
+}
+
+void dns_discover_add( const char *name, char *address, int port)
 {
 	dns_service_t **new_services_list = NULL;
+	dns_service_t *found_service = NULL;
+
+	if( ! name ) return;
+	if( ! address ) return;
+
+	// Check for duplicates by name
+	found_service = dns_discover_by_name( name );
+	if( found_service )
+	{
+		return;
+	}
 
 	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t) * ( num_services + 1 ) ) ;
 

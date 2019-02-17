@@ -43,6 +43,7 @@ typedef struct net_ctx_t {
 	struct net_ctx_t	*prev;
 } net_ctx_t;
 
+net_ctx_t *net_ctx_create( void );
 void net_ctx_destroy( net_ctx_t **ctx );
 void net_ctx_dump( net_ctx_t *ctx );
 void net_ctx_init( void );

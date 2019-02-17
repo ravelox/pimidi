@@ -30,7 +30,8 @@
 #include "net_applemidi.h"
 #include "net_socket.h"
 #include "net_connection.h"
-#include "utils.h"
+
+#include "remote_connection.h"
 
 #include "dns_service_publisher.h"
 #include "dns_service_discover.h"
@@ -43,6 +44,8 @@
 #ifdef HAVE_ALSA
 #include "raveloxmidi_alsa.h"
 #endif
+
+#include "utils.h"
 
 static int running_as_daemon=0;
 
@@ -90,6 +93,11 @@ int main(int argc, char *argv[])
 
 	net_ctx_init();
 
+	if( config_string_get("remote.connect") )
+	{
+		remote_connect_init();
+	}
+
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
@@ -117,6 +125,7 @@ int main(int argc, char *argv[])
 
 	dns_service_publisher_stop();
 
+	remote_connect_teardown();
 	net_socket_teardown();
 	net_ctx_teardown();
 

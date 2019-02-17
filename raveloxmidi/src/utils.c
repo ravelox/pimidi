@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -347,4 +348,12 @@ int get_addr_family(char *ip_address, int port)
 	freeaddrinfo( result );
 	return family;
 
+}
+
+int random_number( void )
+{
+	time_t now = 0;
+
+	now = time(NULL);
+	return rand_r( (unsigned int *)&now );
 }

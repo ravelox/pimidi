@@ -5,6 +5,7 @@ raveloxmidi_SOURCES = \
 	dns_service_publisher.c \
 	dns_service_discover.c \
 	applemidi_inv.c \
+	applemidi_ok.c \
 	applemidi_by.c \
 	applemidi_feedback.c \
 	applemidi_sync.c \
@@ -21,6 +22,7 @@ raveloxmidi_SOURCES = \
 	midi_command.c \
 	net_applemidi.c \
 	net_connection.c \
+	remote_connection.c \
 	rtp_packet.c \
 	raveloxmidi_config.c \
 	daemon.c \

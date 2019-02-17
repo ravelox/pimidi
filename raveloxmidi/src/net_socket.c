@@ -43,6 +43,7 @@ extern int errno;
 #include "net_connection.h"
 
 #include "applemidi_inv.h"
+#include "applemidi_ok.h"
 #include "applemidi_sync.h"
 #include "applemidi_feedback.h"
 #include "applemidi_by.h"
@@ -98,19 +99,34 @@ void net_socket_add( int new_socket )
 	sockets[num_sockets - 1 ] = new_socket;
 }
 
-int net_socket_create(int family, char *bind_address, unsigned int port )
+int net_socket_create(int family, char *ip_address, unsigned int port )
 {
 	int new_socket;
-	struct sockaddr_in6 socket_address;
-	socklen_t addr_len = 0;
-	int optionvalue = 0;
 
-	logging_printf(LOGGING_DEBUG, "net_socket_create: Creating socket for [%s]:%u, family=%d\n", bind_address, port, family);
+	logging_printf(LOGGING_DEBUG, "net_socket_create: Creating socket for [%s]:%u, family=%d\n", ip_address, port, family);
 
 	new_socket = socket(family, SOCK_DGRAM, 0);
 	if( new_socket < 0 )
 	{
 		return errno;
+	}
+
+	return new_socket;
+}
+
+int net_socket_listener_create( int family, char *ip_address, unsigned int port )
+{
+	int new_socket = -1;
+	struct sockaddr_in6 socket_address;
+	socklen_t addr_len = 0;
+	int optionvalue = 0;
+	
+	new_socket = net_socket_create( family, ip_address, port );
+
+	if( new_socket < 0 )
+	{ 
+		logging_printf( LOGGING_ERROR, "net_socket_listener_create: Unable to create socket %s:%u : %s\n", ip_address, port, strerror(new_socket));
+		return new_socket;
 	}
 
 	switch( family )
@@ -123,7 +139,7 @@ int net_socket_create(int family, char *bind_address, unsigned int port )
 			break;
 	}
 			
-	get_sock_addr( bind_address, port, (struct sockaddr *)&socket_address, &addr_len);
+	get_sock_addr( ip_address, port, (struct sockaddr *)&socket_address, &addr_len);
 
 	if ( bind(new_socket, (struct sockaddr *)&socket_address, addr_len) < 0 )
 	{       
@@ -227,6 +243,7 @@ int net_socket_read( int fd )
 					response = applemidi_inv_responder( ip_address, from_port, command->data );
 					break;
 				case NET_APPLEMIDI_CMD_ACCEPT:
+					applemidi_ok_responder( ip_address, from_port, command->data );
 					break;
 				case NET_APPLEMIDI_CMD_REJECT:
 					break;
@@ -255,7 +272,7 @@ int net_socket_read( int fd )
 			}
 
 			net_applemidi_cmd_destroy( &command );
-		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"STAT",4)==0) )
+		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( (const char *)&(packet[1]),"STAT",4)==0) )
 		// Heartbeat request
 		{
 			char *buffer="OK";
@@ -265,7 +282,7 @@ int net_socket_read( int fd )
 			pthread_mutex_unlock( &socket_mutex );
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		
-		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( &(packet[1]),"QUIT",4)==0) )
+		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( (const char *)&(packet[1]),"QUIT",4)==0) )
 		// Shutdown request
 		{
 			char *buffer="QT";
@@ -620,9 +637,9 @@ int net_socket_init( void )
 		case AF_INET: 
 		case AF_INET6:
 			if(
-				net_socket_create( address_family, bind_address, control_port ) ||
-				net_socket_create( address_family, bind_address, data_port ) ||
-				net_socket_create( address_family, bind_address, local_port ) )
+				net_socket_listener_create( address_family, bind_address, control_port ) ||
+				net_socket_listener_create( address_family, bind_address, data_port ) ||
+				net_socket_listener_create( address_family, bind_address, local_port ) )
 			{
 				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create socket: %s\n", strerror( errno ) );
 				return -1;
@@ -730,4 +747,20 @@ void net_socket_set_fds(void)
 			max_fd = MAX( max_fd, sockets[i] );
 		}
 	}
+}
+
+int net_socket_get_data_socket( void )
+{
+	if( num_sockets <= 0 ) return -1;
+	if( ! sockets ) return -1;
+
+	return sockets[DATA_PORT];
+}
+
+int net_socket_get_control_socket( void )
+{
+	if( num_sockets <= 0 ) return -1;
+	if( ! sockets ) return -1;
+
+	return sockets[DATA_PORT-1];
 }
