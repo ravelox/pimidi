@@ -41,6 +41,7 @@ extern int errno;
 #include "net_response.h"
 #include "net_socket.h"
 #include "net_connection.h"
+#include "net_distribute.h"
 
 #include "applemidi_inv.h"
 #include "applemidi_ok.h"
@@ -82,6 +83,16 @@ int socket_timeout = 0;
 int pipe_fd[2];
 
 static void set_shutdown_lock( int i );
+
+void net_socket_lock( void )
+{
+	pthread_mutex_lock( &socket_mutex );
+}
+
+void net_socket_unlock( void )
+{
+	pthread_mutex_unlock( &socket_mutex );
+}
 
 void net_socket_add( int new_socket )
 {
@@ -264,9 +275,9 @@ int net_socket_read( int fd )
 			if( response )
 			{
 				size_t bytes_written = 0;
-				pthread_mutex_lock( &socket_mutex );
+				net_socket_lock();
 				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
-				pthread_mutex_unlock( &socket_mutex );
+				net_socket_unlock();
 				logging_printf( LOGGING_DEBUG, "net_socket_read: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 				net_response_destroy( &response );
 			}
@@ -277,9 +288,9 @@ int net_socket_read( int fd )
 		{
 			char *buffer="OK";
 			size_t bytes_written = 0;
-			pthread_mutex_lock( &socket_mutex );
+			net_socket_lock();
 			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
-			pthread_mutex_unlock( &socket_mutex );
+			net_socket_unlock();
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		
 		} else if( (packet[0]==0xaa) && (recv_len == 5) && ( strncmp( (const char *)&(packet[1]),"QUIT",4)==0) )
@@ -287,9 +298,9 @@ int net_socket_read( int fd )
 		{
 			char *buffer="QT";
 			size_t bytes_written = 0;
-			pthread_mutex_lock( &socket_mutex );
+			net_socket_lock();
 			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
-			pthread_mutex_unlock( &socket_mutex );
+			net_socket_unlock();
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 			logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
 			set_shutdown_lock(1);
@@ -298,168 +309,9 @@ int net_socket_read( int fd )
 #else
 		} else if( packet[0] == 0xaa )
 #endif
-		// MIDI note on internal socket or ALSA rawmidi device
+		// MIDI data on internal socket or ALSA rawmidi device
 		{
-			rtp_packet_t *rtp_packet = NULL;
-			unsigned char *packed_rtp_buffer = NULL;
-			size_t packed_rtp_buffer_len = 0;
-
-			midi_note_t *midi_note = NULL;
-			midi_control_t *midi_control = NULL;
-			midi_program_t *midi_program = NULL;
-			midi_payload_t *initial_midi_payload = NULL;
-
-
-			unsigned char *packed_rtp_payload = NULL;
-
-			midi_command_t *midi_commands=NULL;
-			size_t num_midi_commands=0;
-			size_t midi_command_index = 0;
-
-			char *packed_journal = NULL;
-			size_t packed_journal_len = 0;
-			char *description = NULL;
-			enum midi_message_type_t message_type = 0;
-			size_t midi_payload_len = 0;
-
-
-			// Convert the buffer into a set of commands
-			midi_payload_len = recv_len - 1;
-			initial_midi_payload = midi_payload_create();
-			midi_payload_set_buffer( initial_midi_payload, packet + 1 , &midi_payload_len );
-			midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
-			midi_payload_destroy( &initial_midi_payload );
-
-			for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
-			{
-				midi_payload_t *single_midi_payload = NULL;
-				unsigned char *packed_payload = NULL;
-				size_t packed_payload_len = 0;
-
-				/* Extract a single command as a midi payload */
-				midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
-				if( ! single_midi_payload ) continue;
-
-				midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
-				midi_command_dump( &(midi_commands[ midi_command_index ]) );
-				switch( message_type )
-				{
-					case MIDI_NOTE_OFF:
-					case MIDI_NOTE_ON:
-						ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
-						midi_note_dump( midi_note );
-						break;
-					case MIDI_CONTROL_CHANGE:	
-						ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
-						midi_control_dump( midi_control );
-						break;
-					case MIDI_PROGRAM_CHANGE:
-						ret = midi_program_from_command( &(midi_commands[midi_command_index]), &midi_program);
-						midi_program_dump( midi_program );
-						break;
-					default:
-						break;
-				}
-
-				// Build the RTP packet
-				for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
-				{
-					net_ctx_t *current_ctx = net_ctx_iter_current();
-
-					logging_printf( LOGGING_DEBUG, "net_ctx_iter_current()=%p\n", current_ctx );
-					if(! current_ctx ) continue;
-
-					// Get a journal if there is one
-					pthread_mutex_lock( &socket_mutex );
-					net_ctx_journal_pack( current_ctx , &packed_journal, &packed_journal_len);
-					pthread_mutex_unlock( &socket_mutex );
-
-					if( packed_journal_len > 0 )
-					{
-						midi_payload_set_j( single_midi_payload );
-					} else {
-						midi_payload_unset_j( single_midi_payload );
-					}
-
-					// We have to pack the payload again each time because some connections may not have a journal
-					// and the flag to indicate the journal being present is in the payload
-					midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
-					logging_printf(LOGGING_DEBUG, "packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
-
-					// Join the packed MIDI payload and the journal together
-					packed_rtp_payload = (unsigned char *)malloc( packed_payload_len + packed_journal_len );
-					memset( packed_rtp_payload, 0, packed_payload_len + packed_journal_len );
-					memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
-					memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
-					logging_printf(LOGGING_DEBUG, "packed_rtp_payload\n");
-
-					rtp_packet = rtp_packet_create();
-					net_ctx_increment_seq( current_ctx );
-
-					// Transfer the connection details to the RTP packet
-					net_ctx_update_rtp_fields( current_ctx , rtp_packet );
-
-					// Add the MIDI data to the RTP packet
-					rtp_packet->payload_len = packed_payload_len + packed_journal_len;
-
-					rtp_packet->payload = (unsigned char *)malloc( rtp_packet->payload_len );
-					memcpy( rtp_packet->payload, packed_rtp_payload, rtp_packet->payload_len );
-					rtp_packet_dump( rtp_packet );
-
-					// Pack the RTP data
-					rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
-
-					pthread_mutex_lock( &socket_mutex );
-					net_ctx_send( sockets[ DATA_PORT ], current_ctx, packed_rtp_buffer, packed_rtp_buffer_len );
-					pthread_mutex_unlock( &socket_mutex );
-
-					FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
-					rtp_packet_destroy( &rtp_packet );
-
-					FREENULL( "packed_rtp_payload", (void **)&packed_rtp_payload );
-					FREENULL( "packed_journal", (void **)&packed_journal );
-
-					switch( message_type )
-					{
-						case MIDI_NOTE_OFF:
-						case MIDI_NOTE_ON:
-							net_ctx_add_journal_note( current_ctx , midi_note );
-							break;
-						case MIDI_CONTROL_CHANGE:
-							net_ctx_add_journal_control( current_ctx, midi_control );
-							break;
-						case MIDI_PROGRAM_CHANGE:	
-							net_ctx_add_journal_program( current_ctx, midi_program );
-							break;
-						default:
-							continue;
-					}
-				}
-
-				// Clean up
-				FREENULL( "packed_payload", (void **)&packed_payload );
-				midi_payload_destroy( &single_midi_payload );
-				switch( message_type )
-				{
-					case MIDI_NOTE_OFF:
-					case MIDI_NOTE_ON:
-						midi_note_destroy( &midi_note );
-						break;
-					case MIDI_CONTROL_CHANGE:
-						midi_control_destroy( &midi_control );
-						break;
-					case MIDI_PROGRAM_CHANGE:
-						midi_program_destroy( &midi_program );
-						break;
-					default:
-						break;
-				}
-
-				midi_command_reset( &(midi_commands[midi_command_index]) );
-			}
-
-			free( midi_commands );
-
+			net_distribute_midi( packet, recv_len );
 		} else {
 		// RTP MIDI inbound from remote socket
 			rtp_packet_t *rtp_packet = NULL;
@@ -484,9 +336,9 @@ int net_socket_read( int fd )
 			if( response )
 			{
 				size_t bytes_written = 0;
-				pthread_mutex_lock( &socket_mutex );
+				net_socket_lock();
 				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
-				pthread_mutex_unlock( &socket_mutex );
+				net_socket_unlock();
 				logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 				net_response_destroy( &response );
 			}
@@ -514,16 +366,16 @@ int net_socket_read( int fd )
 
 						if( inbound_midi_fd >= 0 )
 						{
-							pthread_mutex_lock( &socket_mutex );
+							net_socket_lock();
 							bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-							pthread_mutex_unlock( &socket_mutex );
+							net_socket_unlock();
 							logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 						}
 
 #ifdef HAVE_ALSA
-						pthread_mutex_lock( &socket_mutex );
+						net_socket_lock();
 						raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-						pthread_mutex_unlock( &socket_mutex );
+						net_socket_unlock();
 #endif
 						free( raw_buffer );
 					}

@@ -142,8 +142,8 @@ void remote_connect_init( void )
 		} else {
 			ctx = net_ctx_create();
 			ctx->ip_address = ( char * ) strdup( found_service->ip_address );
-			ctx->data_port = found_service->port;
-			ctx->control_port = found_service->port + 1;
+			ctx->control_port = found_service->port;
+			ctx->data_port = found_service->port + 1;
 			ctx->ssrc =  inv->ssrc;
 			ctx->initiator = inv->initiator;
 			ctx->seq = 0x638E;
@@ -154,7 +154,7 @@ void remote_connect_init( void )
 			{
 				logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 			} else {
-				net_ctx_send( net_socket_get_data_socket() , ctx, response->buffer, response->len );
+				net_ctx_send( net_socket_get_control_socket() , ctx, response->buffer, response->len );
 			}
 
 			net_ctx_destroy( &ctx );
