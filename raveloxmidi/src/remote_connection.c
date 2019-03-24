@@ -57,8 +57,8 @@ extern int errno;
 #include "remote_connection.h"
 
 static int remote_connected = 0;
-static int ssrc = 0;
-static int initiator = 0;
+static uint32_t remote_connect_ssrc = 0;
+static uint32_t remote_initiator = 0;
 
 void remote_connect_init( void )
 {
@@ -96,8 +96,8 @@ void remote_connect_init( void )
 		return;
 	}
 
-	ssrc = random_number();
-	initiator = random_number();
+	remote_connect_ssrc = random_number();
+	remote_initiator = random_number();
 
 	// Build the INV packet
 	inv = net_applemidi_inv_create();
@@ -108,9 +108,9 @@ void remote_connect_init( void )
 		return;
 	}
 
-	inv->ssrc = ssrc;
+	inv->ssrc = remote_connect_ssrc;
 	inv->version = 2;
-	inv->initiator = initiator;
+	inv->initiator = remote_initiator;
 	client_name = config_string_get("client.name");
 	if( client_name )
 	{
@@ -143,6 +143,10 @@ void remote_connect_init( void )
 			ctx = net_ctx_create();
 			ctx->ip_address = ( char * ) strdup( found_service->ip_address );
 			ctx->data_port = found_service->port;
+			ctx->control_port = found_service->port + 1;
+			ctx->ssrc =  inv->ssrc;
+			ctx->initiator = inv->initiator;
+			ctx->seq = 0x638E;
 
 			logging_printf( LOGGING_DEBUG, "remote_connect_init: Creating connection context for %s:%u\n", ctx->ip_address, ctx->data_port );
 
@@ -151,7 +155,6 @@ void remote_connect_init( void )
 				logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 			} else {
 				net_ctx_send( net_socket_get_data_socket() , ctx, response->buffer, response->len );
-				net_ctx_send( net_socket_get_control_socket() , ctx, response->buffer, response->len );
 			}
 
 			net_ctx_destroy( &ctx );
@@ -165,8 +168,79 @@ remote_connect_fail:
 	net_applemidi_cmd_destroy( &cmd );
 }
 
-void remote_connect_teardown( void )
+void remote_connect_ok( char *remote_name )
 {
-	if( ! remote_connected ) return;
+	if( net_ctx_find_by_name( remote_name ) )
+	{
+		remote_connected = 1;
+	}
 }
 
+void remote_connect_teardown( void )
+{
+	net_applemidi_inv *by = NULL;
+	net_response_t *response = NULL;
+	net_applemidi_command *cmd = NULL;
+	char *remote_service_name = NULL;
+	char *client_name = NULL;
+	net_ctx_t *ctx;
+
+	if( ! remote_connected ) return;
+	remote_service_name = config_string_get("remote.connect");
+
+	logging_printf( LOGGING_DEBUG, "remote_connect_teardown: Disconnecting from [%s]\n", remote_service_name);
+
+	// Build the BY packet
+	by = net_applemidi_inv_create();
+	
+	if( ! by )
+	{
+		logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to allocate memory for by packet\n");
+		return;
+	}
+
+	by->ssrc = remote_connect_ssrc;
+	by->version = 2;
+	by->initiator = 0;
+	client_name = NULL;
+
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_END );
+	
+	if( ! cmd ) 
+	{
+		logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to create AppleMIDI command\n");
+		net_applemidi_inv_destroy( &by );
+		goto remote_teardown_fail;
+	}
+
+	cmd->data = by;
+
+	response = net_response_create();
+
+	if( response )
+	{
+		int ret = 0;
+		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+		if( ret != 0 )
+		{
+			logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to pack response to by command\n");
+		} else {
+			ctx = net_ctx_find_by_name( remote_service_name );
+
+			if( ! ctx )
+			{
+				logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to find connection for [%s]\n", remote_service_name);
+			} else {
+				net_ctx_send( net_socket_get_data_socket() , ctx, response->buffer, response->len );
+				hex_dump( response->buffer, response->len );
+			}
+		}
+	} else {
+		logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to create response packet\n");
+	}
+
+remote_teardown_fail:
+	net_response_destroy( &response );
+	net_applemidi_cmd_destroy( &cmd );
+	net_applemidi_inv_destroy( &by );
+}

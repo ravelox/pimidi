@@ -38,6 +38,7 @@ typedef struct net_ctx_t {
 	uint16_t	data_port;
 	time_t		start;
 	char * 		ip_address;
+	char *		name;
 	journal_t	*journal;
 	struct net_ctx_t	*next;
 	struct net_ctx_t	*prev;
@@ -50,7 +51,8 @@ void net_ctx_init( void );
 void net_ctx_teardown( void );
 net_ctx_t * net_ctx_find_by_id( uint8_t id );
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port );
+net_ctx_t * net_ctx_find_by_name( char *name );
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port , char *name);
 net_ctx_t * net_ctx_get_last( void );
 
 void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note );

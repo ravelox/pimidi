@@ -33,8 +33,7 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
-static int num_items = 0;
-static raveloxmidi_config_t **config_items = NULL;
+static kv_table_t *config_items = NULL;
 
 static void config_set_defaults( void )
 {
@@ -44,7 +43,7 @@ static void config_set_defaults( void )
 	config_add_item("network.socket_timeout" , "30" );
 	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
-	config_add_item("run_as_daemon", "yes");
+	config_add_item("run_as_daemon", "no");
 	config_add_item("daemon.pid_file","raveloxmidi.pid");
 	config_add_item("logging.enabled", "yes");
 	config_add_item("logging.log_file", NULL);
@@ -60,8 +59,6 @@ static void config_set_defaults( void )
 #endif
 
 }
-
-static raveloxmidi_config_t *config_get_item( char *key );
 
 static void config_load_file( char *filename )
 {
@@ -151,8 +148,14 @@ void config_init( int argc, char *argv[] )
 	const char *short_options = "c:dihNP:RCDT:";
 #endif
 	int c;
-	config_items = NULL;
 
+	config_items = kv_table_create("config_items");
+	if( ! config_items )
+	{
+		fprintf(stderr,"Unable to initialise config table\n");
+		exit(1);
+	}
+		
 	config_set_defaults();
 
 	while(1)
@@ -212,34 +215,24 @@ void config_init( int argc, char *argv[] )
 
 void config_teardown( void )
 {
-	int i = 0;
-
-	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p num_items=%u\n", config_items, num_items - 1 );
-	if( ! config_items ) return;
-	if( num_items == 0 ) return;
-
-	for( i = 0 ; i < num_items ; i++ )
+	if( ! config_items )
 	{
-		if( config_items[i]->value )  free( config_items[i]->value );
-		if( config_items[i]->key ) free( config_items[i]->key );
-		if( config_items[i] ) free( config_items[i] );
+		fprintf( stderr, "NO CONFIG ITEMS\n");
+		return;
 	}
 
-	if( config_items ) free( config_items );
+	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p count=%lu\n", config_items, config_items->count );
 
-	num_items = 0;
+	kv_table_reset( config_items );
+
+	free( config_items );
 	config_items = NULL;
 }
 
 /* Public version */
 char *config_string_get( char *key )
 {
-	raveloxmidi_config_t *item = NULL;
-
-	item = config_get_item( key );
-
-	if( ! item ) return NULL;
-	return item->value;
+	return kv_get_value( config_items, key );
 }
 
 int config_int_get( char *key )
@@ -264,79 +257,20 @@ long config_long_get( char *key )
 
 int config_is_set( char *key )
 {
-	return ( config_get_item( key ) != NULL );
-}
-
-static raveloxmidi_config_t *config_get_item( char *key )
-{
-	int i = 0 ;
-
-	if( num_items <= 0 ) return NULL;
-	if( ! config_items ) return NULL;
-
-	for( i=0; i < num_items ; i ++ )
-	{
-		if( strcasecmp( key, config_items[i]->key ) == 0 )
-		{
-			return config_items[i];
-		}
-	}
-
-	return NULL;
+	return ( kv_find_item( config_items, key ) != NULL );
 }
 
 void config_add_item(char *key, char *value )
 {
-	raveloxmidi_config_t *new_item, *found_item;
-	raveloxmidi_config_t **new_config_item_list = NULL;
-
-	found_item = config_get_item( key );
-	if( ! found_item )
-	{
-		new_item = ( raveloxmidi_config_t *)malloc( sizeof( raveloxmidi_config_t ));
-		if( new_item )
-		{
-			new_item->key = (char *)strdup( key );
-			if( value )
-			{
-				new_item->value = ( char *)strdup( value );
-			} else {
-				new_item->value = NULL;
-			}
-
-			new_config_item_list = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
-			if( ! new_config_item_list )
-			{
-				fprintf(stderr, "config_add_item: Insufficient memory to create new config item\n");
-				free( new_item );
-				return;
-			}
-			config_items = new_config_item_list;
-			config_items[ num_items ] = new_item;
-			num_items++;
-		}
-	/* Overwrite any existing item that has the same key */
-	} else {
-		if( found_item->value ) free(found_item->value);
-		if( value )
-		{
-			found_item->value = ( char *)strdup( value );
-		} else {
-			found_item->value = NULL;
-		}
-	}
+	kv_add_item( config_items, key, value );
 }
 
 void config_dump( void )
 {
-	int i = 0;
 	if( ! config_items ) return;
-	if( num_items == 0 ) return;
+	if( config_items->count <= 0 ) return;
 
-	for( i = 0 ; i < num_items; i++ )
-	{
-		fprintf( stderr, "%s = %s\n", config_items[i]->key, config_items[i]->value );
-	}
+	kv_table_dump( config_items );
 }
 
 void config_usage( void )

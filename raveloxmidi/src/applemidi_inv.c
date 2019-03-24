@@ -65,7 +65,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	if( ! ctx )
 	{
 		logging_printf( LOGGING_DEBUG, "applemidi_inv_responder: Registering new connection\n");
-		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port );
+		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name );
 
 		if( ! ctx ) 
 		{

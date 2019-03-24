@@ -1,11 +1,7 @@
 #ifndef _RAVELOXMIDI_CONFIG_H
 #define _RAVELOXMIDI_CONFIG_H
 
-typedef struct raveloxmidi_config_t
-{
-	char *key;
-	char *value;
-} raveloxmidi_config_t;
+#include "kv_table.h"
 
 void config_init( int argc, char *argv[] );
 void config_teardown( void );

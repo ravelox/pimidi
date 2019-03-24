@@ -246,6 +246,7 @@ int net_socket_read( int fd )
 					applemidi_ok_responder( ip_address, from_port, command->data );
 					break;
 				case NET_APPLEMIDI_CMD_REJECT:
+					logging_printf( LOGGING_ERROR, "net_socket_read: Connection rejected host=%s, port=%u\n", ip_address, from_port);
 					break;
 				case NET_APPLEMIDI_CMD_END:
 					response = applemidi_by_responder( command->data );
@@ -258,7 +259,6 @@ int net_socket_read( int fd )
 					break;
 				case NET_APPLEMIDI_CMD_BITRATE:
 					break;
-					;;
 			}
 
 			if( response )

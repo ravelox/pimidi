@@ -43,20 +43,41 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
+#include "remote_connection.h"
+
 net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *data )
 {
 	net_applemidi_inv *inv = NULL;
+	net_ctx_t *ctx = NULL;
 
 	if( ! data ) return NULL;
 	inv = ( net_applemidi_inv *) data;
-
-/*
-	accept_inv->ssrc = ctx->send_ssrc;
-	accept_inv->version = 2;
-	accept_inv->initiator = ctx->initiator;
-	service_name = config_string_get("service.name");
-*/
-
 	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: ssrc=0x%08x version=%u initiator=0x%08x name=%s\n", inv->ssrc, inv->version, inv->initiator, inv->name);
+
+	ctx = net_ctx_find_by_ssrc( inv->ssrc );
+
+	/* If no context is found, this is a new connection */
+	/* We assume that the current port is the control port */
+	if( ! ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: Registering new connection\n");
+		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name);
+
+		/* Set the data port */
+		ctx->data_port = port + 1;
+
+		if( ! ctx ) 
+		{
+			logging_printf( LOGGING_ERROR, "applemidi_okresponder: Error registering connection\n");
+		}
+
+		/* Set the remote connect flag if the ssrc is the same one we used */
+		remote_connect_ok( inv->name );
+
+	/* Otherwise, we assume that the current port is the data port */
+	} else {
+		ctx->data_port = port;
+	}
+
 	return NULL;
 }

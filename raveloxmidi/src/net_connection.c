@@ -54,6 +54,7 @@ void net_ctx_destroy( net_ctx_t **ctx )
 	if( ! ctx ) return;
 	if( ! *ctx ) return;
 
+	FREENULL( "name",(void **)&((*ctx)->name) );
 	FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
 	journal_destroy( &((*ctx)->journal) );
 
@@ -91,7 +92,7 @@ void net_ctx_dump( net_ctx_t *ctx )
 		ctx->ssrc, ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port);
 }
 
-static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address )
+static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address , char *name)
 {
 	if( ! ctx ) return;
 
@@ -107,6 +108,7 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 		free( ctx->ip_address );
 	}
 	ctx->ip_address = ( char *) strdup( ip_address );
+	ctx->name = ( char *) strdup( name );
 }
 
 net_ctx_t * net_ctx_create( void )
@@ -165,10 +167,19 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 
 	while( current_ctx )
 	{
-		if( current_ctx->ssrc == ssrc )
-		{
-			return current_ctx;
-		}
+		if( current_ctx->ssrc == ssrc ) break;
+		current_ctx = current_ctx->next;
+	}
+
+	return current_ctx;
+}
+
+net_ctx_t * net_ctx_find_by_name( char *name )
+{
+	net_ctx_t *current_ctx = _ctx_head;
+	while( current_ctx )
+	{
+		if( strcmp( current_ctx->name, name ) == 0 ) break;
 		current_ctx = current_ctx->next;
 	}
 
@@ -189,12 +200,12 @@ net_ctx_t * net_ctx_get_last( void )
 	return current_ctx;
 }
 	
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port )
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port, char *name )
 {
 	net_ctx_t *current_ctx = NULL;
 	net_ctx_t *last_ctx = NULL;
 	net_ctx_t *new_ctx = NULL;
-	unsigned int send_ssrc = 0;
+	uint32_t send_ssrc = 0;
 
 	/* Check to see if the ssrc already exists */
 	new_ctx = net_ctx_find_by_ssrc( ssrc );
@@ -217,10 +228,10 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 
 	send_ssrc = random_number();
 
-	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address );
+	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address , name);
 	new_ctx->prev = last_ctx;
 
-	if( last_ctx ) last_ctx->next = new_ctx;
+	if( last_ctx ) last_ctx->next = new_ctx, name;
 
 	for( net_ctx_iter_start_head(); net_ctx_iter_has_next(); net_ctx_iter_next() )
 	{

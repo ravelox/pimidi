@@ -18,11 +18,27 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef _REMOTE_CONNECTION_H
-#define _REMOTE_CONNECTION_H
+#ifndef KV_TABLE_H
+#define KV_TABLE_H
 
-void remote_connect_init( void );
-void remote_connect_ok( char *name );
-void remote_connect_teardown( void );
+#include <unistd.h>
+
+typedef struct kv_item_t {
+	char *key;
+	char *value;
+} kv_item_t;
+
+typedef struct kv_table_t {
+	char *name;
+	size_t count;
+	kv_item_t **items;
+} kv_table_t;
+
+kv_table_t *kv_table_create( char *name );
+void kv_table_dump( kv_table_t *table );
+void kv_table_reset( kv_table_t *table );
+kv_item_t *kv_find_item( kv_table_t *table, char *key );
+char *kv_get_value( kv_table_t *table, char *key );
+void kv_add_item( kv_table_t *table, char *key, char *value );
 
 #endif

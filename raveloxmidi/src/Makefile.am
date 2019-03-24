@@ -28,7 +28,8 @@ raveloxmidi_SOURCES = \
 	daemon.c \
 	logging.c \
 	utils.c \
-	raveloxmidi_alsa.c
+	raveloxmidi_alsa.c \
+	kv_table.c
 
 raveloxmidi_LDADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@

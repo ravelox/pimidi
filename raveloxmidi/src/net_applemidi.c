@@ -70,6 +70,22 @@ void net_applemidi_command_dump( net_applemidi_command *command)
 			inv_data->version, inv_data->initiator,inv_data->ssrc,inv_data->name);
 	}
 
+	if( command->command == NET_APPLEMIDI_CMD_REJECT )
+	{
+		net_applemidi_inv	*reject_data;
+		reject_data = (net_applemidi_inv *)command->data;
+		logging_printf(LOGGING_DEBUG,"reject_data:version=%u,initiator=0x%08x,ssrc=0x%08x,name=\"%s\"\n",
+			reject_data->version, reject_data->initiator,reject_data->ssrc,reject_data->name);
+	}
+
+	if( command->command == NET_APPLEMIDI_CMD_ACCEPT )
+	{
+		net_applemidi_inv	*ok_data;
+		ok_data = (net_applemidi_inv *)command->data;
+		logging_printf(LOGGING_DEBUG,"ok_data:version=%u,initiator=0x%08x,ssrc=0x%08x,name=\"%s\"\n",
+			ok_data->version, ok_data->initiator,ok_data->ssrc,ok_data->name);
+	}
+
 	if( command->command == NET_APPLEMIDI_CMD_END )
 	{
 		net_applemidi_inv	*end_data;
