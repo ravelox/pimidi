@@ -179,7 +179,6 @@ void remote_connect_teardown( void )
 	net_response_t *response = NULL;
 	net_applemidi_command *cmd = NULL;
 	char *remote_service_name = NULL;
-	char *client_name = NULL;
 	net_ctx_t *ctx;
 
 	if( ! remote_connected ) return;
@@ -199,7 +198,6 @@ void remote_connect_teardown( void )
 	by->ssrc = remote_connect_ssrc;
 	by->version = 2;
 	by->initiator = remote_connect_ssrc;
-	client_name = NULL;
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_END );
 	

@@ -63,7 +63,7 @@ extern int errno;
 #include "raveloxmidi_alsa.h"
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( char *packet, size_t recv_len )
+void net_distribute_midi( unsigned char *packet, size_t recv_len )
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
@@ -100,7 +100,7 @@ void net_distribute_midi( char *packet, size_t recv_len )
 		midi_payload_t *single_midi_payload = NULL;
 		unsigned char *packed_payload = NULL;
 		size_t packed_payload_len = 0;
-		int ret = 0;
+		int ret;
 
 		/* Extract a single command as a midi payload */
 		midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );

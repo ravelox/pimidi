@@ -232,7 +232,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address , name);
 	new_ctx->prev = last_ctx;
 
-	if( last_ctx ) last_ctx->next = new_ctx, name;
+	if( last_ctx ) last_ctx->next = new_ctx;
 
 	for( net_ctx_iter_start_head(); net_ctx_iter_has_next(); net_ctx_iter_next() )
 	{
