@@ -93,11 +93,6 @@ int main(int argc, char *argv[])
 
 	net_ctx_init();
 
-	if( config_string_get("remote.connect") )
-	{
-		remote_connect_init();
-	}
-
         signal( SIGINT , net_socket_loop_shutdown);
         signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
@@ -112,6 +107,11 @@ int main(int argc, char *argv[])
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
+		if( config_string_get("remote.connect") )
+		{
+			remote_connect_init();
+		}
+
 		net_socket_loop_init();
 #ifdef HAVE_ALSA
 		net_socket_alsa_loop();

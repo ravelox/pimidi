@@ -53,7 +53,7 @@ static void config_set_defaults( void )
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
 	config_add_item("client.name", "raveloxremote");
-	config_add_item("discover.timeout","10");
+	config_add_item("discover.timeout","5");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 #endif

@@ -61,14 +61,14 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 	if( ! ctx )
 	{
 		logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: Registering new connection\n");
-		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name);
-
-		/* Set the data port */
-		ctx->data_port = port + 1;
+		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port, inv->name);
 
 		if( ! ctx ) 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_okresponder: Error registering connection\n");
+		} else {
+			ctx->data_port = port;
+			ctx->send_ssrc = inv->initiator;
 		}
 
 		/* Set the remote connect flag if the ssrc is the same one we used */

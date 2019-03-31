@@ -158,6 +158,15 @@ net_applemidi_sync * net_applemidi_sync_create( void )
 	return sync;
 }
 
+void net_applemidi_sync_destroy( net_applemidi_sync **sync )
+{
+	if( ! sync ) return;
+	if( ! *sync ) return;
+
+	free( *sync );
+	*sync = NULL;
+}
+
 net_applemidi_feedback * net_applemidi_feedback_create( void )
 {
 	net_applemidi_feedback *feedback = NULL;
@@ -516,7 +525,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 net_applemidi_command * net_applemidi_cmd_create( uint16_t command )
 {
-	net_applemidi_command *new_command;
+	net_applemidi_command *new_command = NULL;
 
 	new_command = ( net_applemidi_command *) malloc( sizeof( net_applemidi_command ) );
 	if( new_command )

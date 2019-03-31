@@ -175,7 +175,7 @@ void net_distribute_midi( char *packet, size_t recv_len )
 			rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
 			net_socket_lock();
-			net_ctx_send( net_socket_get_data_socket(), current_ctx, packed_rtp_buffer, packed_rtp_buffer_len );
+			net_ctx_send( net_socket_get_data_socket(), current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
 			net_socket_unlock();
 
 			FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );

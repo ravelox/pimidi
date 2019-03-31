@@ -207,6 +207,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	net_ctx_t *new_ctx = NULL;
 	uint32_t send_ssrc = 0;
 
+	logging_printf( LOGGING_DEBUG, "net_ctx_register: ssrc=0x%08x initiator=0x%08x ip_address=[%s] port=%u name=[%s]\n", ssrc, initiator, ip_address, port, name );
 	/* Check to see if the ssrc already exists */
 	new_ctx = net_ctx_find_by_ssrc( ssrc );
 	if( ! new_ctx )
@@ -310,11 +311,12 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 	ctx->seq += 1;
 }
 
-void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len )
+void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
 {
 	struct sockaddr_in6 send_address;
 	ssize_t bytes_sent = 0;
 	socklen_t addr_len = 0;
+	int port_number = 0;
 
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
@@ -325,16 +327,16 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 
 	/* Set up the destination address */
 	memset((char *)&send_address, 0, sizeof( send_address));
-	get_sock_addr( ctx->ip_address, ctx->data_port, (struct sockaddr *)&send_address, &addr_len);
+	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
+	get_sock_addr( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len);
 
-	logging_printf(LOGGING_DEBUG, "net_ctx_send: send_address size=%d\n", sizeof( send_address ) );
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, addr_len);
 
 	if( bytes_sent < 0 )
 	{
-		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to [%s]:%u\t%s\n", buffer_len, ctx->ip_address, ctx->data_port, strerror( errno ));
+		logging_printf( LOGGING_ERROR, "net_ctx_send: Failed to send %u bytes to [%s]:%u\t%s\n", buffer_len, ctx->ip_address, port_number, strerror( errno ));
 	} else {
-		logging_printf( LOGGING_DEBUG, "net_ctx_send: write( bytes=%u,host=%s,port=%u)\n", bytes_sent, ctx->ip_address, ctx->data_port );
+		logging_printf( LOGGING_DEBUG, "net_ctx_send: write( bytes=%u,host=[%s]:%u, use_control=%d)\n", bytes_sent, ctx->ip_address, port_number , use_control );
 	}
 }
 
