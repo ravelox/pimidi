@@ -352,8 +352,9 @@ int get_addr_family(char *ip_address, int port)
 
 int random_number( void )
 {
-	time_t now = 0;
+	static unsigned int seedp = 0;
 
-	now = time(NULL);
-	return rand_r( (unsigned int *)&now );
+	seedp = time(NULL);
+
+	return rand_r( &seedp );
 }

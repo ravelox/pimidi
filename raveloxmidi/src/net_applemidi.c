@@ -175,8 +175,7 @@ net_applemidi_feedback * net_applemidi_feedback_create( void )
 
 	if( feedback )
 	{
-		memset( feedback , 0, sizeof( net_applemidi_feedback ) );
-	}
+		memset( feedback , 0, sizeof( net_applemidi_feedback ) ); }
 
 	return feedback;
 }
@@ -188,50 +187,41 @@ int net_applemidi_cmd_destroy( net_applemidi_command **command )
 		return NET_APPLEMIDI_DONE;
 	}
 
-	if(	(*command)->command == NET_APPLEMIDI_CMD_INV  ||
-		(*command)->command == NET_APPLEMIDI_CMD_ACCEPT  ||
-		(*command)->command == NET_APPLEMIDI_CMD_REJECT  ||
-		(*command)->command == NET_APPLEMIDI_CMD_END  
-		)
+	switch( (*command)->command )
 	{
-		if( (*command)->data )
-		{
-			net_applemidi_inv *inv;
-			inv = (net_applemidi_inv *)(*command)->data;
-			if( inv->name )
+		case  NET_APPLEMIDI_CMD_INV:
+		case  NET_APPLEMIDI_CMD_ACCEPT:
+		case  NET_APPLEMIDI_CMD_REJECT:
+		case  NET_APPLEMIDI_CMD_END:
+			if( (*command)->data )
 			{
-				free(inv->name);
-				inv->name = NULL;
+				net_applemidi_inv *inv = (net_applemidi_inv *)(*command)->data;
+				if( inv->name )
+				{
+					free( inv->name );
+					inv->name = NULL;
+				}
 			}
-			free( (*command)->data );
-			(*command)->data = NULL;
-		}
-		free( *command );
-		*command = NULL;
-		return NET_APPLEMIDI_DONE;
+			break;
+		default:
+			break;
 	}
 
-	if( (*command)->command == NET_APPLEMIDI_CMD_SYNC  ||
-		(*command)->command == NET_APPLEMIDI_CMD_FEEDBACK ||
-		(*command)->command == NET_APPLEMIDI_CMD_BITRATE )
+	if( (*command)->data )
 	{
-		if( (*command)->data )
-		{
-			free( (*command)->data );
-			(*command)->data = NULL;
-		}
-		free( *command );
-		*command = NULL;
-		return NET_APPLEMIDI_DONE;
+		free( (*command)->data );
+		(*command)->data = NULL;
 	}
 
+	free( *command );
+	*command = NULL;
 	return NET_APPLEMIDI_DONE;
 }
 
-int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char *in_buffer, size_t in_buffer_len)
+int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char *in_buffer, size_t buffer_len)
 {
-
-	unsigned char *p;
+	unsigned char *p = NULL;
+	size_t in_buffer_len = 0;
 
 	if( ! in_buffer )
 	{
@@ -239,6 +229,8 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 		return NET_APPLEMIDI_NEED_DATA;
 	}
 		
+	in_buffer_len = buffer_len;
+
 	if( in_buffer_len < NET_APPLEMIDI_COMMAND_SIZE )
 	{
 		*command_buffer = NULL;
@@ -285,7 +277,11 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 
 		if( in_buffer_len > 0 )
 		{
-			inv->name = strndup( (const char *)p, in_buffer_len );
+			if( p )
+			{
+				inv->name = ( char * )strdup( (const char *)p );
+				in_buffer_len = 0;
+			}
 		} else {
 			inv->name = NULL;
 		}

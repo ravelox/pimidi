@@ -140,7 +140,7 @@ void logging_printf(int level, const char *format, ...)
 
 	if( ! prefix_disabled )
 	{
-		fprintf( logging_fp , "[%lu]\t%s: ", time( NULL ) , logging_value_to_name( loglevel_map, level ) );
+		fprintf( logging_fp , "[%lu]\t[tid=%lu]\t%s: ", time( NULL ) , pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
 	va_start(ap, format);

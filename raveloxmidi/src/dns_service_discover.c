@@ -230,10 +230,13 @@ void dns_discover_free_services( void )
 	if( num_services <= 0 ) return;
 	for(int i = 0; i < num_services; i++)
 	{
+		if( services[i]->name ) free( services[i]->name );
+		if( services[i]->ip_address) free( services[i]->ip_address);
 		FREENULL( "dns_service_t", (void **)&(services[i]) );
 	}
 	free(services);
 	services = NULL;
+	num_services = 0;
 }
 
 void dns_discover_init( void )
@@ -246,7 +249,6 @@ void dns_discover_init( void )
 void dns_discover_teardown( void )
 {
 	dns_discover_free_services();
-	num_services = 0;
 	pthread_mutex_destroy( &discover_mutex );
 }
 

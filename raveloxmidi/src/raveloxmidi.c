@@ -112,6 +112,8 @@ int main(int argc, char *argv[])
 			remote_connect_init();
 		}
 
+		dns_discover_teardown();
+
 		net_socket_loop_init();
 #ifdef HAVE_ALSA
 		net_socket_alsa_loop();
@@ -138,6 +140,7 @@ daemon_stop:
 	{
 		daemon_teardown();
 	}
+
 
 	config_teardown();
 

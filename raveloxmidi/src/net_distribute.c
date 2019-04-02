@@ -136,9 +136,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len )
 			if(! current_ctx ) continue;
 
 			// Get a journal if there is one
-			net_socket_lock();
 			net_ctx_journal_pack( current_ctx , &packed_journal, &packed_journal_len);
-			net_socket_unlock();
 
 			if( packed_journal_len > 0 )
 			{
@@ -174,9 +172,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len )
 			// Pack the RTP data
 			rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-			net_socket_lock();
 			net_ctx_send( net_socket_get_data_socket(), current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
-			net_socket_unlock();
 
 			FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 			rtp_packet_destroy( &rtp_packet );

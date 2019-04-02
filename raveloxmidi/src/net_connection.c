@@ -35,6 +35,7 @@ extern int errno;
 
 #include "midi_journal.h"
 #include "net_connection.h"
+#include "net_socket.h"
 #include "rtp_packet.h"
 #include "utils.h"
 
@@ -165,12 +166,14 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 {
 	net_ctx_t *current_ctx = _ctx_head;
 
-	while( current_ctx )
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ssrc=0x%08x\n", ssrc );
+	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
+		current_ctx = net_ctx_iter_current();
 		if( current_ctx->ssrc == ssrc ) break;
-		current_ctx = current_ctx->next;
 	}
 
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ctx=%p\n", current_ctx );
 	return current_ctx;
 }
 
@@ -208,8 +211,10 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	uint32_t send_ssrc = 0;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_register: ssrc=0x%08x initiator=0x%08x ip_address=[%s] port=%u name=[%s]\n", ssrc, initiator, ip_address, port, name );
+
 	/* Check to see if the ssrc already exists */
 	new_ctx = net_ctx_find_by_ssrc( ssrc );
+
 	if( ! new_ctx )
 	{
 		new_ctx = net_ctx_create();
@@ -223,11 +228,10 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 		return NULL;
 	}
 
-
 	last_ctx = net_ctx_get_last();
 	if( ! _ctx_head ) _ctx_head = new_ctx;
 
-	send_ssrc = random_number();
+	send_ssrc = 0x4157;
 
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address , name);
 	new_ctx->prev = last_ctx;
@@ -330,7 +334,9 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
 	get_sock_addr( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len);
 
+	net_socket_lock();
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, addr_len);
+	net_socket_unlock();
 
 	if( bytes_sent < 0 )
 	{

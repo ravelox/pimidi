@@ -12,7 +12,6 @@ AC_PROG_INSTALL
 
 AC_SYS_LARGEFILE
 
-
 PKG_PROG_PKG_CONFIG
 
 PKG_CHECK_MODULES(AVAHI, avahi-client )
@@ -38,4 +37,5 @@ then
 	AC_SUBST(DEB_ARCH)
 	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
 fi
+
 AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec)

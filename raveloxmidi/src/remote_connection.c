@@ -170,7 +170,6 @@ void remote_connect_init( void )
 remote_connect_fail:
 	net_response_destroy( &response );
 	net_applemidi_cmd_destroy( &cmd );
-	net_applemidi_inv_destroy( &inv );
 }
 
 void remote_connect_teardown( void )
@@ -237,7 +236,6 @@ void remote_connect_teardown( void )
 remote_teardown_fail:
 	net_response_destroy( &response );
 	net_applemidi_cmd_destroy( &cmd );
-	net_applemidi_inv_destroy( &by );
 }
 
 void remote_connect_ok( char *remote_name )
@@ -260,7 +258,8 @@ void remote_connect_ok( char *remote_name )
 	remote_connected = 1;
 	logging_printf(LOGGING_DEBUG, "remote_connect_ok: Connection found for [%s]\n", remote_name);
 
-	// Build the SYNC packet
+/*
+	 Build the SYNC packet
 	sync_packet = net_applemidi_sync_create();
 	
 	if( ! sync_packet )
@@ -271,13 +270,13 @@ void remote_connect_ok( char *remote_name )
 
 	sync_packet->ssrc = ctx->send_ssrc;
 	sync_packet->count = 0;
-	sync_packet->timestamp1 = time(0);
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 	
 	if( ! cmd ) 
 	{
 		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to create AppleMIDI command\n");
+		net_applemidi_sync_destroy( &sync_packet );
 		goto remote_ok_fail;
 	}
 
@@ -298,9 +297,8 @@ void remote_connect_ok( char *remote_name )
 	} else {
 		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to create response packet\n");
 	}
+*/
 
-remote_ok_fail:
 	net_response_destroy( &response );
 	net_applemidi_cmd_destroy( &cmd );
-	net_applemidi_sync_destroy( &sync_packet );
 }

@@ -47,32 +47,31 @@ extern int errno;
 
 net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *data )
 {
-	net_applemidi_inv *inv = NULL;
+	net_applemidi_inv *ok_packet = NULL;
 	net_ctx_t *ctx = NULL;
 
 	if( ! data ) return NULL;
-	inv = ( net_applemidi_inv *) data;
-	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: ssrc=0x%08x version=%u initiator=0x%08x name=%s\n", inv->ssrc, inv->version, inv->initiator, inv->name);
+	ok_packet = ( net_applemidi_inv *) data;
+	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: address=[%s]:%u ssrc=0x%08x version=%u initiator=0x%08x name=%s\n", ip_address, port, ok_packet->ssrc, ok_packet->version, ok_packet->initiator, ok_packet->name);
 
-	ctx = net_ctx_find_by_ssrc( inv->ssrc );
+	ctx = net_ctx_find_by_ssrc( ok_packet->ssrc );
 
 	/* If no context is found, this is a new connection */
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: Registering new connection\n");
-		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port, inv->name);
+		ctx = net_ctx_register( ok_packet->ssrc, ok_packet->initiator, ip_address, port, ok_packet->name);
 
 		if( ! ctx ) 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_okresponder: Error registering connection\n");
 		} else {
 			ctx->data_port = port;
-			ctx->send_ssrc = inv->initiator;
+			ctx->send_ssrc = ok_packet->initiator;
 		}
 
 		/* Set the remote connect flag if the ssrc is the same one we used */
-		remote_connect_ok( inv->name );
+		remote_connect_ok( ok_packet->name );
 
 	/* Otherwise, we assume that the current port is the data port */
 	} else {

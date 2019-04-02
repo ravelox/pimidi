@@ -43,7 +43,6 @@ int net_socket_get_data_socket( void );
 int net_socket_get_control_socket( void );
 
 void net_socket_set_fds( void );
-extern uint8_t _max_ctx;
 
 /* Indicate which socket should be the data port */
 #define DATA_PORT 1
