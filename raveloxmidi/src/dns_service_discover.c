@@ -193,6 +193,7 @@ void dns_discover_add( const char *name, char *address, int port)
 	if( ! name ) return;
 	if( ! address ) return;
 
+	logging_printf( LOGGING_DEBUG, "dns_discover_add: name=\"%s\" address=[%s]:%d\n", name, address, port );
 	// Check for duplicates by name
 	found_service = dns_discover_by_name( name );
 	if( found_service )

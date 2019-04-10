@@ -223,7 +223,7 @@ void FREENULL( const char *description, void **ptr )
 	if( ! ptr ) return;
 	if( ! *ptr ) return;
 
-	logging_printf(LOGGING_DEBUG,"FREENULL: description=\"%s\",ptr=%p\n", description, *ptr);
+	logging_printf(LOGGING_DEBUG,"FREENULL: \"%s\"=%p\n", description, *ptr);
 	free( *ptr );
 	*ptr = NULL;
 }
@@ -288,7 +288,7 @@ char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen )
         return s;
 }
 
-int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen)
+int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen, int *family)
 {
         struct addrinfo hints;
         struct addrinfo *result;
@@ -296,7 +296,6 @@ int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_
         char portaddr[32];
 
         if( ! ip_address ) return 1;
-	if( ! socket ) return 1;
 
         memset( &hints, 0, sizeof( hints ) );
         memset( portaddr, 0, sizeof( portaddr ) );
@@ -312,42 +311,24 @@ int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_
 		return 1;
 	}
 
-	memset( socket, 0, sizeof( struct sockaddr ) );
-	memcpy( socket, result->ai_addr, result->ai_addrlen );
-	*socklen = result->ai_addrlen;
+	if( socket )
+	{
+		memset( socket, 0, sizeof( struct sockaddr ) );
+		memcpy( socket, result->ai_addr, result->ai_addrlen );
+	}
+
+	if( socklen )
+	{
+		*socklen = result->ai_addrlen;
+	}
+
+	if( family )
+	{
+		*family = result->ai_family;
+	}
 
 	freeaddrinfo( result );
 	return 0;
-}
-
-int get_addr_family(char *ip_address, int port)
-{
-        struct addrinfo hints;
-        struct addrinfo *result;
-        int val;
-        char portaddr[32];
-	int family = AF_UNSPEC;
-
-        if( ! ip_address ) return AF_UNSPEC;
-
-        memset( &hints, 0, sizeof( hints ) );
-        memset( portaddr, 0, sizeof( portaddr ) );
-        sprintf( portaddr, "%d", port ); 
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_DGRAM;
-
-        val = getaddrinfo(ip_address, portaddr, &hints, &result );
-	if( val )
-	{
-		logging_printf(LOGGING_WARN, "get_addr_family: Invalid address: [%s]:%d\n", ip_address, port );
-		freeaddrinfo( result );
-		return AF_UNSPEC;
-	}
-
-	family = result->ai_family;
-	freeaddrinfo( result );
-	return family;
-
 }
 
 int random_number( void )

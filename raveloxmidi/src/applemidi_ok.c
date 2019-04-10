@@ -54,13 +54,13 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 	ok_packet = ( net_applemidi_inv *) data;
 	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: address=[%s]:%u ssrc=0x%08x version=%u initiator=0x%08x name=%s\n", ip_address, port, ok_packet->ssrc, ok_packet->version, ok_packet->initiator, ok_packet->name);
 
-	ctx = net_ctx_find_by_ssrc( ok_packet->ssrc );
+	ctx = net_ctx_find_by_ssrc( ok_packet->initiator );
 
 	/* If no context is found, this is a new connection */
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		ctx = net_ctx_register( ok_packet->ssrc, ok_packet->initiator, ip_address, port, ok_packet->name);
+		ctx = net_ctx_register( ok_packet->initiator, ok_packet->initiator, ip_address, port, ok_packet->name);
 
 		if( ! ctx ) 
 		{

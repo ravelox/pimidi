@@ -96,7 +96,7 @@ void remote_connect_init( void )
 		return;
 	}
 
-	logging_printf( LOGGING_DEBUG, "remote_connect_init: Found [%s] [%s:%d]\n", found_service->name, found_service->ip_address, found_service->port);
+	logging_printf( LOGGING_DEBUG, "remote_connect_init: Found name=\"%s\" address=[%s]:%d\n", found_service->name, found_service->ip_address, found_service->port);
 	remote_connect_ssrc = random_number();
 	remote_initiator = random_number();
 
@@ -112,7 +112,7 @@ void remote_connect_init( void )
 	inv->ssrc = remote_connect_ssrc;
 	inv->version = 2;
 	inv->initiator = remote_initiator;
-	client_name = config_string_get("client.name");
+	client_name = config_string_get("service.name");
 	if( client_name )
 	{
 		inv->name = (char *)strdup( client_name );
@@ -156,9 +156,9 @@ void remote_connect_init( void )
 				ctx->seq = 0x638E;
 
 				logging_printf( LOGGING_DEBUG, "remote_connect_init: Creating connection context for %s data=%u control=%u\n", ctx->ip_address, ctx->data_port, ctx->control_port );
-				net_ctx_send( net_socket_get_control_socket() , ctx, response->buffer, response->len , USE_CONTROL_PORT );
+				net_ctx_send( ctx, response->buffer, response->len , USE_DATA_PORT );
 				ctx->seq++;
-				net_ctx_send( net_socket_get_data_socket() , ctx, response->buffer, response->len , USE_DATA_PORT );
+				net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
 			}
 
 			net_ctx_destroy( &ctx );
@@ -225,7 +225,7 @@ void remote_connect_teardown( void )
 			{
 				logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to find connection for [%s]\n", remote_service_name);
 			} else {
-				net_ctx_send( net_socket_get_control_socket() , ctx, response->buffer, response->len , USE_CONTROL_PORT);
+				net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT);
 				hex_dump( response->buffer, response->len );
 			}
 		}
@@ -243,7 +243,7 @@ void remote_connect_ok( char *remote_name )
 	net_applemidi_sync *sync_packet = NULL;
 	net_response_t *response = NULL;
 	net_applemidi_command *cmd = NULL;
-	net_ctx_t *ctx;
+	net_ctx_t *ctx = NULL;
 
 	if( ! remote_name ) return;
 
@@ -258,8 +258,7 @@ void remote_connect_ok( char *remote_name )
 	remote_connected = 1;
 	logging_printf(LOGGING_DEBUG, "remote_connect_ok: Connection found for [%s]\n", remote_name);
 
-/*
-	 Build the SYNC packet
+	// Build the SYNC packet
 	sync_packet = net_applemidi_sync_create();
 	
 	if( ! sync_packet )
@@ -270,6 +269,9 @@ void remote_connect_ok( char *remote_name )
 
 	sync_packet->ssrc = ctx->send_ssrc;
 	sync_packet->count = 0;
+	sync_packet->timestamp1 = time(NULL);
+	sync_packet->timestamp2 = 0;
+	sync_packet->timestamp3 = 0;
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 	
@@ -284,21 +286,22 @@ void remote_connect_ok( char *remote_name )
 
 	response = net_response_create();
 
-	if( response )
+	if( ! response )
 	{
-		int ret = 0;
-		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
-		if( ret != 0 )
-		{
-			logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to pack response to sync_packet command\n");
-		} else {
-			net_ctx_send( net_socket_get_control_socket() , ctx, response->buffer, response->len , USE_CONTROL_PORT );
-		}
-	} else {
 		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to create response packet\n");
+		goto remote_ok_fail;
 	}
-*/
+	
+		int ret = 0;
+	ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+	if( ret != 0 )
+	{
+		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to pack response to sync_packet command\n");
+	} else {
+		net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
+	}
 
+remote_ok_fail:
 	net_response_destroy( &response );
 	net_applemidi_cmd_destroy( &cmd );
 }

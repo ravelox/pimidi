@@ -101,7 +101,8 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->send_ssrc = send_ssrc;
 	ctx->initiator = initiator;
 	ctx->seq = seq;
-	ctx->control_port = port;
+	ctx->data_port = port;
+	ctx->control_port = port + 1;
 	ctx->start = time( NULL );
 
 	if( ctx->ip_address )
@@ -173,7 +174,7 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 		if( current_ctx->ssrc == ssrc ) break;
 	}
 
-	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ctx=%p\n", current_ctx );
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: found=%s\n", (current_ctx ? "yes" : "no"));
 	return current_ctx;
 }
 
@@ -231,7 +232,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	last_ctx = net_ctx_get_last();
 	if( ! _ctx_head ) _ctx_head = new_ctx;
 
-	send_ssrc = 0x4157;
+	send_ssrc = initiator;
 
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address , name);
 	new_ctx->prev = last_ctx;
@@ -315,12 +316,14 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 	ctx->seq += 1;
 }
 
-void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
+void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
 {
-	struct sockaddr_in6 send_address;
+	struct sockaddr_in6 send_address, socket_address;
 	ssize_t bytes_sent = 0;
-	socklen_t addr_len = 0;
+	socklen_t addr_len = 0, socket_addr_len = 0;
 	int port_number = 0;
+	int family = AF_UNSPEC;
+	int send_socket = 0;
 
 	if( ! buffer ) return;
 	if( buffer_len <= 0 ) return;
@@ -331,8 +334,13 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 
 	/* Set up the destination address */
 	memset((char *)&send_address, 0, sizeof( send_address));
-	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
-	get_sock_addr( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len);
+	port_number = ( use_control == USE_CONTROL_PORT ? ctx->data_port : ctx->control_port );
+	get_sock_info( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len, &family);
+
+	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
+	socket_addr_len = sizeof( socket_address );
+	getsockname(send_socket , (struct sockaddr *)&socket_address, &socket_addr_len);
+	logging_printf( LOGGING_DEBUG, "net_ctx_send: outbound socket=%d\n", ntohs( ((struct sockaddr_in *)&socket_address)->sin_port ) );
 
 	net_socket_lock();
 	bytes_sent = sendto( send_socket, buffer, buffer_len , 0 , (struct sockaddr *)&send_address, addr_len);
@@ -349,45 +357,38 @@ void net_ctx_send( int send_socket, net_ctx_t *ctx, unsigned char *buffer, size_
 void net_ctx_iter_start_head(void)
 {
 	_iterator_current = _ctx_head;
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_start_head: current=%p\n", _iterator_current );
 	
 }
 void net_ctx_iter_start_tail(void)
 {
 	_iterator_current = net_ctx_get_last();
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_start_end: current=%p\n", _iterator_current );
 	
 }
 
 net_ctx_t *net_ctx_iter_current(void)
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_current: current=%p\n", _iterator_current );
 	return _iterator_current;
 }
 
 int net_ctx_iter_has_current( void )
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_has_current: current=%p\n", _iterator_current );
 	return ( _iterator_current ? 1 : 0 );
 }
 
 int net_ctx_iter_has_next(void)
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_has_next: current=%p\n", _iterator_current );
 	if(! _iterator_current ) return 0;
 	return (_iterator_current->next ? 1 : 0);
 }
 
 int net_ctx_iter_has_prev(void)
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_has_prev: current=%p\n", _iterator_current );
 	if(! _iterator_current ) return 0;
 	return (_iterator_current->prev ? 1 : 0);
 }
 
 void net_ctx_iter_next(void)
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_next: current=%p\n", _iterator_current );
 	if(_iterator_current)
 	{
 		_iterator_current = _iterator_current->next;
@@ -396,7 +397,6 @@ void net_ctx_iter_next(void)
 
 void net_ctx_iter_prev(void)
 {
-	logging_printf(LOGGING_DEBUG,"net_ctx_iter_prev: current=%p\n", _iterator_current );
 	if(_iterator_current)
 	{
 		_iterator_current = _iterator_current->prev;

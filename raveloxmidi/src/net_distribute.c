@@ -100,7 +100,6 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len )
 		midi_payload_t *single_midi_payload = NULL;
 		unsigned char *packed_payload = NULL;
 		size_t packed_payload_len = 0;
-		int ret;
 
 		/* Extract a single command as a midi payload */
 		midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
@@ -112,15 +111,15 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len )
 		{
 			case MIDI_NOTE_OFF:
 			case MIDI_NOTE_ON:
-				ret = midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+				midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
 				midi_note_dump( midi_note );
 				break;
 			case MIDI_CONTROL_CHANGE:	
-				ret = midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+				midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
 				midi_control_dump( midi_control );
 				break;
 			case MIDI_PROGRAM_CHANGE:
-				ret = midi_program_from_command( &(midi_commands[midi_command_index]), &midi_program);
+				midi_program_from_command( &(midi_commands[midi_command_index]), &midi_program);
 				midi_program_dump( midi_program );
 				break;
 			default:
@@ -172,7 +171,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len )
 			// Pack the RTP data
 			rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
 
-			net_ctx_send( net_socket_get_data_socket(), current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
+			net_ctx_send( current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
 
 			FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 			rtp_packet_destroy( &rtp_packet );

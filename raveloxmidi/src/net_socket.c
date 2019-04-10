@@ -150,7 +150,7 @@ int net_socket_listener_create( int family, char *ip_address, unsigned int port 
 			break;
 	}
 			
-	get_sock_addr( ip_address, port, (struct sockaddr *)&socket_address, &addr_len);
+	get_sock_info( ip_address, port, (struct sockaddr *)&socket_address, &addr_len, NULL);
 
 	if ( bind(new_socket, (struct sockaddr *)&socket_address, addr_len) < 0 )
 	{       
@@ -209,7 +209,6 @@ int net_socket_read( int fd )
 		} else {
 #endif
 			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
-			logging_printf(LOGGING_DEBUG, "net_socket_read: from_len=%u\n", from_len );
 			get_ip_string( (struct sockaddr *)&from_addr, ip_address, INET6_ADDRSTRLEN );
 			from_port = ntohs( ((struct sockaddr_in *)&from_addr)->sin_port );
 #ifdef HAVE_ALSA
@@ -278,7 +277,7 @@ int net_socket_read( int fd )
 				net_socket_lock();
 				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
 				net_socket_unlock();
-				logging_printf( LOGGING_DEBUG, "net_socket_read: write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
+				logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 				net_response_destroy( &response );
 			}
 
@@ -481,7 +480,7 @@ int net_socket_init( void )
 	local_port = config_int_get("network.local.port");
 
 	bind_address = config_string_get("network.bind_address");
-	address_family = get_addr_family( bind_address , control_port );
+	get_sock_info( bind_address , control_port , NULL, NULL, &address_family);
 	logging_printf(LOGGING_DEBUG, "net_socket_init: network.bind_address=[%s], family=%d\n", bind_address, address_family);
 
 	switch( address_family )
@@ -606,7 +605,7 @@ int net_socket_get_data_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT];
+	return sockets[DATA_PORT - 1];
 }
 
 int net_socket_get_control_socket( void )
@@ -614,5 +613,5 @@ int net_socket_get_control_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT-1];
+	return sockets[DATA_PORT];
 }

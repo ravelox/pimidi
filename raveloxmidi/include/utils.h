@@ -38,8 +38,7 @@ int is_yes( const char *value );
 int is_no( const char *value );
 
 char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen );
-int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen);
-int get_addr_family(char *ip_address, int port);
+int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen, int *family);
 
 int random_number( void );
 

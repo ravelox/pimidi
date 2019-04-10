@@ -66,7 +66,7 @@ void net_ctx_journal_dump( net_ctx_t *ctx);
 void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size);
 void net_ctx_journal_reset( net_ctx_t *ctx );
 void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet);
-void net_ctx_send( int socket, net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control );
+void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control );
 void net_ctx_increment_seq( net_ctx_t *ctx );
 
 void net_ctx_iter_start_head(void);

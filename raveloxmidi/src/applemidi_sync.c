@@ -52,13 +52,19 @@ net_response_t * applemidi_sync_responder( void *data )
 	net_response_t *response = NULL;
 	uint32_t delta = 0;
 
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: start\n");
+
 	if( ! data ) return NULL;
 
 	sync = ( net_applemidi_sync *) data;
 
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
-	if( ! ctx ) return NULL;
+	if( ! ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: No context found for ssrc=%s\n", sync->ssrc );
+		return NULL;
+	}
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
@@ -111,6 +117,7 @@ net_response_t * applemidi_sync_responder( void *data )
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to pack response to sync command\n");
 			net_response_destroy( &response );
+			response = NULL;
 		}
 	}
 
