@@ -270,8 +270,8 @@ void remote_connect_ok( char *remote_name )
 	sync_packet->ssrc = ctx->send_ssrc;
 	sync_packet->count = 0;
 	sync_packet->timestamp1 = time(NULL);
-	sync_packet->timestamp2 = 0;
-	sync_packet->timestamp3 = 0;
+	sync_packet->timestamp2 = random_number();
+	sync_packet->timestamp3 = random_number();
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 	

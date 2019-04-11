@@ -275,7 +275,7 @@ int net_socket_read( int fd )
 			{
 				size_t bytes_written = 0;
 				net_socket_lock();
-				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
+				bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
 				net_socket_unlock();
 				logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 				net_response_destroy( &response );
@@ -288,7 +288,7 @@ int net_socket_read( int fd )
 			char *buffer="OK";
 			size_t bytes_written = 0;
 			net_socket_lock();
-			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
+			bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
 			net_socket_unlock();
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		
@@ -298,7 +298,7 @@ int net_socket_read( int fd )
 			char *buffer="QT";
 			size_t bytes_written = 0;
 			net_socket_lock();
-			bytes_written = sendto( fd, buffer, strlen(buffer), 0 , (void *)&from_addr, from_len);
+			bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
 			net_socket_unlock();
 			logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 			logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
@@ -336,7 +336,7 @@ int net_socket_read( int fd )
 			{
 				size_t bytes_written = 0;
 				net_socket_lock();
-				bytes_written = sendto( fd, response->buffer, response->len , 0 , (void *)&from_addr, from_len);
+				bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
 				net_socket_unlock();
 				logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 				net_response_destroy( &response );

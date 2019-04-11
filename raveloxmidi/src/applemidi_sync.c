@@ -40,6 +40,7 @@ extern int errno;
 #include "net_connection.h"
 #include "net_socket.h"
 #include "net_response.h"
+#include "utils.h"
 
 #include "logging.h"
 
@@ -51,6 +52,7 @@ net_response_t * applemidi_sync_responder( void *data )
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
 	uint32_t delta = 0;
+	time_t current_time = 0;
 
 	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: start\n");
 
@@ -65,6 +67,8 @@ net_response_t * applemidi_sync_responder( void *data )
 		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: No context found for ssrc=%s\n", sync->ssrc );
 		return NULL;
 	}
+
+	net_ctx_dump( ctx );
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
@@ -90,7 +94,12 @@ net_response_t * applemidi_sync_responder( void *data )
 	sync_resp->timestamp2 = sync->timestamp2;
 	sync_resp->timestamp3 = sync->timestamp3;
 
-	delta = time( NULL ) - ctx->start;
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%u start=%u delta=0x%08x\n", current_time, ctx->start, delta );
+
+	current_time = time( NULL );
+	delta = current_time - ctx->start;
+
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%u start=%u delta=0x%08x\n", current_time, ctx->start, delta );
 	
 	switch( sync_resp->count )
 	{
@@ -106,6 +115,8 @@ net_response_t * applemidi_sync_responder( void *data )
 	}
 
 	cmd->data = sync_resp;
+
+	net_applemidi_command_dump( cmd );
 
 	response = net_response_create();
 

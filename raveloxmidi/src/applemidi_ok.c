@@ -60,13 +60,13 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		ctx = net_ctx_register( ok_packet->initiator, ok_packet->initiator, ip_address, port, ok_packet->name);
+		ctx = net_ctx_register( ok_packet->ssrc, ok_packet->initiator, ip_address, port, ok_packet->name);
 
 		if( ! ctx ) 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_okresponder: Error registering connection\n");
 		} else {
-			ctx->data_port = port;
+			ctx->control_port = port;
 			ctx->send_ssrc = ok_packet->initiator;
 		}
 
