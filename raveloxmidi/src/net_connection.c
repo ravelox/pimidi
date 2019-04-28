@@ -87,22 +87,33 @@ void net_ctx_destroy( net_ctx_t **ctx )
 
 void net_ctx_dump( net_ctx_t *ctx )
 {
+	DEBUG_ONLY;
 	if( ! ctx ) return;
 	
-	logging_printf( LOGGING_DEBUG, "net_ctx: ssrc=0x%08x,send_ssrc=0x%08x,initiator=0x%08x,seq=0x%08x,host=%s,control=%u,data=%u start=%u\n",
+	logging_printf( LOGGING_DEBUG, "net_ctx: ssrc=0x%08x,send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u start=%u\n",
 		ctx->ssrc, ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
 }
 
-static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint32_t seq, uint16_t port, char *ip_address , char *name)
+void net_ctx_dump_all( void )
+{
+	DEBUG_ONLY;
+	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: start\n");
+	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
+	{
+		net_ctx_dump( net_ctx_iter_current() );
+	}
+	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: end\n");
+}
+
+static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint16_t port, char *ip_address , char *name)
 {
 	if( ! ctx ) return;
 
 	ctx->ssrc = ssrc;
 	ctx->send_ssrc = send_ssrc;
 	ctx->initiator = initiator;
-	ctx->seq = seq;
-	ctx->data_port = port;
-	ctx->control_port = port + 1;
+	ctx->control_port = port;
+	ctx->data_port = port+1;
 	ctx->start = time( NULL );
 
 	if( ctx->ip_address )
@@ -127,13 +138,15 @@ net_ctx_t * net_ctx_create( void )
 	}
 
 	memset( new_ctx, 0, sizeof( net_ctx_t ) );
-	new_ctx->seq = 0x0000;
+	new_ctx->seq = 1;
 
 	journal_init( &journal );
 
 	new_ctx->journal = journal;
 	new_ctx->next = NULL;
 	new_ctx->prev = NULL;
+
+	new_ctx->status = NET_CTX_STATUS_IDLE;
 
 	return new_ctx;
 
@@ -165,29 +178,60 @@ void net_ctx_teardown( void )
 
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 {
-	net_ctx_t *current_ctx = _ctx_head;
+	net_ctx_t *current_ctx = NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ssrc=0x%08x\n", ssrc );
 	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
 		current_ctx = net_ctx_iter_current();
-		if( current_ctx->ssrc == ssrc ) return current_ctx;
+		if( current_ctx )
+		{
+			if( current_ctx->ssrc == ssrc ) return current_ctx;
+		}
 	}
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: not found\n");
 	return NULL;
 }
 
-net_ctx_t * net_ctx_find_by_name( char *name )
+net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator)
 {
-	net_ctx_t *current_ctx = _ctx_head;
-	while( current_ctx )
+	net_ctx_t *current_ctx = NULL;
+
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: initiator=0x%08x\n", initiator );
+
+	net_ctx_dump_all();
+	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
-		if( strcmp( current_ctx->name, name ) == 0 ) break;
-		current_ctx = current_ctx->next;
+		current_ctx = net_ctx_iter_current();
+		if( current_ctx )
+		{
+			if( current_ctx->initiator == initiator ) return current_ctx;
+		}
 	}
 
-	return current_ctx;
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: not found\n");
+	return NULL;
+}
+
+net_ctx_t * net_ctx_find_by_name( char *name )
+{
+	net_ctx_t *current_ctx = NULL;
+	
+	if( ! name ) return NULL;
+
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: name=[%s]\n", name);
+	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next() )
+	{
+		current_ctx = net_ctx_iter_current();
+		if( current_ctx )
+		{
+			if( strcmp( current_ctx->name, name ) == 0 ) return current_ctx;
+		}
+	}
+
+	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: not found\n");
+	return NULL;
 }
 
 net_ctx_t * net_ctx_get_last( void )
@@ -206,7 +250,6 @@ net_ctx_t * net_ctx_get_last( void )
 	
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port, char *name )
 {
-	net_ctx_t *current_ctx = NULL;
 	net_ctx_t *last_ctx = NULL;
 	net_ctx_t *new_ctx = NULL;
 	uint32_t send_ssrc = 0;
@@ -231,7 +274,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	}
 
 	send_ssrc = initiator;
-	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, 0x638F, port, ip_address , name);
+	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, port, ip_address , name);
 
 	/* Add the connection to the list */
 	if( ! _ctx_head )
@@ -246,11 +289,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 		new_ctx->prev = last_ctx;
 	}
 register_end:
-	for( net_ctx_iter_start_head(); net_ctx_iter_has_next(); net_ctx_iter_next() )
-	{
-		current_ctx = net_ctx_iter_current();
-		net_ctx_dump( current_ctx );
-	}
+	net_ctx_dump_all();
 
 	return new_ctx;
 }
@@ -341,7 +380,7 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 
 	/* Set up the destination address */
 	memset((char *)&send_address, 0, sizeof( send_address));
-	port_number = ( use_control == USE_CONTROL_PORT ? ctx->data_port : ctx->control_port );
+	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
 	get_sock_info( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len, &family);
 
 	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
@@ -407,5 +446,17 @@ void net_ctx_iter_prev(void)
 	if(_iterator_current)
 	{
 		_iterator_current = _iterator_current->prev;
+	}
+}
+
+char *net_ctx_status_to_string( net_ctx_status_t status )
+{
+	switch( status )
+	{
+		case NET_CTX_STATUS_IDLE: return "idle";
+        	case NET_CTX_STATUS_FIRST_INV: return "first_inv";
+        	case NET_CTX_STATUS_SECOND_INV: return "second_inv";
+        	case NET_CTX_STATUS_REMOTE_CONNECTION: return "remote_connection";
+		default: return "unknown";
 	}
 }

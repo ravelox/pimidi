@@ -43,6 +43,8 @@ static void config_set_defaults( void )
 	config_add_item("network.socket_timeout" , "30" );
 	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
+	config_add_item("service.ipv4", "yes");
+	config_add_item("service.ipv6", "no");
 	config_add_item("run_as_daemon", "no");
 	config_add_item("daemon.pid_file","raveloxmidi.pid");
 	config_add_item("logging.enabled", "yes");
@@ -53,6 +55,7 @@ static void config_set_defaults( void )
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
 	config_add_item("discover.timeout","5");
+	config_add_item("sync.interval","10");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 #endif
@@ -134,18 +137,12 @@ void config_init( int argc, char *argv[] )
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
-		{"discover", no_argument, NULL, 'D'},
-		{"discover-timeout", required_argument, NULL, 'T'},
 #ifdef HAVE_ALSA
 #endif
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
-#ifdef HAVE_ALSA
-	const char *short_options = "c:dihNP:RCDT:";
-#else
-	const char *short_options = "c:dihNP:RCDT:";
-#endif
+	const char *short_options = "c:dihNP:RC";
 	int c;
 
 	config_items = kv_table_create("config_items");
@@ -194,12 +191,6 @@ void config_init( int argc, char *argv[] )
 				break;
 			case 'C':
 				dump_config = 1;
-				break;
-			case 'D':
-				config_add_item("discover.services", "yes");
-				break;
-			case 'T':
-				config_add_item("discover.timeout", optarg);
 				break;
 		}
 	} 

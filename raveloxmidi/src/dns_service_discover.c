@@ -127,30 +127,42 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
     }
 }
 
-int dns_discover_services( void )
+int dns_discover_services( int use_ipv4, int use_ipv6 )
 {
     AvahiServiceBrowser *sb = NULL;
     int error;
     struct timeval timeout;
+    AvahiProtocol protocol;
 
     if (!(threaded_poll = avahi_threaded_poll_new())) {
-        logging_printf(LOGGING_WARN, "Failed to create threaded poll object.\n");
+        logging_printf(LOGGING_WARN, "dns_discover_services: Failed to create threaded poll object.\n");
         goto fail;
     }
 
     client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 
     if (!client) {
-        logging_printf(LOGGING_WARN, "Failed to create client: %s\n", avahi_strerror(error));
+        logging_printf(LOGGING_WARN, "dns_discover_services: Failed to create client: %s\n", avahi_strerror(error));
         goto fail;
     }
 
-    if (!(sb = avahi_service_browser_new(client, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, "_apple-midi._udp", NULL, 0, browse_callback, client))) {
-        logging_printf(LOGGING_WARN, "Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(client)));
+    if( use_ipv4 && use_ipv6 )
+    {
+        protocol = AVAHI_PROTO_UNSPEC;
+    } else if ( use_ipv4 ) {
+        protocol = AVAHI_PROTO_INET;
+    } else {
+        protocol = AVAHI_PROTO_INET6;
+    }
+
+    if (!(sb = avahi_service_browser_new(client, AVAHI_IF_UNSPEC, protocol, "_apple-midi._udp", NULL, 0, browse_callback, client))) {
+        logging_printf(LOGGING_WARN, "dns_discover_services: Failed to create service browser: %s\n", avahi_strerror(avahi_client_errno(client)));
         goto fail;
     }
 
     avahi_threaded_poll_start(threaded_poll);
+
+    /* Keep the threads running until the timeout */
     timeout.tv_sec = config_int_get("discover.timeout");
     timeout.tv_usec= 0;
     select( 0, NULL, NULL, NULL, &timeout );

@@ -54,26 +54,18 @@ int main(int argc, char *argv[])
 	dns_service_desc_t service_desc;
 	int ret = 0;
 
+	utils_init();
+
 	config_init( argc, argv);
 
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
-	dns_discover_init();
-
-	if( config_is_set("discover.services" ) )
-	{
-		int services_found = 0;
-		services_found = dns_discover_services();
-
-		if( services_found > 0 )
-		{
-			dns_discover_dump();
-		} else {
-			logging_printf( LOGGING_INFO, "No remote services found\n");
-		}
-		goto daemon_stop;
-	}
+	service_desc.name = config_string_get("service.name");
+	service_desc.service = "_apple-midi._udp";
+	service_desc.port = config_int_get("network.control.port");
+	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
+	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
 
 #ifdef HAVE_ALSA
 	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
@@ -97,28 +89,28 @@ int main(int argc, char *argv[])
         signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	service_desc.name = config_string_get("service.name");
-	service_desc.service = "_apple-midi._udp";
-	service_desc.port = config_int_get("network.control.port");
-
 	ret = dns_service_publisher_start( &service_desc );
 	
 	if( ret != 0 )
 	{
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
+		net_socket_loop_init();
+
 		if( config_string_get("remote.connect") )
 		{
+			dns_discover_init();
 			remote_connect_init();
+			dns_discover_teardown();
 		}
 
-		dns_discover_teardown();
-
-		net_socket_loop_init();
+		if( net_socket_get_shutdown_lock() == 0 )
+		{
 #ifdef HAVE_ALSA
-		net_socket_alsa_loop();
+			net_socket_alsa_loop();
 #endif
-		net_socket_fd_loop();
+			net_socket_fd_loop();
+		}
 #ifdef HAVE_ALSA
 		net_socket_wait_for_alsa();
 #endif
@@ -145,6 +137,8 @@ daemon_stop:
 	config_teardown();
 
 	logging_teardown();
+
+	utils_teardown();
 
 	return 0;
 }

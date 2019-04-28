@@ -42,6 +42,12 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 
 int random_number( void );
 
+void GET_MASTER_LOCK( void );
+void RELEASE_MASTER_LOCK( void );
+
+void utils_init( void );
+void utils_teardown( void );
+
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 

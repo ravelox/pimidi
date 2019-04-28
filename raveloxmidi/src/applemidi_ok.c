@@ -41,6 +41,7 @@ extern int errno;
 #include "net_response.h"
 
 #include "raveloxmidi_config.h"
+#include "utils.h"
 #include "logging.h"
 
 #include "remote_connection.h"
@@ -49,34 +50,46 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 {
 	net_applemidi_inv *ok_packet = NULL;
 	net_ctx_t *ctx = NULL;
+	net_response_t *response = NULL;
 
 	if( ! data ) return NULL;
+
 	ok_packet = ( net_applemidi_inv *) data;
 	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: address=[%s]:%u ssrc=0x%08x version=%u initiator=0x%08x name=%s\n", ip_address, port, ok_packet->ssrc, ok_packet->version, ok_packet->initiator, ok_packet->name);
 
-	ctx = net_ctx_find_by_ssrc( ok_packet->initiator );
+	ctx = net_ctx_find_by_initiator( ok_packet->initiator );
 
-	/* If no context is found, this is a new connection */
-	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		ctx = net_ctx_register( ok_packet->ssrc, ok_packet->initiator, ip_address, port, ok_packet->name);
-
-		if( ! ctx ) 
-		{
-			logging_printf( LOGGING_ERROR, "applemidi_okresponder: Error registering connection\n");
-		} else {
-			ctx->control_port = port;
-			ctx->send_ssrc = ok_packet->initiator;
-		}
-
-		/* Set the remote connect flag if the ssrc is the same one we used */
-		remote_connect_ok( ok_packet->name );
-
-	/* Otherwise, we assume that the current port is the data port */
-	} else {
-		ctx->data_port = port;
+		logging_printf(LOGGING_WARN,"applemidi_ok_responder: Unexpected OK from ssrc=0x%08x\n", ok_packet->ssrc);
+		return NULL;
 	}
 
-	return NULL;
+	logging_printf( LOGGING_DEBUG, "applemidi_ok_responder: address=[%s]:%u status=%s\n", ip_address, port, net_ctx_status_to_string(ctx->status ));
+	switch( ctx->status )
+	{
+		case NET_CTX_STATUS_FIRST_INV:
+			response = net_response_inv( ctx->send_ssrc, ctx->initiator, config_string_get("client.name") );
+			ctx->ssrc = ok_packet->ssrc;
+			net_ctx_dump_all();
+			net_ctx_send( ctx, response->buffer, response->len , USE_DATA_PORT );
+			hex_dump( response->buffer, response->len );
+			net_response_destroy( &response );
+			response = NULL;
+			ctx->status = NET_CTX_STATUS_SECOND_INV;
+			break;
+		case NET_CTX_STATUS_SECOND_INV:
+			response = net_response_sync( ctx->send_ssrc );
+			net_ctx_send( ctx, response->buffer, response->len, USE_CONTROL_PORT );
+			hex_dump( response->buffer, response->len );
+			net_response_destroy( &response );
+			response = NULL;
+			ctx->status = NET_CTX_STATUS_REMOTE_CONNECTION;
+			remote_connect_sync_start();
+			break;
+		default:
+			break;
+	}
+
+	return response;
 }

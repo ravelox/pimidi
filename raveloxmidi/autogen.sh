@@ -5,6 +5,7 @@ set -x
 rm -f Makefile
 
 aclocal
+
 autoconf
 
 autoheader

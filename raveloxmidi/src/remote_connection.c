@@ -56,19 +56,17 @@ extern int errno;
 
 #include "remote_connection.h"
 
-static int remote_connected = 0;
-static uint32_t remote_connect_ssrc = 0;
-static uint32_t remote_initiator = 0;
+pthread_t sync_thread;
 
 void remote_connect_init( void )
 {
 	dns_service_t *found_service = NULL;
 	char *remote_service_name = NULL;
 	char *client_name = NULL;
-	net_applemidi_inv *inv = NULL;
 	net_response_t *response = NULL;
-	net_applemidi_command *cmd = NULL;
 	net_ctx_t *ctx;
+	int use_ipv4, use_ipv6;
+	uint32_t initiator = 0, ssrc = 0;
 
 	remote_service_name = config_string_get("remote.connect");
 
@@ -80,13 +78,14 @@ void remote_connect_init( void )
 
 	logging_printf(LOGGING_DEBUG, "remote_connect_init: Looking for [%s]\n", remote_service_name);
 
-	remote_connected = 0;
-	if( dns_discover_services() <= 0 )
+	use_ipv4 = is_yes( config_string_get("service.ipv4") ) ;
+	use_ipv6 = is_yes( config_string_get("service.ipv6") ) ;
+
+	if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
 	{
 		logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
 		return;
 	}
-
 
 	found_service = dns_discover_by_name( remote_service_name );
 
@@ -97,79 +96,32 @@ void remote_connect_init( void )
 	}
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_init: Found name=\"%s\" address=[%s]:%d\n", found_service->name, found_service->ip_address, found_service->port);
-	remote_connect_ssrc = random_number();
-	remote_initiator = random_number();
+	ssrc = random_number();
+	initiator = random_number();
 
-	// Build the INV packet
-	inv = net_applemidi_inv_create();
-	
-	if( ! inv )
+	client_name = config_string_get("client.name");
+	if( !client_name )
 	{
-		logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to allocate memory for inv packet\n");
-		return;
+		client_name = (char *)strdup( "RaveloxMIDIClient" );
 	}
 
-	inv->ssrc = remote_connect_ssrc;
-	inv->version = 2;
-	inv->initiator = remote_initiator;
-	client_name = config_string_get("service.name");
-	if( client_name )
-	{
-		inv->name = (char *)strdup( client_name );
-	} else {
-		inv->name = (char *)strdup( "RaveloxMIDIClient" );
-	}
-
-	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_INV );
-	
-	if( ! cmd ) 
-	{
-		logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create AppleMIDI command\n");
-		net_applemidi_inv_destroy( &inv );
-		goto remote_connect_fail;
-	}
-
-	cmd->data = inv;
-
-	response = net_response_create();
+	response = net_response_inv( ssrc, initiator, client_name );
 
 	if( response )
 	{
-		int ret = 0;
-		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
-		if( ret != 0 )
+		ctx = net_ctx_register( ssrc, initiator, found_service->ip_address, found_service->port, found_service->name );
+
+		if( ! ctx )
 		{
-			logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to pack response to inv command\n");
+			logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 		} else {
-			ctx = net_ctx_create();
-
-			if( ! ctx )
-			{
-				logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
-			} else {
-				ctx->ip_address = ( char * ) strdup( found_service->ip_address );
-				ctx->control_port = found_service->port;
-				ctx->data_port = found_service->port+1;
-				ctx->ssrc =  inv->ssrc;
-				ctx->send_ssrc =  inv->ssrc;
-				ctx->initiator = inv->initiator;
-				ctx->seq = 0x638E;
-
-				logging_printf( LOGGING_DEBUG, "remote_connect_init: Creating connection context for %s data=%u control=%u\n", ctx->ip_address, ctx->data_port, ctx->control_port );
-				net_ctx_send( ctx, response->buffer, response->len , USE_DATA_PORT );
-				ctx->seq++;
-				net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
-			}
-
-			net_ctx_destroy( &ctx );
+			ctx->status = NET_CTX_STATUS_FIRST_INV;
+			logging_printf( LOGGING_DEBUG, "remote_connect_init: Sending INV request to [%s]:%d\n", ctx->ip_address, ctx->control_port );
+			net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
 		}
-	} else {
-		logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create response packet\n");
 	}
 
-remote_connect_fail:
 	net_response_destroy( &response );
-	net_applemidi_cmd_destroy( &cmd );
 }
 
 void remote_connect_teardown( void )
@@ -180,10 +132,19 @@ void remote_connect_teardown( void )
 	char *remote_service_name = NULL;
 	net_ctx_t *ctx;
 
-	if( ! remote_connected ) return;
 	remote_service_name = config_string_get("remote.connect");
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_teardown: Disconnecting from [%s]\n", remote_service_name);
+
+	remote_connect_wait_for_thread();
+
+	ctx = net_ctx_find_by_name( remote_service_name );
+	
+	if( ! ctx )
+	{
+		logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to find connection for [%s]\n", remote_service_name);
+		return;
+	};
 
 	// Build the BY packet
 	by = net_applemidi_inv_create();
@@ -194,9 +155,9 @@ void remote_connect_teardown( void )
 		return;
 	}
 
-	by->ssrc = remote_connect_ssrc;
+	by->ssrc = ctx->send_ssrc;
 	by->version = 2;
-	by->initiator = remote_connect_ssrc;
+	by->initiator = ctx->initiator;
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_END );
 	
@@ -219,15 +180,8 @@ void remote_connect_teardown( void )
 		{
 			logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to pack response to by command\n");
 		} else {
-			ctx = net_ctx_find_by_name( remote_service_name );
-
-			if( ! ctx )
-			{
-				logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to find connection for [%s]\n", remote_service_name);
-			} else {
-				net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT);
-				hex_dump( response->buffer, response->len );
-			}
+			net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT);
+			hex_dump( response->buffer, response->len );
 		}
 	} else {
 		logging_printf( LOGGING_ERROR, "remote_connect_teardown: Unable to create response packet\n");
@@ -238,70 +192,60 @@ remote_teardown_fail:
 	net_applemidi_cmd_destroy( &cmd );
 }
 
-void remote_connect_ok( char *remote_name )
+static void *remote_connect_sync_thread( void *data )
 {
-	net_applemidi_sync *sync_packet = NULL;
-	net_response_t *response = NULL;
-	net_applemidi_command *cmd = NULL;
+	net_response_t *response;
 	net_ctx_t *ctx = NULL;
+	char *remote_service_name = NULL;
+	int shutdown_fd = 0;
+	fd_set read_fds;
+	struct timeval tv;
 
-	if( ! remote_name ) return;
+	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: start\n");
+	logging_printf( LOGGING_DEBUG, "rmeote_connect_sync_thread: sync.interval=%s\n", config_string_get("sync.interval"));
 
-	ctx = net_ctx_find_by_name( remote_name );
+	shutdown_fd = net_socket_get_shutdown_fd();
+	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: shutdown_fd=%u\n", shutdown_fd );
 
-	if( ! ctx )
+	remote_service_name = config_string_get("remote.connect");
+	ctx = net_ctx_find_by_name( remote_service_name );
+
+	while( ctx && (net_socket_get_shutdown_lock()==0) )
 	{
-		logging_printf( LOGGING_DEBUG, "remote_connect_ok: No context found for [%s]\n", remote_name );
-		return;
+		FD_ZERO( &read_fds );
+		FD_SET( shutdown_fd, &read_fds );
+		memset( &tv, 0, sizeof( struct timeval ) );
+		tv.tv_sec = config_int_get("sync.interval");
+		select( shutdown_fd + 1, &read_fds, NULL , NULL , &tv );
+		if( net_socket_get_shutdown_lock() == 1 )
+		{
+			logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received during poll\n");
+			break;
+		}
+		response = net_response_sync( ctx->send_ssrc );
+		net_ctx_send( ctx, response->buffer, response->len, USE_CONTROL_PORT );
+		hex_dump( response->buffer, response->len );
+		net_response_destroy( &response );
 	}
 
-	remote_connected = 1;
-	logging_printf(LOGGING_DEBUG, "remote_connect_ok: Connection found for [%s]\n", remote_name);
-
-	// Build the SYNC packet
-	sync_packet = net_applemidi_sync_create();
-	
-	if( ! sync_packet )
+	if( net_socket_get_shutdown_lock() == 1 )
 	{
-		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to allocate memory for sync_packet packet\n");
-		return;
+		logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received\n");
 	}
+	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: stop\n");
 
-	sync_packet->ssrc = ctx->send_ssrc;
-	sync_packet->count = 0;
-	sync_packet->timestamp1 = time(NULL);
-	sync_packet->timestamp2 = random_number();
-	sync_packet->timestamp3 = random_number();
+	return NULL;
+}
 
-	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
-	
-	if( ! cmd ) 
-	{
-		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to create AppleMIDI command\n");
-		net_applemidi_sync_destroy( &sync_packet );
-		goto remote_ok_fail;
-	}
+void remote_connect_sync_start( void )
+{
+	logging_printf( LOGGING_DEBUG, "remote_connect_sync_start: Starting sync thread\n");
+	pthread_create( &sync_thread, NULL, remote_connect_sync_thread, NULL );
+}
 
-	cmd->data = sync_packet;
-
-	response = net_response_create();
-
-	if( ! response )
-	{
-		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to create response packet\n");
-		goto remote_ok_fail;
-	}
-	
-		int ret = 0;
-	ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
-	if( ret != 0 )
-	{
-		logging_printf( LOGGING_ERROR, "remote_connect_ok: Unable to pack response to sync_packet command\n");
-	} else {
-		net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
-	}
-
-remote_ok_fail:
-	net_response_destroy( &response );
-	net_applemidi_cmd_destroy( &cmd );
+void remote_connect_wait_for_thread( void )
+{
+	logging_printf( LOGGING_DEBUG, "remote_connect_wait_for_thread: Waiting\n");
+	pthread_join( sync_thread, NULL );
+	logging_printf( LOGGING_DEBUG, "remote_connect_wait_for_thread: Done\n");
 }

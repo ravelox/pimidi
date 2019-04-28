@@ -38,11 +38,13 @@ int net_socket_fd_loop(void);
 int net_socket_alsa_loop(void);
 void net_socket_wait_for_alsa(void);
 void net_socket_loop_shutdown(int signal);
+int net_socket_get_shutdown_lock( void) ;
 
 int net_socket_get_data_socket( void );
 int net_socket_get_control_socket( void );
 
 void net_socket_set_fds( void );
+int net_socket_get_shutdown_fd( void );
 
 /* Indicate which socket should be the data port */
 #define DATA_PORT 1

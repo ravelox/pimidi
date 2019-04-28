@@ -80,7 +80,7 @@ static pthread_mutex_t shutdown_lock;
 static pthread_mutex_t socket_mutex;
 pthread_t alsa_listener_thread;
 int socket_timeout = 0;
-int pipe_fd[2];
+int pipe_fd[2] = { 0, 0 };
 
 static void set_shutdown_lock( int i );
 
@@ -191,7 +191,7 @@ int net_socket_read( int fd )
 	struct sockaddr_storage from_addr;
 	int output_enabled = 0;
 	char ip_address[ INET6_ADDRSTRLEN ];
-	int from_port = 0;
+	uint16_t from_port = 0;
 
 	net_applemidi_command *command;
 	int ret = 0;
@@ -401,6 +401,15 @@ static void set_shutdown_lock( int i )
 	pthread_mutex_unlock( &shutdown_lock );
 }
 
+int net_socket_get_shutdown_lock( void )
+{
+	int i = 0;
+	pthread_mutex_lock( &shutdown_lock );
+	i = net_socket_shutdown;
+	pthread_mutex_unlock( &shutdown_lock );
+	return i;
+}
+
 void net_socket_loop_init()
 {
 	int err = 0;
@@ -605,7 +614,7 @@ int net_socket_get_data_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT - 1];
+	return sockets[DATA_PORT];
 }
 
 int net_socket_get_control_socket( void )
@@ -613,5 +622,10 @@ int net_socket_get_control_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT];
+	return sockets[DATA_PORT - 1];
+}
+
+int net_socket_get_shutdown_fd( void )
+{
+	return pipe_fd[0];
 }

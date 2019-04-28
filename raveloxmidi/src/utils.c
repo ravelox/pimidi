@@ -34,11 +34,17 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
+#include <pthread.h>
+
 #include <errno.h>
 extern int errno;
 
 #include "config.h"
 #include "logging.h"
+
+#include "utils.h"
+
+static pthread_mutex_t master_lock;
 
 extern int errno;
 
@@ -197,9 +203,10 @@ void hex_dump( unsigned char *buffer, size_t len )
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
 
+	GET_MASTER_LOCK();
 	logging_prefix_disable();
 
-	logging_printf(LOGGING_DEBUG, "hexdump(%p , %u)\n", buffer, len );
+	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
 	if( ! buffer ) return;
 	if( len <= 0 ) return;
 
@@ -213,9 +220,11 @@ void hex_dump( unsigned char *buffer, size_t len )
 		logging_printf(LOGGING_DEBUG, "%02x %c\t", c, isprint(c)  ? c : '.' );
 	}
 	logging_printf(LOGGING_DEBUG, "\n");
-	logging_printf(LOGGING_DEBUG, "-- end hexdump\n");
+	logging_printf(LOGGING_DEBUG, "-- end hex_dump\n");
 
 	logging_prefix_enable();
+
+	RELEASE_MASTER_LOCK();
 }
 
 void FREENULL( const char *description, void **ptr )
@@ -339,3 +348,24 @@ int random_number( void )
 
 	return rand_r( &seedp );
 }
+	
+void GET_MASTER_LOCK( void )
+{
+	pthread_mutex_lock( &master_lock );
+}
+
+void RELEASE_MASTER_LOCK( void )
+{
+	pthread_mutex_unlock( &master_lock );
+}
+
+void utils_init( void )
+{
+	pthread_mutex_init( &master_lock , NULL);
+}
+
+void utils_teardown( void )
+{
+	pthread_mutex_destroy( &master_lock );
+}
+

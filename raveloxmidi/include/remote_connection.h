@@ -24,5 +24,7 @@
 void remote_connect_init( void );
 void remote_connect_ok( char *name );
 void remote_connect_teardown( void );
+void remote_connect_sync_start( void );
+void remote_connect_wait_for_thread( void );
 
 #endif

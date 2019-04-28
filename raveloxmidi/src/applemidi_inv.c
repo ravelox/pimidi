@@ -71,8 +71,6 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Error registering connection\n");
 		}
-	//} else {
-	//	ctx->data_port = port;
 	}
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_ACCEPT );

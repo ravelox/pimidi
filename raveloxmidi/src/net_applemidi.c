@@ -182,6 +182,7 @@ net_applemidi_feedback * net_applemidi_feedback_create( void )
 
 int net_applemidi_cmd_destroy( net_applemidi_command **command )
 {
+
 	if( ! *command )
 	{
 		return NET_APPLEMIDI_DONE;

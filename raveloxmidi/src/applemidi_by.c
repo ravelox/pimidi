@@ -47,6 +47,7 @@ net_response_t * applemidi_by_responder( void *data )
 	net_applemidi_inv *inv = NULL;
 	net_ctx_t *ctx = NULL;
 
+	logging_printf( LOGGING_DEBUG, "applemidi_by_responder: data=%p\n", data );
 	if( ! data ) return NULL;
 
 	inv = ( net_applemidi_inv *) data;

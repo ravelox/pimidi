@@ -49,6 +49,8 @@ static AvahiClient *client = NULL;
 static char *sd_name_copy = NULL;
 static char *sd_service_copy = NULL;
 static int sd_port = 0;
+static int use_ipv4 = 0;
+static int use_ipv6 = 0;
 
 static void create_services(AvahiClient *c);
 
@@ -97,6 +99,7 @@ static void entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
 static void create_services(AvahiClient *c) {
     char *n, r[128];
     int ret;
+    AvahiProtocol protocol;
     assert(c);
 
     /* If this is the first time we're called, let's create a new
@@ -117,7 +120,16 @@ static void create_services(AvahiClient *c) {
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
-        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0,  sd_name_copy , sd_service_copy , NULL, NULL,  sd_port, "test=blah", r, NULL)) < 0) {
+	if( use_ipv4 && use_ipv6 )
+	{
+		protocol = AVAHI_PROTO_UNSPEC;
+	} else if( use_ipv4 ) {
+		protocol = AVAHI_PROTO_INET;
+	} else {
+		protocol = AVAHI_PROTO_INET6;
+	}
+
+        if ((ret = avahi_entry_group_add_service(group, AVAHI_IF_UNSPEC, protocol, 0,  sd_name_copy , sd_service_copy , NULL, NULL,  sd_port, "test=blah", r, NULL)) < 0) {
 
             if (ret == AVAHI_ERR_COLLISION)
                 goto collision;
@@ -245,6 +257,9 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 	sd_name_copy = avahi_strdup( service_desc->name );
 	sd_service_copy = avahi_strdup( service_desc->service );
 	sd_port = service_desc->port;
+
+	use_ipv4 = service_desc->publish_ipv4;
+	use_ipv6 = service_desc->publish_ipv6;
 
 	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
 
