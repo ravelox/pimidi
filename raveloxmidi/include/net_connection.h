@@ -59,6 +59,8 @@ net_ctx_t *net_ctx_create( void );
 void net_ctx_destroy( net_ctx_t **ctx );
 void net_ctx_dump( net_ctx_t *ctx );
 void net_ctx_dump_all( void );
+void net_ctx_lock( void );
+void net_ctx_unlock( void );
 void net_ctx_init( void );
 void net_ctx_teardown( void );
 net_ctx_t * net_ctx_find_by_id( uint8_t id );

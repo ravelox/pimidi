@@ -208,15 +208,21 @@ static void *remote_connect_sync_thread( void *data )
 	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: shutdown_fd=%u\n", shutdown_fd );
 
 	remote_service_name = config_string_get("remote.connect");
-	ctx = net_ctx_find_by_name( remote_service_name );
 
-	while( ctx && (net_socket_get_shutdown_lock()==0) )
+	while( net_socket_get_shutdown_lock()==0 )
 	{
+		ctx = net_ctx_find_by_name( remote_service_name );
+		if( ! ctx )
+		{
+			logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: No remote connection context\n");
+			break;
+		}
 		FD_ZERO( &read_fds );
 		FD_SET( shutdown_fd, &read_fds );
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = config_int_get("sync.interval");
-		select( shutdown_fd + 1, &read_fds, NULL , NULL , &tv );
+		select( shutdown_fd + 1, NULL, NULL , &read_fds, &tv );
+		logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: select()=\"%s\"\n", strerror( errno ) );
 		if( net_socket_get_shutdown_lock() == 1 )
 		{
 			logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received during poll\n");

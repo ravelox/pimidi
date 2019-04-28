@@ -469,6 +469,7 @@ void net_socket_loop_shutdown(int signal)
 {
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
 	set_shutdown_lock( 1 );
+	write( pipe_fd[0] , "X", 1 );
 	close( pipe_fd[0] );
 	close( pipe_fd[1] );
 }

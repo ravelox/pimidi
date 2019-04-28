@@ -28,6 +28,8 @@
 
 #include <arpa/inet.h>
 
+#include <pthread.h>
+
 #include <errno.h>
 extern int errno;
 
@@ -44,8 +46,19 @@ extern int errno;
 
 static net_ctx_t *_ctx_head = NULL;
 static unsigned int _max_ctx = 0;
-
 static net_ctx_t *_iterator_current = NULL;
+
+static pthread_mutex_t ctx_mutex;
+
+void net_ctx_lock( void )
+{
+	pthread_mutex_lock( &ctx_mutex );
+}
+
+void net_ctx_unlock( void )
+{
+	pthread_mutex_unlock( &ctx_mutex );
+}
 
 void net_ctx_destroy( net_ctx_t **ctx )
 {
@@ -54,6 +67,8 @@ void net_ctx_destroy( net_ctx_t **ctx )
 
 	if( ! ctx ) return;
 	if( ! *ctx ) return;
+
+	net_ctx_lock();
 
 	FREENULL( "name",(void **)&((*ctx)->name) );
 	FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
@@ -82,7 +97,8 @@ void net_ctx_destroy( net_ctx_t **ctx )
 		_ctx_head = next_ctx;
 	}
 
-	FREENULL( "net_ctx_remove: ctx",(void**)ctx );
+	FREENULL( "net_ctx_destroy: ctx", (void**)ctx );
+	net_ctx_unlock();
 }
 
 void net_ctx_dump( net_ctx_t *ctx )
@@ -98,10 +114,12 @@ void net_ctx_dump_all( void )
 {
 	DEBUG_ONLY;
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: start\n");
+	net_ctx_lock();
 	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
 		net_ctx_dump( net_ctx_iter_current() );
 	}
+	net_ctx_unlock();
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: end\n");
 }
 
@@ -158,8 +176,9 @@ void net_ctx_init( void )
 	if( _max_ctx == 0 ) _max_ctx = 1;
 
 	_ctx_head = NULL;
-}
 
+	pthread_mutex_init( &ctx_mutex, NULL );
+}
 
 void net_ctx_teardown( void )
 {
@@ -174,6 +193,8 @@ void net_ctx_teardown( void )
 		net_ctx_destroy( &current_ctx );
 		current_ctx = prev_ctx;
 	}
+
+	pthread_mutex_destroy( &ctx_mutex );
 }
 
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
@@ -181,15 +202,20 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 	net_ctx_t *current_ctx = NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ssrc=0x%08x\n", ssrc );
+	net_ctx_lock();
 	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
 		current_ctx = net_ctx_iter_current();
 		if( current_ctx )
 		{
-			if( current_ctx->ssrc == ssrc ) return current_ctx;
+			if( current_ctx->ssrc == ssrc )
+			{
+				net_ctx_unlock();
+				return current_ctx;
+			}
 		}
 	}
-
+	net_ctx_unlock();
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: not found\n");
 	return NULL;
 }
@@ -200,16 +226,21 @@ net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator)
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: initiator=0x%08x\n", initiator );
 
-	net_ctx_dump_all();
+	net_ctx_lock();
 	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
 	{
 		current_ctx = net_ctx_iter_current();
 		if( current_ctx )
 		{
-			if( current_ctx->initiator == initiator ) return current_ctx;
+			if( current_ctx->initiator == initiator )
+			{
+				net_ctx_unlock();
+				return current_ctx;
+			}
 		}
 	}
 
+	net_ctx_unlock();
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: not found\n");
 	return NULL;
 }
@@ -221,15 +252,21 @@ net_ctx_t * net_ctx_find_by_name( char *name )
 	if( ! name ) return NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: name=[%s]\n", name);
+	net_ctx_lock();
 	for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next() )
 	{
 		current_ctx = net_ctx_iter_current();
 		if( current_ctx )
 		{
-			if( strcmp( current_ctx->name, name ) == 0 ) return current_ctx;
+			if( strcmp( current_ctx->name, name ) == 0 )
+			{
+				net_ctx_unlock();
+				return current_ctx;
+			}
 		}
 	}
 
+	net_ctx_unlock();
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: not found\n");
 	return NULL;
 }
