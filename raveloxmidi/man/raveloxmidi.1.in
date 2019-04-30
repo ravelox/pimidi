@@ -1,18 +1,16 @@
 .TH raveloxmidi "@VERSION@"
 .SH NAME
-raveloxmidi - RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
+raveloxmidi \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
-.B raveloxmidi
-[-c filename] [-d|-i] [-N] [-P filename] [-R] [-h] [-C] [-T seconds]
+\fBraveloxmidi\fP [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
 
-.B raveloxmidi
-[--config filename] [--debug|--info] [--nodaemon] [--pidfile filename] [--readonly] [--help] [--dumpconfig] 
+\fBraveloxmidi\fP [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] 
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
 .SH OPTIONS
 .TP
-.B -c filename
+.B -c \fIfilename\fP
 Name of configuration file to use. If no configuration file is provided, some defaults are assumed. See below for details.
 .TP
 .B -d
@@ -24,10 +22,10 @@ Run in info mode. This will provide info-level output to either stdout or the co
 .B -N
 Do not run as a daemon.
 .TP
-.B -P pidfile
-File to store the pid of the running process. Default is
-.B raveloxmidi.pid 
-in the current directory.
+.B -P \fIpidfile\fP
+File to store the pid of the running process.
+.br
+Default is \fBraveloxmidi.pid \fP in the current directory.
 .TP
 .B -R
 Enable readonly mode. This doesn't write anything to disk.
@@ -41,73 +39,127 @@ Display the current config to stderr
 The available options for the configuration file are as follows:
 .TP
 .B network.bind_address
-Address to bind the listening sockets. This can be IPv4 or IPv6 ( default is 0.0.0.0 )
+IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
+.br
+Default is 0.0.0.0 ( meaning all IPv4 interfaces ). IPv6 equivalent is ::
 .TP
-.B network.rtpmidi.port
-Port to listen on for RTP MIDI events from remote clients ( default is 5004 )
+.B network.control.port
+Main RTP MIDI listening port for new connections and shutdowns. Used in the Avahi definition for the RTP MIDI service.
+.br
+Default is 5004.
 .TP
-.B network.rtsp.port
-Port to listen on for RTSP events from remote clients ( default is 5005 )
+.B network.data.port
+Listening port for all other data in the conversation.
+.br
+Default is 5005.
 .TP
 .B network.local.port
-Port to listen on for local MIDI  ( default is 5006 )
+Local listening port for accepting MIDI events.
+.br
+Default is 5006.
 .TP
-.B network.socket_timeout
-Polling interval (in seconds) to listen for network events ( default is 30 )
+.B service.ipv4
+Indicate whether Avahi service should use IPv4 addresses.
+.br
+Default is yes.
+.TP
+.B service.ipv6
+Indicate whether Avahi service should use IPv6 addressed.
+.br
+Default is no.
 .TP
 .B network.max_connections
-Number of connections that can be made to @PACKAGE@. Maximum is 255. Minimum is 1. ( default is 8 ).
+Maximum number of incoming connections that can be stored.
+.br
+Default is 8.
 .TP
 .B service.name
-Label to prepend to mDNS service name "_apple-midi._udp". ( default is raveloxmidi )
+Name used in the Avahi definition for the RTP MIDI service.
+.br
+Default is \fBraveloxmidi\fP.
 .TP
-.B discover.services
-List the available _apple-midi._udp services. This will exit once complete. Default is no.
-.TP
-.B discover.timeout
-Timeout for service discovery. Default is 10 seconds.
+.B remote.connect
+Name of remote service to connect to.
 .TP
 .B client.name
-Label to use when making a rtpMIDI connection to a remote service. ( default is raveloxremote )
+Name to use when connecting to remote service. If not defined, service.name will be used.
+.TP
+.B network.socket_timeout
+Polling timeout for the listening sockets.
+.br
+Default is 30 seconds.
+.TP
+.B discover.timeout
+Length of time in seconds to wait for new remote services to be seen.
+.br
+Default is 5 seconds.
 .TP
 .B run_as_daemon
-Run the binary in the background. Can be yes or no. ( default is yes ).
+Specifies that raveloxmidi should run in the background.
+.br
+Default is yes.
 .TP
-.B daemon.pid_file
-Name of file to write pid of background process. ( Default is raveloxmidi.pid ).
+.B
+daemon.pid_file
+If raveloxmidi is run in the background. The pid for the process is written to this file.
+.br
+Default is \fBraveloxmidi.pid\fP.
 .TP
-.B logging.enabled
-Write logging events to stdout or a named file. Can be yes or no. ( default is yes ).
+.B
+logging.enabled
+Set to yes to write output to a log file. Set to no to disable.
+.br
+Default is yes.
 .TP
-.B logging.log_file
-Name of file to write logging events. If no filename is supplied, logging events will go to stdout. ( default is null ).
+.B
+logging.log_file
+Name of file to write logging to.
+.br
+Default is \fBstderr\fP.
 .TP
-.B logging.log_level
-Level of logging events to be written if enabled. Can be 
-.B DEBUG, INFO, NORMAL, WARNING or ERROR
-( default is NORMAL )
+.B
+logging.log_level
+Threshold for log events. Acceptable values are \fBdebug\fP , \fBinfo\fP , \fBnormal\fP , \fBwarning\fP and \fBerror\fP.
+.br
+Default is normal.
 .TP
-.B security.check
-Enables or disables rudimentary check on the named pid file to prevent the daemon.pid_file option being used to overwrite executable files. Can be yes or no. ( default is yes ).
+.B
+security.check
+If set to yes, it is not possible to write the daemon pid to a file with executable permissions.
+.br
+Default is yes.
 .TP
-.B inbound_midi
-Name of file to write inbound MIDI events to. This file is governed by the security check option. Default is
-.B /dev/sequencer
+.B
+inbound_midi
+Name of file to write inbound MIDI events to. This file is governed by the security check option.
+.br
+Default is \fB/dev/sequencer\fP.
 .TP
-.B file_mode
-File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. Default is 0640.
+.B
+file_mode
+File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. 
+.br
+Default is 0640.
 .TP
-.B The following options are available if raveloxmidi is built with ALSA support:
+.B
+sync.interval
+Interval in seconds between SYNC commands for timing purposes.
+.br
+Default is 10s.
+.TP
+If ALSA is detected, the following options are also available:
 .TP
 .B alsa.output_device
 Name of the rawmidi ALSA device to send MIDI events to.
 .TP
 .B alsa.input_device
 Name of the rawmidi ALSA device to read MIDI events from.
-.TP
+.TP 
 .B alsa.input_buffer_size
-Size of the buffer to use for reading data from the input device. Default is 4096. Maximum is 65535.
+Size of the buffer to use for reading data from the input device.
+.br
+Default is 4096. Maximum is 65535.
 .fi
 .SH AUTHOR
 .B raveloxmidi
-is developed by Dave Kelly (c) 2014
+is developed by Dave Kelly (c) @COPYRIGHT_YEAR@

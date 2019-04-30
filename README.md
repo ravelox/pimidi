@@ -8,7 +8,7 @@ The reason for writing this was to generate note events from a Raspberry Pi to s
 
 Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on Windows talking to FL Studio 11.
 
-The build will auto-detect ALSA and build rawmidi support. See below for ALSA requirements. Thanks to Daniel Collins (malacalypse) for being the guinea pig for this.
+The build will auto-detect ALSA and build rawmidi support. Please read **FAQ.md** for ALSA requirements. Thanks to Daniel Collins (malacalypse) for being the guinea pig for this.
 
 Except for the Avahi code, it's all mine but I have leaned heavily on the following references:
 
@@ -85,7 +85,7 @@ For debugging, you can run ```raveloxmidi -N -d``` to keep raveloxmidi in the fo
 ```
 network.bind_address
 	IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
-	Default is 0.0.0.0 ( meaning all interfaces ). IPv6 equivalent is ::
+	Default is 0.0.0.0 ( meaning all IPv4 interfaces ). IPv6 equivalent is ::
 network.control.port
 	Main RTP MIDI listening port for new connections and shutdowns.
 	Used in the zeroconf definition for the RTP MIDI service.
@@ -96,15 +96,25 @@ network.data.port
 network.local.port
 	Local listening port for accepting MIDI events.
 	Default is 5006.
+service.ipv4
+	Indicate whether Avahi service should use IPv4 addresses. Default is yes.
+service.ipv6
+	Indicate whether Avahi service should use IPv6 addressed. Default is no.
 network.max_connections
 	Maximum number of incoming connections that can be stored.
 	Default is 8.
 service.name
 	Name used in the zeroconf definition for the RTP MIDI service.
 	Default is 'raveloxmidi'.
+remote.connect
+	Name of remote service to connect to.
+client.name
+	Name to use when connecting to remote service. If not defined, service.name will be used.
 network.socket_timeout
 	Polling timeout for the listening sockets.
 	Default is 30 seconds.
+discover.timeout
+	Length of time in seconds to wait for new remote services to be seen. Default is 5 seconds.
 run_as_daemon
 	Specifies that raveloxmidi should run in the background.
 	Default is yes.
@@ -129,6 +139,8 @@ inbound_midi
 file_mode
         File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. 
 	Default is 0640.
+sync.interval
+	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
 ```
 
 If ALSA is detected, the following options are also available:
@@ -142,117 +154,3 @@ alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device.
 	Default is 4096. Maximum is 65535.
 ```
-
-## ALSA Support
-
-The autotools configure script will automatically detect the presence of ALSA libraries and will build the code for support.
-raveloxmidi uses the rawmidi interface so the snd-virmidi module must be loaded.
-
-The following steps can be taken to test everything is working:
-
-1. Ensure the snd-virmidi module is loaded.
-
-```modprobe snd-virmidi```
-
-2. Verify the device names
-
-```sudo amidi -l``` will give output like 
-```
-Dir Device Name
-IO hw:0,0 ES1371
-IO hw:1,0 Virtual Raw MIDI (16 subdevices)
-IO hw:1,1 Virtual Raw MIDI (16 subdevices)
-IO hw:1,2 Virtual Raw MIDI (16 subdevices)
-IO hw:1,3 Virtual Raw MIDI (16 subdevices)
-```
-
-3. Install timidity and run it with the ALSA interface
-
-```timidity -iA``` will output the available ports to connect to (for example):
-
-```
-Opening sequencer port: 128:0 128:1 128:2 128:3
-```
-
-4. In a raveloxmidi config file, add the option:
-
-```alsa.output_device = hw:1,0,0```
-
-The device name will vary depending on the setup.
-
-5. Run raveloxmidi with the config file. In debug mode, the debug output should show lines like:
-
-```
-[1534193901]	DEBUG: raveloxmidi_alsa_init: ret=0 Success
-[1534193901]	DEBUG: rawmidi: handle="hw:1,0,0" hw_id="VirMidi" hw_driver_name="Virtual Raw MIDI" flags=7 card=1 device=0
-[1534193901]	DEBUG: rawmidi: handle="hw:1,0,0" hw_id="VirMidi" hw_driver_name="Virtual Raw MIDI" flags=7 card=1 device=0
-```
-6. Determine the port number for hw:1,0,0 using aconnect
-
-```aconnect -l```
-
-This will show output like:
-```
-client 0: 'System' [type=kernel]
-0 'Timer '
-1 'Announce '
-client 14: 'Midi Through' [type=kernel]
-0 'Midi Through Port-0'
-client 16: 'Ensoniq AudioPCI' [type=kernel,card=0]
-0 'ES1371 '
-client 20: 'Virtual Raw MIDI 1-0' [type=kernel,card=1]
-0 'VirMIDI 1-0 '
-```
-
-This shows that ```hw:1,0,0``` is port ```20:0```
-
-7. Connected the port to timidty:
-
-```aconnect 20:0 128:0```
-
-8. On the remote machine, make a connection to raveloxmidi. I have tested this with OS X.
-9. (For example) In Logic Pro X, create a new external MIDI track and use the raveloxmidi connection.
-10. Using the keyboard GUI in Logic Pro X, tap a few notes. The notes are played through Timidity.
-
-
-For input support:
-
-1. Repeat steps 1 and 2 above if the module isn't loaded.
-
-2. In a raveloxmidi config file, add the option:
-
-```alsa.input_device = hw:1,1,0```
-
-The device name will vary depending on the setup but it MUST be different from the device configuired as the output device.
-
-3. Run raveloxmidi with the config file. In debug mode, the debug output should show lines like:
-```
-[1534193901]    DEBUG: raveloxmidi_alsa_init: ret=0 Success 
-[1534193901]    DEBUG: rawmidi: handle="hw:1,0,0" hw_id="VirMidi" hw_driver_name="Virtual Raw MIDI" flags=7 card=1 device=0
-[1534193901]    DEBUG: rawmidi: handle="hw:1,1,0" hw_id="VirMidi" hw_driver_name="Virtual Raw MIDI" flags=7 card=1 device=0
-```
-4. Determine the port number for ```hw:1,1,0``` using aconnect
-
-```aconnect -l``` will show output like:
-```
-client 0: 'System' [type=kernel]
-0 'Timer '
-1 'Announce '
-client 14: 'Midi Through' [type=kernel]
-0 'Midi Through Port-0' 
-client 16: 'Ensoniq AudioPCI' [type=kernel,card=0]
-0 'ES1371 '
-client 20: 'Virtual Raw MIDI 1-0' [type=kernel,card=1]
-0 'VirMIDI 1-0 '
-client 21: 'Virtual Raw MIDI 1-0' [type=kernel,card=1]
-0 'VirMIDI 1-0 '
-```
-This shows that ```hw:1,1,0``` is port ```21:0```
-
-5. On the remote machine make a connection raveloxmidi.
-6. Run your favourite music making software that will make MIDI connections.
-7. On the local machine, Using aplaymidi, take a .mid file and run:
-
-```aplaymidi -p 21:0 name-of-midi-file.mid```
-
-The MIDI events should be processed through the remote software.

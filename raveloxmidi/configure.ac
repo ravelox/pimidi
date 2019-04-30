@@ -40,4 +40,7 @@ then
 	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
 fi
 
+COPYRIGHT_YEAR="`date +'%Y'`"
+AC_SUBST(COPYRIGHT_YEAR)
+
 AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec)
