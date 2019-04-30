@@ -310,7 +310,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 		return NULL;
 	}
 
-	send_ssrc = initiator;
+	send_ssrc = random_number();
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, port, ip_address , name);
 
 	/* Add the connection to the list */

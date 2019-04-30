@@ -115,6 +115,7 @@ void remote_connect_init( void )
 		{
 			logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 		} else {
+			ctx->send_ssrc = ssrc;
 			ctx->status = NET_CTX_STATUS_FIRST_INV;
 			logging_printf( LOGGING_DEBUG, "remote_connect_init: Sending INV request to [%s]:%d\n", ctx->ip_address, ctx->control_port );
 			net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
@@ -200,6 +201,7 @@ static void *remote_connect_sync_thread( void *data )
 	int shutdown_fd = 0;
 	fd_set read_fds;
 	struct timeval tv;
+	int sync_interval = 0;
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: start\n");
 	logging_printf( LOGGING_DEBUG, "rmeote_connect_sync_thread: sync.interval=%s\n", config_string_get("sync.interval"));
@@ -208,8 +210,9 @@ static void *remote_connect_sync_thread( void *data )
 	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: shutdown_fd=%u\n", shutdown_fd );
 
 	remote_service_name = config_string_get("remote.connect");
+	sync_interval = config_int_get("sync.interval");
 
-	while( net_socket_get_shutdown_lock()==0 )
+	do
 	{
 		ctx = net_ctx_find_by_name( remote_service_name );
 		if( ! ctx )
@@ -220,8 +223,8 @@ static void *remote_connect_sync_thread( void *data )
 		FD_ZERO( &read_fds );
 		FD_SET( shutdown_fd, &read_fds );
 		memset( &tv, 0, sizeof( struct timeval ) );
-		tv.tv_sec = config_int_get("sync.interval");
-		select( shutdown_fd + 1, NULL, NULL , &read_fds, &tv );
+		tv.tv_sec = sync_interval;
+		select( shutdown_fd + 1, &read_fds, NULL , NULL, &tv );
 		logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: select()=\"%s\"\n", strerror( errno ) );
 		if( net_socket_get_shutdown_lock() == 1 )
 		{
@@ -232,7 +235,7 @@ static void *remote_connect_sync_thread( void *data )
 		net_ctx_send( ctx, response->buffer, response->len, USE_CONTROL_PORT );
 		hex_dump( response->buffer, response->len );
 		net_response_destroy( &response );
-	}
+	} while( 1 );
 
 	if( net_socket_get_shutdown_lock() == 1 )
 	{

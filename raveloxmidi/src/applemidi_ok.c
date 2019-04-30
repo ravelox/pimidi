@@ -71,7 +71,6 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 		case NET_CTX_STATUS_FIRST_INV:
 			response = net_response_inv( ctx->send_ssrc, ctx->initiator, config_string_get("client.name") );
 			ctx->ssrc = ok_packet->ssrc;
-			net_ctx_dump_all();
 			net_ctx_send( ctx, response->buffer, response->len , USE_DATA_PORT );
 			hex_dump( response->buffer, response->len );
 			net_response_destroy( &response );
