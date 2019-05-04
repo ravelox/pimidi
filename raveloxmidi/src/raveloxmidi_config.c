@@ -53,6 +53,7 @@ static void config_set_defaults( void )
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
+	config_add_item("config.requires", VERSION);
 
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
@@ -137,16 +138,14 @@ void config_init( int argc, char *argv[] )
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
-#ifdef HAVE_ALSA
-		{"listinterfaces", no_argument, NULL, 'L'},
-#endif
+		{"version", no_argument, NULL, 'v'},
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
 #ifdef HAVE_ALSA
-	const char *short_options = "c:dIhNP:RLC";
+	const char *short_options = "c:dIhNP:RCv";
 #else
-	const char *short_options = "c:dIhNP:RC";
+	const char *short_options = "c:dIhNP:RCv";
 #endif
 	int c;
 	config_items = NULL;
@@ -178,6 +177,10 @@ void config_init( int argc, char *argv[] )
 			/* This option exits */
 			case 'h':
 				config_usage();
+				exit(0);
+			/* This option exits */
+			case 'v':
+				fprintf(stderr, "%s (%s)\n", PACKAGE, VERSION);
 				exit(0);
 			case 'N':
 				config_add_item("run_as_daemon", "no");
