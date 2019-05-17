@@ -51,8 +51,8 @@ net_response_t * applemidi_sync_responder( void *data )
 	net_applemidi_sync *sync_resp = NULL;
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
-	uint32_t delta = 0;
-	time_t current_time = 0;
+	long delta = 0;
+	long current_time = 0;
 
 	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: start\n");
 
@@ -94,12 +94,12 @@ net_response_t * applemidi_sync_responder( void *data )
 	sync_resp->timestamp2 = sync->timestamp2;
 	sync_resp->timestamp3 = sync->timestamp3;
 
-	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%u start=%u delta=0x%08x\n", current_time, ctx->start, delta );
+	memcpy( sync_resp->padding, sync->padding, 3 );
 
-	current_time = time( NULL );
+	current_time = time_in_microseconds();
 	delta = current_time - ctx->start;
 
-	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%u start=%u delta=0x%08x\n", current_time, ctx->start, delta );
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%ld start=%ld delta=%ld\n", current_time, ctx->start, delta );
 	
 	switch( sync_resp->count )
 	{

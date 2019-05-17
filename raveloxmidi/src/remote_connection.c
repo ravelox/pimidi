@@ -99,15 +99,11 @@ void remote_connect_init( void )
 	ssrc = random_number();
 	initiator = random_number();
 
-	client_name = config_string_get("client.name");
+	client_name = config_string_get("service.name");
 
 	if( !client_name )
 	{
-		client_name = config_string_get("service.name");
-		if( ! client_name )
-		{
-			client_name = "RaveloxMIDIClient";
-		}
+		client_name = "RaveloxMIDIClient";
 	}
 
 	response = net_response_inv( ssrc, initiator, client_name );

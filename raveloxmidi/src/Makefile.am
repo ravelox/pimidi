@@ -37,4 +37,4 @@ raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
 
 EXTRA_DIST = 
 
-INCLUDES = -I ../include
+AM_CPPFLAGS = -I ../include

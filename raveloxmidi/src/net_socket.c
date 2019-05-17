@@ -467,10 +467,11 @@ int net_socket_fd_loop()
 
 void net_socket_loop_shutdown(int signal)
 {
+	int ret = 0;
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
 	set_shutdown_lock( 1 );
-	write( pipe_fd[0] , "X", 1 );
-	write( pipe_fd[1] , "X", 1 );
+	ret = write( pipe_fd[0] , "X", 1 );
+	ret = write( pipe_fd[1] , "X", 1 );
 	close( pipe_fd[0] );
 	close( pipe_fd[1] );
 }

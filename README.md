@@ -18,6 +18,7 @@ Except for the Avahi code, it's all mine but I have leaned heavily on the follow
 Note: Where possible, I've tried to use RTP MIDI to mean the protocol and rtpMIDI to mean the software written by Tobias Erichsen. Some mistakes may be present but,
 in most cases, I am referring to the protocol
 
+Some Apple documentation is available at https://developer.apple.com/library/archive/documentation/Audio/Conceptual/MIDINetworkDriverProtocol/MIDI/MIDI.html
 I'm doing this purely for fun and don't expect anyone else to use
 it but I'm happy to accept suggestions if you ever come across
 this code.
@@ -140,7 +141,7 @@ file_mode
         File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. 
 	Default is 0640.
 sync.interval
-	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
+	Interval in seconds between SYNC commands for timing purposes. Default is 60s.
 ```
 
 If ALSA is detected, the following options are also available:

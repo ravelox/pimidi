@@ -44,7 +44,8 @@ extern int errno;
 
 #include "utils.h"
 
-static pthread_mutex_t master_lock;
+static pthread_mutex_t utils_thread_lock;
+static unsigned int random_seed = 0;
 
 extern int errno;
 
@@ -203,7 +204,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
 
-	GET_MASTER_LOCK();
+	utils_lock();
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
@@ -224,7 +225,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 
 	logging_prefix_enable();
 
-	RELEASE_MASTER_LOCK();
+	utils_unlock();
 }
 
 void FREENULL( const char *description, void **ptr )
@@ -342,30 +343,39 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 
 int random_number( void )
 {
-	static unsigned int seedp = 0;
+	int ret = 0;
+	
+	utils_lock();
+	ret = rand_r( &random_seed );
+	utils_unlock();
 
-	seedp = time(NULL);
-
-	return rand_r( &seedp );
+	return ret;
 }
 	
-void GET_MASTER_LOCK( void )
+long time_in_microseconds( void )
 {
-	pthread_mutex_lock( &master_lock );
+	struct timeval currentTime;
+	gettimeofday( &currentTime, NULL );
+	return currentTime.tv_sec * (int)1e6 + currentTime.tv_usec;
 }
 
-void RELEASE_MASTER_LOCK( void )
+void utils_lock( void )
 {
-	pthread_mutex_unlock( &master_lock );
+	pthread_mutex_lock( &utils_thread_lock );
+}
+
+void utils_unlock( void )
+{
+	pthread_mutex_unlock( &utils_thread_lock );
 }
 
 void utils_init( void )
 {
-	pthread_mutex_init( &master_lock , NULL);
+	pthread_mutex_init( &utils_thread_lock , NULL);
+	random_seed = time(NULL);
 }
 
 void utils_teardown( void )
 {
-	pthread_mutex_destroy( &master_lock );
+	pthread_mutex_destroy( &utils_thread_lock );
 }
-

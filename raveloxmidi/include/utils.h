@@ -41,9 +41,10 @@ char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen );
 int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen, int *family);
 
 int random_number( void );
+long time_in_microseconds( void );
 
-void GET_MASTER_LOCK( void );
-void RELEASE_MASTER_LOCK( void );
+void utils_lock( void );
+void utils_unlock( void );
 
 void utils_init( void );
 void utils_teardown( void );

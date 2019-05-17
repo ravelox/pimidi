@@ -132,7 +132,7 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->initiator = initiator;
 	ctx->control_port = port;
 	ctx->data_port = port+1;
-	ctx->start = time( NULL );
+	ctx->start = time_in_microseconds();
 
 	if( ctx->ip_address )
 	{
@@ -140,6 +140,9 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	}
 	ctx->ip_address = ( char *) strdup( ip_address );
 	ctx->name = ( char *) strdup( name );
+
+	logging_printf( LOGGING_DEBUG, "net_ctx_set\n");
+	net_ctx_dump( ctx );
 }
 
 net_ctx_t * net_ctx_create( void )
@@ -261,6 +264,7 @@ net_ctx_t * net_ctx_find_by_name( char *name )
 			if( strcmp( current_ctx->name, name ) == 0 )
 			{
 				net_ctx_unlock();
+				logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: found\n");
 				return current_ctx;
 			}
 		}
@@ -388,7 +392,7 @@ void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet)
 	if( ! ctx ) return;
 
 	rtp_packet->header.seq = ctx->seq;
-	rtp_packet->header.timestamp = time(0) - ctx->start;
+	rtp_packet->header.timestamp = time_in_microseconds() - ctx->start;
 	rtp_packet->header.ssrc = ctx->send_ssrc;
 }
 

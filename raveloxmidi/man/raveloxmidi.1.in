@@ -81,9 +81,6 @@ Default is \fBraveloxmidi\fP.
 .B remote.connect
 Name of remote service to connect to.
 .TP
-.B client.name
-Name to use when connecting to remote service. If not defined, service.name will be used.
-.TP
 .B network.socket_timeout
 Polling timeout for the listening sockets.
 .br
@@ -145,7 +142,7 @@ Default is 0640.
 sync.interval
 Interval in seconds between SYNC commands for timing purposes.
 .br
-Default is 10s.
+Default is 60s per \rBhttps://developer.apple.com/library/archive/documentation/Audio/Conceptual/MIDINetworkDriverProtocol/MIDI/MIDI.html\fP
 .TP
 If ALSA is detected, the following options are also available:
 .TP

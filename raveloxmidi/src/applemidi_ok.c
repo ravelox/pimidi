@@ -69,7 +69,7 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 	switch( ctx->status )
 	{
 		case NET_CTX_STATUS_FIRST_INV:
-			response = net_response_inv( ctx->send_ssrc, ctx->initiator, config_string_get("client.name") );
+			response = net_response_inv( ctx->send_ssrc, ctx->initiator, config_string_get("service.name") );
 			ctx->ssrc = ok_packet->ssrc;
 			net_ctx_send( ctx, response->buffer, response->len , USE_DATA_PORT );
 			hex_dump( response->buffer, response->len );
@@ -84,6 +84,7 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 			net_response_destroy( &response );
 			response = NULL;
 			ctx->status = NET_CTX_STATUS_REMOTE_CONNECTION;
+			logging_printf( LOGGING_INFO, "Remote connection established to [%s]\n", ok_packet->name );
 			remote_connect_sync_start();
 			break;
 		default:

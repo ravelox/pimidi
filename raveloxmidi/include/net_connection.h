@@ -47,7 +47,7 @@ typedef struct net_ctx_t {
 	uint32_t	seq;
 	uint16_t	control_port;
 	uint16_t	data_port;
-	time_t		start;
+	long		start;
 	char * 		ip_address;
 	char *		name;
 	journal_t	*journal;
