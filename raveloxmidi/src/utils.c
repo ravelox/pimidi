@@ -356,7 +356,7 @@ long time_in_microseconds( void )
 {
 	struct timeval currentTime;
 	gettimeofday( &currentTime, NULL );
-	return currentTime.tv_sec * (int)1e6 + currentTime.tv_usec;
+	return ( currentTime.tv_sec * (int)1e6 + currentTime.tv_usec ) / 100 ;
 }
 
 void utils_lock( void )
