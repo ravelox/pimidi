@@ -85,11 +85,7 @@ static void config_load_file( char *filename )
 		char *return_value = NULL;
 		return_value = fgets( config_line , MAX_CONFIG_LINE, config_file );
 
-<<<<<<< HEAD
 		if( feof( config_file) && ! return_value ) break;
-=======
-		if( feof( config_file) && !return_value ) break;
->>>>>>> experimental
 
 		if( ! return_value )
 		{
@@ -141,7 +137,6 @@ void config_init( int argc, char *argv[] )
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
-<<<<<<< HEAD
 		{"version", no_argument, NULL, 'v'},
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
@@ -151,14 +146,6 @@ void config_init( int argc, char *argv[] )
 #else
 	const char *short_options = "c:dIhNP:RCv";
 #endif
-=======
-#ifdef HAVE_ALSA
-#endif
-		{"help", no_argument, NULL, 'h'},
-		{0,0,0,0}
-	};
-	const char *short_options = "c:dihNP:RC";
->>>>>>> experimental
 	int c;
 
 	config_items = kv_table_create("config_items");

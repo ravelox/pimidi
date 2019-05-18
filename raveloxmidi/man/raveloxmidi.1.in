@@ -2,13 +2,16 @@
 .SH NAME
 raveloxmidi \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
-\fBraveloxmidi\fP [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
+\fBraveloxmidi\fP [-v] [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
 
-\fBraveloxmidi\fP [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] 
+\fBraveloxmidi\fP [\-\-version] [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] 
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
 .SH OPTIONS
+.TP
+.B -v
+Display current version number and exit.
 .TP
 .B -c \fIfilename\fP
 Name of configuration file to use. If no configuration file is provided, some defaults are assumed. See below for details.
