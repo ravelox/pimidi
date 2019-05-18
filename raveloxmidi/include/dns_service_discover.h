@@ -18,18 +18,23 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef NET_RESPONSE_H
-#define NET_RESPONSE_H
+#ifndef DNS_SERVICE_DISCOVERER_H
+#define DNS_SERVICE_DISCOVERER_H
 
-typedef struct net_response_t {
-        unsigned char *buffer;
-        size_t len;
-} net_response_t;
+typedef struct dns_service_t {
+	char *name;
+	char *ip_address;
+	int port;
+} dns_service_t;
 
-net_response_t * net_response_create( void ); 
-void net_response_destroy( net_response_t **response );
+int dns_discover_services( int use_ipv4, int use_ipv6 );
+void dns_discover_add( const char *name, char *address, int port );
+dns_service_t *dns_discover_by_name( const char *name );
+void dns_discover_free_services( void );
+void dns_discover_init( void );
+void dns_discover_teardown( void );
 
-net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name);
-net_response_t *net_response_sync( uint32_t send_ssrc , long start_time);
+void dns_discover_dump( void );
+
 
 #endif

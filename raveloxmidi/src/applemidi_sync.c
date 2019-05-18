@@ -40,17 +40,21 @@ extern int errno;
 #include "net_connection.h"
 #include "net_socket.h"
 #include "net_response.h"
+#include "utils.h"
 
 #include "logging.h"
 
-net_response_t * cmd_sync_handler( void *data )
+net_response_t * applemidi_sync_responder( void *data )
 {
 	net_applemidi_command *cmd = NULL;
 	net_applemidi_sync *sync = NULL;
 	net_applemidi_sync *sync_resp = NULL;
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
-	uint32_t delta = 0;
+	long delta = 0;
+	long current_time = 0;
+
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: start\n");
 
 	if( ! data ) return NULL;
 
@@ -58,20 +62,26 @@ net_response_t * cmd_sync_handler( void *data )
 
 	ctx = net_ctx_find_by_ssrc( sync->ssrc);
 
-	if( ! ctx ) return NULL;
+	if( ! ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: No context found for ssrc=%s\n", sync->ssrc );
+		return NULL;
+	}
+
+	net_ctx_dump( ctx );
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync command\n");
+		logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to allocate memory for sync command\n");
 		return NULL;
 	}
 
 	sync_resp = net_applemidi_sync_create();
 	
 	if( ! sync_resp ) {
-		logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to allocate memory for sync_resp command data\n");
+		logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to allocate memory for sync_resp command data\n");
 		free( cmd );
 		return NULL;
 	}
@@ -84,7 +94,12 @@ net_response_t * cmd_sync_handler( void *data )
 	sync_resp->timestamp2 = sync->timestamp2;
 	sync_resp->timestamp3 = sync->timestamp3;
 
-	delta = time( NULL ) - ctx->start;
+	memcpy( sync_resp->padding, sync->padding, 3 );
+
+	current_time = time_in_microseconds();
+	delta = current_time - ctx->start;
+
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%ld start=%ld delta=%ld\n", current_time, ctx->start, delta );
 	
 	switch( sync_resp->count )
 	{
@@ -101,6 +116,8 @@ net_response_t * cmd_sync_handler( void *data )
 
 	cmd->data = sync_resp;
 
+	net_applemidi_command_dump( cmd );
+
 	response = net_response_create();
 
 	if( response )
@@ -109,8 +126,9 @@ net_response_t * cmd_sync_handler( void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "cmd_sync_handler: Unable to pack response to sync command\n");
+			logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to pack response to sync command\n");
 			net_response_destroy( &response );
+			response = NULL;
 		}
 	}
 

@@ -43,7 +43,7 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
-net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
+net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void *data )
 {
 	net_applemidi_command *cmd = NULL;
 	net_applemidi_inv *inv = NULL;
@@ -64,23 +64,20 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "cmd_inv_hander: Registering new connection\n");
-		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port );
+		logging_printf( LOGGING_DEBUG, "applemidi_inv_responder: Registering new connection\n");
+		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name );
 
 		if( ! ctx ) 
 		{
-			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Error registering connection\n");
+			logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Error registering connection\n");
 		}
-	/* Otherwise, we assume that the current port is the data port */
-	} else {
-		ctx->data_port = port;
 	}
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_ACCEPT );
 
 	if( ! cmd )
 	{
-		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command\n");
+		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command\n");
 		net_ctx_destroy( &ctx );
 		return NULL;
 	}
@@ -88,7 +85,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 	accept_inv = net_applemidi_inv_create();
 	
 	if( ! accept_inv ) {
-		logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to allocate memory for accept_inv command data\n");
+		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
 		net_ctx_destroy( &ctx );
 		return NULL;
@@ -115,7 +112,7 @@ net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data )
 		ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
 		if( ret != 0 )
 		{
-			logging_printf( LOGGING_ERROR, "cmd_inv_handler: Unable to pack response to inv command\n");
+			logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to pack response to inv command\n");
 			net_response_destroy( &response );
 		}
 	}

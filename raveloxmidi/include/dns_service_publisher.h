@@ -25,6 +25,8 @@ typedef struct dns_service_desc_t {
 	char *name;
 	char *service;
 	int port;
+	int publish_ipv4;
+	int publish_ipv6;
 } dns_service_desc_t;
 
 void dns_service_publisher_cleanup( void );

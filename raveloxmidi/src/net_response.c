@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -32,6 +33,8 @@
 #include <pthread.h>
 
 #include "net_response.h"
+#include "net_applemidi.h"
+#include "net_connection.h"
 #include "utils.h"
 #include "logging.h"
 #include "config.h"
@@ -63,4 +66,112 @@ void net_response_destroy( net_response_t **response )
 
 	free( *response );
 	*response = NULL;
+}
+
+net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name )
+{
+	net_applemidi_inv *inv = NULL;
+	net_response_t *response = NULL;
+	net_applemidi_command *cmd = NULL;
+
+	// Build the INV packet
+	inv = net_applemidi_inv_create();
+	
+	if( ! inv )
+	{
+		logging_printf( LOGGING_ERROR, "net_response_inv: Cannot create INV packet\n");
+		return NULL;
+	}
+
+	inv->ssrc = ssrc;
+	inv->version = 2;
+	inv->initiator = initiator;
+	if( name )
+	{
+		inv->name = (char *)strdup( name );
+	} else {
+		inv->name = (char *)strdup( "RaveloxMIDIClient" );
+	}
+
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_INV );
+	
+	if( cmd )
+	{
+		cmd->data = inv;
+		response = net_response_create();
+		if( ! response )
+		{
+			logging_printf( LOGGING_ERROR, "net_response_inv: Unable to create RESPONSE packet\n");
+		} else {
+			int ret = 0;
+			ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+			net_applemidi_cmd_destroy( &cmd );
+			if( ret != 0 )
+			{
+				logging_printf( LOGGING_ERROR, "Unable to pack RESPONSE packet\n");
+			} else {
+				return response;
+			}
+		}
+
+	} else {
+		logging_printf( LOGGING_ERROR, "net_response_inv: Unable to create AppleMIDI command\n");
+	}
+
+	net_response_destroy( &response );
+	net_applemidi_cmd_destroy( &cmd );
+
+	return NULL;
+}
+
+net_response_t *net_response_sync( uint32_t send_ssrc , long start_time )
+{
+	net_applemidi_sync *sync = NULL;
+	net_response_t *response = NULL;
+	net_applemidi_command *cmd = NULL;
+
+	sync = net_applemidi_sync_create();
+	
+	if( ! sync )
+	{
+		logging_printf( LOGGING_ERROR, "net_response_sync: Unable to allocate memory for sync packet\n");
+		return NULL;
+	}
+
+	sync->ssrc = send_ssrc;
+	sync->count = 0;
+	sync->timestamp1 = time_in_microseconds() - start_time;
+	sync->timestamp2 = random_number();
+	sync->timestamp3 = random_number();
+
+	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
+	
+	if( cmd )
+	{
+		cmd->data = sync;
+
+		response = net_response_create();
+
+		if( response )
+		{
+			int ret = 0;
+			ret = net_applemidi_pack( cmd , &(response->buffer), &(response->len) );
+			if( ret != 0 )
+			{
+				logging_printf( LOGGING_ERROR, "net_response_sync: Unable to pack response to sync command\n");
+			} else {
+				net_applemidi_cmd_destroy( &cmd );
+				return response;
+			}
+		} else {
+			logging_printf( LOGGING_ERROR, "net_response_sync: Unable to create response packet\n");
+		}
+	} else {
+		logging_printf( LOGGING_ERROR, "net_response_sync: Unable to create AppleMIDI command\n");
+	}
+
+	net_response_destroy( &response );
+	net_applemidi_cmd_destroy( &cmd );
+
+	return NULL;
 }

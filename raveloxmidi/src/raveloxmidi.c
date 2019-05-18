@@ -30,9 +30,11 @@
 #include "net_applemidi.h"
 #include "net_socket.h"
 #include "net_connection.h"
-#include "utils.h"
+
+#include "remote_connection.h"
 
 #include "dns_service_publisher.h"
+#include "dns_service_discover.h"
 
 #include "raveloxmidi_config.h"
 #include "daemon.h"
@@ -43,6 +45,8 @@
 #include "raveloxmidi_alsa.h"
 #endif
 
+#include "utils.h"
+
 static int running_as_daemon=0;
 
 int main(int argc, char *argv[])
@@ -50,10 +54,18 @@ int main(int argc, char *argv[])
 	dns_service_desc_t service_desc;
 	int ret = 0;
 
+	utils_init();
+
 	config_init( argc, argv);
 
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
+
+	service_desc.name = config_string_get("service.name");
+	service_desc.service = "_apple-midi._udp";
+	service_desc.port = config_int_get("network.control.port");
+	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
+	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
 
 #ifdef HAVE_ALSA
 	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
@@ -77,10 +89,6 @@ int main(int argc, char *argv[])
         signal( SIGTERM , net_socket_loop_shutdown);
         signal( SIGUSR2 , net_socket_loop_shutdown);
 
-	service_desc.name = config_string_get("service.name");
-	service_desc.service = "_apple-midi._udp";
-	service_desc.port = config_int_get("network.control.port");
-
 	ret = dns_service_publisher_start( &service_desc );
 	
 	if( ret != 0 )
@@ -88,23 +96,36 @@ int main(int argc, char *argv[])
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
 		net_socket_loop_init();
+
+		if( config_string_get("remote.connect") )
+		{
+			dns_discover_init();
+			remote_connect_init();
+			dns_discover_teardown();
+		}
+
+		if( net_socket_get_shutdown_lock() == 0 )
+		{
 #ifdef HAVE_ALSA
-		net_socket_alsa_loop();
+			net_socket_alsa_loop();
 #endif
-		net_socket_fd_loop();
+			net_socket_fd_loop();
+		}
 #ifdef HAVE_ALSA
 		net_socket_wait_for_alsa();
 #endif
 		net_socket_loop_teardown();
 	}
 
+	dns_service_publisher_stop();
+
+	remote_connect_teardown();
 	net_socket_teardown();
 	net_ctx_teardown();
 
 #ifdef HAVE_ALSA
 	raveloxmidi_alsa_teardown();
 #endif
-	dns_service_publisher_stop();
 
 daemon_stop:
 	if( running_as_daemon )
@@ -112,10 +133,12 @@ daemon_stop:
 		daemon_teardown();
 	}
 
+
 	config_teardown();
 
 	logging_teardown();
 
+	utils_teardown();
 
 	return 0;
 }

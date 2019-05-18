@@ -33,8 +33,7 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
-static int num_items = 0;
-static raveloxmidi_config_t **config_items = NULL;
+static kv_table_t *config_items = NULL;
 
 static void config_set_defaults( void )
 {
@@ -44,7 +43,9 @@ static void config_set_defaults( void )
 	config_add_item("network.socket_timeout" , "30" );
 	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
-	config_add_item("run_as_daemon", "yes");
+	config_add_item("service.ipv4", "yes");
+	config_add_item("service.ipv6", "no");
+	config_add_item("run_as_daemon", "no");
 	config_add_item("daemon.pid_file","raveloxmidi.pid");
 	config_add_item("logging.enabled", "yes");
 	config_add_item("logging.log_file", NULL);
@@ -53,15 +54,13 @@ static void config_set_defaults( void )
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
 	config_add_item("file_mode", "0640");
-	config_add_item("config.requires", VERSION);
-
+	config_add_item("discover.timeout","5");
+	config_add_item("sync.interval","60");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 #endif
 
 }
-
-static raveloxmidi_config_t *config_get_item( char *key );
 
 static void config_load_file( char *filename )
 {
@@ -86,7 +85,11 @@ static void config_load_file( char *filename )
 		char *return_value = NULL;
 		return_value = fgets( config_line , MAX_CONFIG_LINE, config_file );
 
+<<<<<<< HEAD
 		if( feof( config_file) && ! return_value ) break;
+=======
+		if( feof( config_file) && !return_value ) break;
+>>>>>>> experimental
 
 		if( ! return_value )
 		{
@@ -133,11 +136,12 @@ void config_init( int argc, char *argv[] )
 	static struct option long_options[] = {
 		{"config",   required_argument, NULL, 'c'},
 		{"debug",    no_argument, NULL, 'd'},
-		{"info",    no_argument, NULL, 'I'},
+		{"info",    no_argument, NULL, 'i'},
 		{"nodaemon", no_argument, NULL, 'N'},
 		{"pidfile", required_argument, NULL, 'P'},
 		{"readonly", no_argument, NULL, 'R'},
 		{"dumpconfig", no_argument, NULL, 'C'},
+<<<<<<< HEAD
 		{"version", no_argument, NULL, 'v'},
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
@@ -147,9 +151,23 @@ void config_init( int argc, char *argv[] )
 #else
 	const char *short_options = "c:dIhNP:RCv";
 #endif
+=======
+#ifdef HAVE_ALSA
+#endif
+		{"help", no_argument, NULL, 'h'},
+		{0,0,0,0}
+	};
+	const char *short_options = "c:dihNP:RC";
+>>>>>>> experimental
 	int c;
-	config_items = NULL;
 
+	config_items = kv_table_create("config_items");
+	if( ! config_items )
+	{
+		fprintf(stderr,"Unable to initialise config table\n");
+		exit(1);
+	}
+		
 	config_set_defaults();
 
 	while(1)
@@ -165,7 +183,7 @@ void config_init( int argc, char *argv[] )
 			case 'c':
 				config_add_item("config.file", optarg);
 				break;
-			case 'I':
+			case 'i':
 				config_add_item("logging.enabled", "yes");
 				config_add_item("logging.log_level", "info");
 				break;
@@ -207,34 +225,24 @@ void config_init( int argc, char *argv[] )
 
 void config_teardown( void )
 {
-	int i = 0;
-
-	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p num_items=%u\n", config_items, num_items - 1 );
-	if( ! config_items ) return;
-	if( num_items == 0 ) return;
-
-	for( i = 0 ; i < num_items ; i++ )
+	if( ! config_items )
 	{
-		if( config_items[i]->value )  free( config_items[i]->value );
-		if( config_items[i]->key ) free( config_items[i]->key );
-		if( config_items[i] ) free( config_items[i] );
+		fprintf( stderr, "NO CONFIG ITEMS\n");
+		return;
 	}
 
-	if( config_items ) free( config_items );
+	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p count=%lu\n", config_items, config_items->count );
 
-	num_items = 0;
+	kv_table_reset( config_items );
+
+	free( config_items );
 	config_items = NULL;
 }
 
 /* Public version */
 char *config_string_get( char *key )
 {
-	raveloxmidi_config_t *item = NULL;
-
-	item = config_get_item( key );
-
-	if( ! item ) return NULL;
-	return item->value;
+	return kv_get_value( config_items, key );
 }
 
 int config_int_get( char *key )
@@ -257,92 +265,39 @@ long config_long_get( char *key )
 	return atol( item_string );
 }
 
-static raveloxmidi_config_t *config_get_item( char *key )
+int config_is_set( char *key )
 {
-	int i = 0 ;
-
-	if( num_items <= 0 ) return NULL;
-	if( ! config_items ) return NULL;
-
-	for( i=0; i < num_items ; i ++ )
-	{
-		if( strcasecmp( key, config_items[i]->key ) == 0 )
-		{
-			return config_items[i];
-		}
-	}
-
-	return NULL;
+	return ( kv_find_item( config_items, key ) != NULL );
 }
 
 void config_add_item(char *key, char *value )
 {
-	raveloxmidi_config_t *new_item, *found_item;
-	raveloxmidi_config_t **new_config_item_list = NULL;
-
-	found_item = config_get_item( key );
-	if( ! found_item )
-	{
-		new_item = ( raveloxmidi_config_t *)malloc( sizeof( raveloxmidi_config_t ));
-		if( new_item )
-		{
-			new_item->key = (char *)strdup( key );
-			if( value )
-			{
-				new_item->value = ( char *)strdup( value );
-			} else {
-				new_item->value = NULL;
-			}
-
-			new_config_item_list = (raveloxmidi_config_t **)realloc(config_items, sizeof( raveloxmidi_config_t * ) * (num_items + 1) );
-			if( ! new_config_item_list )
-			{
-				fprintf(stderr, "config_add_item: Insufficient memory to create new config item\n");
-				free( new_item );
-				return;
-			}
-			config_items = new_config_item_list;
-			config_items[ num_items ] = new_item;
-			num_items++;
-		}
-	/* Overwrite any existing item that has the same key */
-	} else {
-		if( found_item->value ) free(found_item->value);
-		if( value )
-		{
-			found_item->value = ( char *)strdup( value );
-		} else {
-			found_item->value = NULL;
-		}
-	}
+	kv_add_item( config_items, key, value );
 }
 
 void config_dump( void )
 {
-	int i = 0;
 	if( ! config_items ) return;
-	if( num_items == 0 ) return;
+	if( config_items->count <= 0 ) return;
 
-	for( i = 0 ; i < num_items; i++ )
-	{
-		fprintf( stderr, "%s = %s\n", config_items[i]->key, config_items[i]->value );
-	}
+	kv_table_dump( config_items );
 }
 
 void config_usage( void )
 {
 	fprintf( stderr, "Usage:\n");
-	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-I] [-R] [-N] [-P filename] [-C] [-h]");
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-i] [-R] [-N] [-P filename] [-C] [-D] [-h]");
 	fprintf( stderr, "\n");
-	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--help]");
+	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--discover] [--help]");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "\n");
 	fprintf( stderr, "-c filename\tName of config file to use\n");
 	fprintf( stderr, "-d\t\tRun in debug mode\n");
-	fprintf( stderr, "-d\t\tRun in debug mode\n");
+	fprintf( stderr, "-i\t\tRun in info mode\n");
 	fprintf( stderr, "-N\t\tDo not run in the background\n");
 	fprintf( stderr, "-P filename\tName of file to write background pid\n");
 	fprintf( stderr, "-C\t\tDump the current config to stderr\n");
+	fprintf( stderr, "-D\t\tDiscover rtpMIDI services\n");
 	fprintf( stderr, "-h\t\tThis output\n");
 	fprintf( stderr, "\nThe following configuration file items are default:\n");
 	config_dump();

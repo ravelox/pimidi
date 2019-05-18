@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2018 Dave Kelly
+   Copyright (C) 2014 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,18 +18,9 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef NET_RESPONSE_H
-#define NET_RESPONSE_H
+#ifndef APPLEMIDI_BY_H
+#define APPLEMIDI_BY_H
 
-typedef struct net_response_t {
-        unsigned char *buffer;
-        size_t len;
-} net_response_t;
-
-net_response_t * net_response_create( void ); 
-void net_response_destroy( net_response_t **response );
-
-net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name);
-net_response_t *net_response_sync( uint32_t send_ssrc , long start_time);
+net_response_t * applemidi_by_responder( void *data );
 
 #endif

@@ -1,9 +1,10 @@
-AC_INIT()
+AC_INIT([raveloxmidi],[0.7.0])
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE(raveloxmidi, 0.6.2)
+AM_INIT_AUTOMAKE
+
 AC_CONFIG_HEADERS([config.h])
 
 AC_GNU_SOURCE
@@ -11,7 +12,6 @@ AC_PROG_CC
 AC_PROG_INSTALL
 
 AC_SYS_LARGEFILE
-
 
 PKG_PROG_PKG_CONFIG
 
@@ -38,4 +38,8 @@ then
 	AC_SUBST(DEB_ARCH)
 	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
 fi
+
+COPYRIGHT_YEAR="`date +'%Y'`"
+AC_SUBST(COPYRIGHT_YEAR)
+
 AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec)

@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2014 Dave Kelly
+   Copyright (C) 2019 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,10 +18,27 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_feedback_HANDLER_H
-#define CMD_feedback_HANDLER_H
+#ifndef KV_TABLE_H
+#define KV_TABLE_H
 
-net_response_t * cmd_feedback_handler( void *data );
-net_response_t *cmd_feedback_create( uint32_t ssrc, uint16_t rtp_seq );
+#include <unistd.h>
+
+typedef struct kv_item_t {
+	char *key;
+	char *value;
+} kv_item_t;
+
+typedef struct kv_table_t {
+	char *name;
+	size_t count;
+	kv_item_t **items;
+} kv_table_t;
+
+kv_table_t *kv_table_create( char *name );
+void kv_table_dump( kv_table_t *table );
+void kv_table_reset( kv_table_t *table );
+kv_item_t *kv_find_item( kv_table_t *table, char *key );
+char *kv_get_value( kv_table_t *table, char *key );
+void kv_add_item( kv_table_t *table, char *key, char *value );
 
 #endif

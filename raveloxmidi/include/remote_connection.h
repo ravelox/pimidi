@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2014 Dave Kelly
+   Copyright (C) 2019 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,9 +18,13 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_INV_HANDLER_H
-#define CMD_INV_HANDLER_H
+#ifndef _REMOTE_CONNECTION_H
+#define _REMOTE_CONNECTION_H
 
-net_response_t * cmd_inv_handler( char *ip_address, uint16_t port, void *data );
+void remote_connect_init( void );
+void remote_connect_ok( char *name );
+void remote_connect_teardown( void );
+void remote_connect_sync_start( void );
+void remote_connect_wait_for_thread( void );
 
 #endif

@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2014 Dave Kelly
+   Copyright (C) 2019 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef CMD_sync_HANDLER_H
-#define CMD_sync_HANDLER_H
+#ifndef _NET_DISTRIBUTE_H
+#define _NET_DISTRIBUTE_H
 
-net_response_t * cmd_sync_handler( void *data );
+void net_distribute_midi( unsigned char *packet, size_t recv_len );
 
 #endif

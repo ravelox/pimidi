@@ -28,16 +28,24 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+
+#include <pthread.h>
 
 #include <errno.h>
 extern int errno;
 
 #include "config.h"
 #include "logging.h"
+
+#include "utils.h"
+
+static pthread_mutex_t utils_thread_lock;
+static unsigned int random_seed = 0;
 
 extern int errno;
 
@@ -196,9 +204,10 @@ void hex_dump( unsigned char *buffer, size_t len )
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
 
+	utils_lock();
 	logging_prefix_disable();
 
-	logging_printf(LOGGING_DEBUG, "hexdump(%p , %u)\n", buffer, len );
+	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
 	if( ! buffer ) return;
 	if( len <= 0 ) return;
 
@@ -212,9 +221,11 @@ void hex_dump( unsigned char *buffer, size_t len )
 		logging_printf(LOGGING_DEBUG, "%02x %c\t", c, isprint(c)  ? c : '.' );
 	}
 	logging_printf(LOGGING_DEBUG, "\n");
-	logging_printf(LOGGING_DEBUG, "-- end hexdump\n");
+	logging_printf(LOGGING_DEBUG, "-- end hex_dump\n");
 
 	logging_prefix_enable();
+
+	utils_unlock();
 }
 
 void FREENULL( const char *description, void **ptr )
@@ -222,7 +233,7 @@ void FREENULL( const char *description, void **ptr )
 	if( ! ptr ) return;
 	if( ! *ptr ) return;
 
-	logging_printf(LOGGING_DEBUG,"FREENULL: description=\"%s\",ptr=%p\n", description, *ptr);
+	logging_printf(LOGGING_DEBUG,"FREENULL: \"%s\"=%p\n", description, *ptr);
 	free( *ptr );
 	*ptr = NULL;
 }
@@ -287,16 +298,14 @@ char *get_ip_string( struct sockaddr *sa, char *s, size_t maxlen )
         return s;
 }
 
-int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen)
+int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_t *socklen, int *family)
 {
         struct addrinfo hints;
         struct addrinfo *result;
         int val;
         char portaddr[32];
-	char tmp_address[ INET6_ADDRSTRLEN ];
 
         if( ! ip_address ) return 1;
-	if( ! socket ) return 1;
 
         memset( &hints, 0, sizeof( hints ) );
         memset( portaddr, 0, sizeof( portaddr ) );
@@ -312,41 +321,61 @@ int get_sock_addr( char *ip_address, int port, struct sockaddr *socket, socklen_
 		return 1;
 	}
 
-	memset( socket, 0, sizeof( struct sockaddr ) );
-	memcpy( socket, result->ai_addr, result->ai_addrlen );
-	*socklen = result->ai_addrlen;
+	if( socket )
+	{
+		memset( socket, 0, sizeof( struct sockaddr ) );
+		memcpy( socket, result->ai_addr, result->ai_addrlen );
+	}
+
+	if( socklen )
+	{
+		*socklen = result->ai_addrlen;
+	}
+
+	if( family )
+	{
+		*family = result->ai_family;
+	}
 
 	freeaddrinfo( result );
 	return 0;
 }
 
-int get_addr_family(char *ip_address, int port)
+int random_number( void )
 {
-        struct addrinfo hints;
-        struct addrinfo *result;
-        int val;
-        char portaddr[32];
-	char tmp_address[ INET6_ADDRSTRLEN ];
-	int family = AF_UNSPEC;
+	int ret = 0;
+	
+	utils_lock();
+	ret = rand_r( &random_seed );
+	utils_unlock();
 
-        if( ! ip_address ) return AF_UNSPEC;
+	return ret;
+}
+	
+long time_in_microseconds( void )
+{
+	struct timeval currentTime;
+	gettimeofday( &currentTime, NULL );
+	return ( currentTime.tv_sec * (int)1e6 + currentTime.tv_usec ) / 100 ;
+}
 
-        memset( &hints, 0, sizeof( hints ) );
-        memset( portaddr, 0, sizeof( portaddr ) );
-        sprintf( portaddr, "%d", port ); 
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_DGRAM;
+void utils_lock( void )
+{
+	pthread_mutex_lock( &utils_thread_lock );
+}
 
-        val = getaddrinfo(ip_address, portaddr, &hints, &result );
-	if( val )
-	{
-		logging_printf(LOGGING_WARN, "get_addr_family: Invalid address: [%s]:%d\n", ip_address, port );
-		freeaddrinfo( result );
-		return AF_UNSPEC;
-	}
+void utils_unlock( void )
+{
+	pthread_mutex_unlock( &utils_thread_lock );
+}
 
-	family = result->ai_family;
-	freeaddrinfo( result );
-	return family;
+void utils_init( void )
+{
+	pthread_mutex_init( &utils_thread_lock , NULL);
+	random_seed = time(NULL);
+}
 
+void utils_teardown( void )
+{
+	pthread_mutex_destroy( &utils_thread_lock );
 }
