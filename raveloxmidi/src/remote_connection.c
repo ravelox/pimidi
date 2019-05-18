@@ -232,7 +232,7 @@ static void *remote_connect_sync_thread( void *data )
 			logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received during poll\n");
 			break;
 		}
-		response = net_response_sync( ctx->send_ssrc );
+		response = net_response_sync( ctx->send_ssrc , ctx->start );
 		net_ctx_send( ctx, response->buffer, response->len, USE_CONTROL_PORT );
 		hex_dump( response->buffer, response->len );
 		net_response_destroy( &response );

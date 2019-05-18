@@ -152,7 +152,7 @@ net_applemidi_sync * net_applemidi_sync_create( void )
 
 	if( sync )
 	{
-		memset( sync, 0 , sizeof( net_applemidi_sync ) );
+		memset( sync, 0, sizeof( net_applemidi_sync ) );
 	}
 
 	return sync;

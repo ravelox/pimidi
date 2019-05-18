@@ -30,6 +30,6 @@ net_response_t * net_response_create( void );
 void net_response_destroy( net_response_t **response );
 
 net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name);
-net_response_t *net_response_sync( uint32_t send_ssrc );
+net_response_t *net_response_sync( uint32_t send_ssrc , long start_time);
 
 #endif

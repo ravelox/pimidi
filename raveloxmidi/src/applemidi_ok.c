@@ -78,7 +78,7 @@ net_response_t * applemidi_ok_responder( char *ip_address, uint16_t port, void *
 			ctx->status = NET_CTX_STATUS_SECOND_INV;
 			break;
 		case NET_CTX_STATUS_SECOND_INV:
-			response = net_response_sync( ctx->send_ssrc );
+			response = net_response_sync( ctx->send_ssrc , ctx->start );
 			net_ctx_send( ctx, response->buffer, response->len, USE_CONTROL_PORT );
 			hex_dump( response->buffer, response->len );
 			net_response_destroy( &response );
