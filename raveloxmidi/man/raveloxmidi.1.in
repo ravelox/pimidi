@@ -145,7 +145,12 @@ Default is 0640.
 sync.interval
 Interval in seconds between SYNC commands for timing purposes.
 .br
-Default is 60s per \rBhttps://developer.apple.com/library/archive/documentation/Audio/Conceptual/MIDINetworkDriverProtocol/MIDI/MIDI.html\fP
+Default is 10s.
+.br
+See
+.B
+https://developer.apple.com/library/archive/documentation/Audio/Conceptual/MIDINetworkDriverProtocol/MIDI/MIDI.html
+for more information
 .TP
 If ALSA is detected, the following options are also available:
 .TP

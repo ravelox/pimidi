@@ -141,7 +141,7 @@ file_mode
         File permissions on the inbound_midi file if it needs to be created. Specify as Unix octal permissions. 
 	Default is 0640.
 sync.interval
-	Interval in seconds between SYNC commands for timing purposes. Default is 60s.
+	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
 ```
 
 If ALSA is detected, the following options are also available:
