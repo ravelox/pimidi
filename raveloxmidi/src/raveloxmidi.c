@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	} else {
 		net_socket_loop_init();
 
-		if( config_string_get("remote.connect") )
+		if( config_string_get("remote.connect") || config_string_get("remote.connect_to_ip") )
 		{
 			dns_discover_init();
 			remote_connect_init();

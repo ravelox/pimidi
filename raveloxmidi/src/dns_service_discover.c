@@ -179,18 +179,20 @@ fail:
     return num_services;
 }
 
-dns_service_t *dns_discover_by_name( const char *name )
+dns_service_t *set_fixed_ip( const char *ip )
 {
-
-  //just to test
   dns_service_t * my_server;
   my_server = (dns_service_t *)malloc( sizeof( dns_service_t ) );
 	my_server->name = (char *)strdup( "landev" );
-	my_server->ip_address = ( char *)strdup( "192.168.179.138" );
+	my_server->ip_address = ( char *)strdup( ip );
   my_server->port = 5004;
 
   return my_server;
 
+}
+
+dns_service_t *dns_discover_by_name( const char *name )
+{
 
 	int i = 0;
 

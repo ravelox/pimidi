@@ -62,18 +62,29 @@ void remote_connect_init( void )
 {
 	dns_service_t *found_service = NULL;
 	char *remote_service_name = NULL;
+  char *remote_service_ip = NULL;
 	char *client_name = NULL;
 	net_response_t *response = NULL;
 	net_ctx_t *ctx;
 	int use_ipv4, use_ipv6;
 	uint32_t initiator = 0, ssrc = 0;
+  int fixedIP = 0;
 
 	remote_service_name = config_string_get("remote.connect");
+  remote_service_ip = config_string_get("remote.connect_to_ip");
 
 	if( (! remote_service_name)  || ( strlen( remote_service_name ) <=0 ) )
 	{
 		logging_printf(LOGGING_WARN, "remote_connect_init: remote.connect option is present but not set\n");
-		return;
+    if( (! remote_service_ip)  || ( strlen( remote_service_ip ) <=0 ) )
+    {
+      logging_printf(LOGGING_WARN, "remote_connect_init: remote.connect option is present but not set\n");
+		  return;
+    }
+    else
+    {
+      fixedIP = 1;
+    }
 	}
 
 	logging_printf(LOGGING_DEBUG, "remote_connect_init: Looking for [%s]\n", remote_service_name);
@@ -83,11 +94,15 @@ void remote_connect_init( void )
 
 	if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
 	{
-		logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
-		//return;  //just a test
+		logging_printf(LOGGING_WARN, "remote_connect_init: No services found in Local Network\n");
+    if (fixedIP == 0)
+		  return;
 	}
 
-	found_service = dns_discover_by_name( remote_service_name );
+  if (fixedIP = 0)
+  	found_service = dns_discover_by_name( remote_service_name );
+  else
+    found_service = set_fixed_ip( remote_service_ip );
 
 	if( ! found_service )
 	{
