@@ -84,7 +84,7 @@ void remote_connect_init( void )
 	if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
 	{
 		logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
-		return;
+		//return;  //just a test
 	}
 
 	found_service = dns_discover_by_name( remote_service_name );

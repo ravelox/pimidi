@@ -181,6 +181,17 @@ fail:
 
 dns_service_t *dns_discover_by_name( const char *name )
 {
+
+  //just to test
+  dns_service_t * my_server;
+  my_server = (dns_service_t *)malloc( sizeof( dns_service_t ) );
+	my_server->name = (char *)strdup( "landev" );
+	my_server->ip_address = ( char *)strdup( "192.168.179.138" );
+  my_server->port = 5004;
+
+  return my_server;
+
+
 	int i = 0;
 
 	if( num_services < 1 ) return NULL;
