@@ -428,6 +428,8 @@ void net_socket_loop_init()
 		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", pipe_fd[0], pipe_fd[1]);
 		FD_SET( pipe_fd[1], &read_fds );
 	}
+	fcntl(pipe_fd[0], F_SETFL, O_NONBLOCK);
+	fcntl(pipe_fd[1], F_SETFL, O_NONBLOCK);
 }
 
 void net_socket_loop_teardown()

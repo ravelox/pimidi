@@ -67,27 +67,97 @@ void remote_connect_init( void )
 	net_ctx_t *ctx;
 	int use_ipv4, use_ipv6;
 	uint32_t initiator = 0, ssrc = 0;
+	char *p1 = NULL;
+	char *p2 = NULL;
+	int remote_port_number = 0;
 
-	remote_service_name = config_string_get("remote.connect");
 
-	if( (! remote_service_name)  || ( strlen( remote_service_name ) <=0 ) )
+	if( ! config_is_set( "remote.connect" ) )
 	{
-		logging_printf(LOGGING_WARN, "remote_connect_init: remote.connect option is present but not set\n");
+		logging_printf(LOGGING_WARN, "remote_connect_init: Called with no remote.connect value\n");
 		return;
 	}
+
+	remote_service_name = (char *) strdup( config_string_get("remote.connect") );
 
 	logging_printf(LOGGING_DEBUG, "remote_connect_init: Looking for [%s]\n", remote_service_name);
 
-	use_ipv4 = is_yes( config_string_get("service.ipv4") ) ;
-	use_ipv6 = is_yes( config_string_get("service.ipv6") ) ;
+	p1 = remote_service_name;
+	p2 = p1 + strlen( remote_service_name );
 
-	if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
+	/* Work backwards to find a colon ':' */
+	/* If a ']' character is found first, we'll assume this is going to be an direct connect address */
+
+	while( p2 > p1 )
 	{
-		logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
-		return;
+		if( *p2 == ']' ) break;
+		if( *p2 == ':' ) break;
+		p2--;
 	}
 
-	found_service = dns_discover_by_name( remote_service_name );
+
+
+	/* If no colon ':' or ']' was found, we'll assume this is a service name to be located */
+	if( p2 == p1 )
+	{
+		use_ipv4 = is_yes( config_string_get("service.ipv4") ) ;
+		use_ipv6 = is_yes( config_string_get("service.ipv6") ) ;
+
+		if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
+		{
+			logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
+			free( remote_service_name );
+			return;
+		}
+
+		found_service = dns_discover_by_name( remote_service_name );
+		goto make_remote_connection;
+	}  else {
+		/* If there is a colon ':', split the string to determine the port number */
+		if( *p2 == ':' )
+		{
+			*p2='\0';
+			p2++;
+			remote_port_number = atoi( p2 );
+			p2 = remote_service_name + strlen( remote_service_name ) - 1;
+		}
+
+		/* If there is a ']', work forwards from the start of the string to remove the '[' */
+		if ( *p2 == ']' )
+		{
+			*p2='\0';
+			while( p1 < p2 )
+			{
+				if( *p1 == '[' ) break;
+				p1++;
+			}
+
+		}
+		if( p1 == p2 )
+		{
+			p1 = remote_service_name;
+		} else {
+			*p1='\0';
+			p1++;
+		}
+
+		if( remote_port_number == 0 )
+		{
+			logging_printf( LOGGING_ERROR, "remote_connect_init: No port number specified\n");
+			free( remote_service_name );
+			return;
+		}
+
+		logging_printf( LOGGING_DEBUG, "remote_connect_init: connect_string=>%s<\n", config_string_get("remote.connect") );
+		logging_printf( LOGGING_DEBUG, "remote_connect_init: connect_address=>%s<, connect_port=%d\n", p1, remote_port_number );
+
+		dns_discover_add( config_string_get("remote.connect"), p1, remote_port_number );
+		found_service = dns_discover_by_name( config_string_get("remote.connect") );
+	}
+	
+
+make_remote_connection:
+	free( remote_service_name );
 
 	if( ! found_service )
 	{
