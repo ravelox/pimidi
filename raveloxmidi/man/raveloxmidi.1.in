@@ -83,6 +83,18 @@ Default is \fBraveloxmidi\fP.
 .TP
 .B remote.connect
 Name of remote service to connect to.
+.br
+The value can be one of two formats:
+.br
+To connect to a Bonjour-advertised service, use the format:
+.br
+\fBremote.connect = service\fP
+.br
+To connect directly to a server/port, use the format:
+.br
+\fBremote.connect = [address]:port\fP
+.br
+A port number \fBmust\fP be specified if making a direct connection.
 .TP
 .B network.socket_timeout
 Polling timeout for the listening sockets.

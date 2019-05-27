@@ -109,6 +109,12 @@ service.name
 	Default is 'raveloxmidi'.
 remote.connect
 	Name of remote service to connect to.
+	The value can be one of two formats:
+		To connect to a Bonjour-advertised service, use the format:
+			remote.connect = service
+		To connect directly to a server/port, use the format:
+			remote.connect = [address]:port
+			A port number must be specified if making a direct connection.
 client.name
 	Name to use when connecting to remote service. If not defined, service.name will be used.
 network.socket_timeout
