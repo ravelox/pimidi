@@ -48,7 +48,7 @@ static void config_set_defaults( void )
 	config_add_item("run_as_daemon", "no");
 	config_add_item("daemon.pid_file","raveloxmidi.pid");
 	config_add_item("logging.enabled", "yes");
-	config_add_item("logging.log_file", NULL);
+	config_add_item("logging.log_file", "raveloxmidi.log");
 	config_add_item("logging.log_level", "normal");
 	config_add_item("security.check", "yes");
 	config_add_item("readonly","no");
