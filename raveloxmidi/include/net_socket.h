@@ -49,6 +49,6 @@ int net_socket_get_shutdown_fd( void );
 /* Indicate which socket should be the data port */
 #define DATA_PORT 1
 
-#define BUFFER_32K	32768
+#define DEFAULT_BLOCK_SIZE 2048
 
 #endif

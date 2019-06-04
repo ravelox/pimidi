@@ -49,11 +49,15 @@ void kv_table_dump( kv_table_t *table )
 	if( ! table ) return;
 	if( ! table->items ) return;
 
-	if( table->name ) fprintf(stderr,"Table: %s\n", table->name );
-
 	for( i=0; i < table->count; i++ )
 	{
-		fprintf(stderr, "%s = %s\n", table->items[i]->key, table->items[i]->value);
+		if( table->items[i]->key )
+		{
+			if( table->items[i]->value )
+			{
+				fprintf(stderr, "%s = %s\n", table->items[i]->key, table->items[i]->value);
+			}
+		}
 	}
 }
 

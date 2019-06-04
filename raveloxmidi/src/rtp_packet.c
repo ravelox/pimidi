@@ -151,6 +151,7 @@ void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *
 	rtp_packet->payload_len = 0;
 	if( current_buffer_len > 0 )
 	{
+		logging_printf( LOGGING_DEBUG, "rtp_packet_unpack: current_buffer_len = %zu\n", current_buffer_len );
 		rtp_packet->payload = ( unsigned char * ) malloc( current_buffer_len );
 		rtp_packet->payload_len = current_buffer_len;
 		memcpy( rtp_packet->payload, p, current_buffer_len );
