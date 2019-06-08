@@ -58,6 +58,12 @@ int main(int argc, char *argv[])
 
 	config_init( argc, argv);
 
+	if( ! config_is_set("network.bind_address") )
+	{
+		fprintf( stderr, "No network.bind_address configuration is set\n" );
+		goto daemon_stop;
+	}
+
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 

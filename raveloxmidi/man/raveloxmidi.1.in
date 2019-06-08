@@ -45,6 +45,8 @@ The available options for the configuration file are as follows:
 IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
 .br
 Default is 0.0.0.0 ( meaning all IPv4 interfaces ). IPv6 equivalent is ::
+.br
+This \fBmust\fP be set in the configuration file for raveloxmidi to run.
 .TP
 .B network.control.port
 Main RTP MIDI listening port for new connections and shutdowns. Used in the Avahi definition for the RTP MIDI service.
