@@ -206,6 +206,8 @@ void remote_connect_teardown( void )
 
 	remote_service_name = config_string_get("remote.connect");
 
+	if( ! remote_service_name ) return;
+
 	logging_printf( LOGGING_DEBUG, "remote_connect_teardown: Disconnecting from [%s]\n", remote_service_name);
 
 	remote_connect_wait_for_thread();
