@@ -1,6 +1,6 @@
 # FAQ
 
-1. If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:
+## 1. If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:
 ```
 use-ipv6=no
 publish-aaaa-on-ipv4=no
@@ -8,7 +8,7 @@ publish-aaaa-on-ipv4=no
 Obviously, if you want to use IPv6, both those options should be set to yes
 You will need to restart Avahi for those changes to be picked up.
 
-2. How to configure and test ALSA Support
+## 2. How to configure and test ALSA Support
 
 The autotools configure script will automatically detect the presence of ALSA libraries and will build the code for support.
 raveloxmidi uses the rawmidi interface so the snd-virmidi module must be loaded.
