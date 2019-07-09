@@ -1,6 +1,8 @@
 # FAQ
 
-## 1. If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:
+## 1. External software tries to connect to raveloxmidi over IPv6
+
+If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:
 ```
 use-ipv6=no
 publish-aaaa-on-ipv4=no
