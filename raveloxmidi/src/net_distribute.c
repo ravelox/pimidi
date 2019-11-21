@@ -88,8 +88,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len, char first_byt
 	enum midi_message_type_t message_type = 0;
 	size_t midi_payload_len = 0;
 
-	offset = ( first_byte_ignore ? 1 : 0 );
-	logging_printf( LOGGING_DEBUG, "net_distribute: first_byte_ignore=%d offset=%d\n", first_byte_ignore, offset);
+	offset = ( first_byte_ignore ? 0 : 1 );
 
 	// Convert the buffer into a set of commands
 	midi_payload_len = recv_len - offset;
