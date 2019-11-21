@@ -341,7 +341,7 @@ int net_socket_read( int fd )
 #endif
 	// MIDI data on internal socket or ALSA rawmidi device
 	{
-		net_distribute_midi( read_buffer, read_buffer_size );
+		net_distribute_midi( read_buffer, read_buffer_size , (fd==RAVELOXMIDI_ALSA_INPUT) );
 	} else {
 	// RTP MIDI inbound from remote socket
 		rtp_packet_t *rtp_packet = NULL;

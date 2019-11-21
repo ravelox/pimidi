@@ -173,14 +173,7 @@ int raveloxmidi_alsa_read( unsigned char *buffer, size_t buffer_size )
 
 	if( input_handle )
 	{
-		bytes_read = snd_rawmidi_read( input_handle, buffer + 1, buffer_size - 1 );
-
-		if( bytes_read > 0 )
-		{
-			// Add fake 0xaa identifier for origin identifier
-			buffer[0] = 0xaa;
-			bytes_read++;
-		}
+		bytes_read = snd_rawmidi_read( input_handle, buffer, buffer_size );
 	}
 
 	return bytes_read;
