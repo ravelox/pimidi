@@ -478,6 +478,8 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 			case MIDI_ACTIVE_SENSING:
 			case MIDI_RESET:
 			case MIDI_NULL:
+				p++;
+				current_len--;
 				break;
 		}
 		
