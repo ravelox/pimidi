@@ -42,12 +42,15 @@ int net_socket_get_shutdown_lock( void) ;
 
 int net_socket_get_data_socket( void );
 int net_socket_get_control_socket( void );
+int net_socket_get_local_socket( void );
 
 void net_socket_set_fds( void );
 int net_socket_get_shutdown_fd( void );
 
-/* Indicate which socket should be the data port */
-#define DATA_PORT 1
+/* Indicate which socket should be which in the socket array */
+#define NET_SOCKET_CONTROL_PORT 0
+#define NET_SOCKET_DATA_PORT 1
+#define NET_SOCKET_LOCAL_PORT 2
 
 #define DEFAULT_BLOCK_SIZE 2048
 

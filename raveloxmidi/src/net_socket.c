@@ -69,6 +69,7 @@ static int net_socket_shutdown;
 static int inbound_midi_fd = -1;
 static unsigned char *packet = NULL;
 static size_t packet_size = 0;
+
 #ifdef HAVE_ALSA
 static size_t alsa_buffer_size = 0;
 #endif
@@ -199,6 +200,13 @@ int net_socket_read( int fd )
 	ssize_t read_buffer_size = 0;
 	unsigned int read_buffer_block_count = 0;
 	unsigned int read_buffer_block_size = 0;
+	int data_fd = 0;
+	int control_fd = 0;
+	int local_fd = 0;
+
+	data_fd = net_socket_get_data_socket();
+	control_fd = net_socket_get_control_socket();
+	local_fd = net_socket_get_local_socket();
 
 	memset( ip_address, 0, INET6_ADDRSTRLEN );
 	from_len = sizeof( from_addr );
@@ -313,7 +321,7 @@ int net_socket_read( int fd )
 		}
 
 		net_applemidi_cmd_destroy( &command );
-	} else if( (read_buffer[0]==0xaa) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"STAT",4)==0) )
+	} else if( ( fd == local_fd ) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"STAT",4)==0) )
 	// Heartbeat request
 	{
 		char *buffer="OK";
@@ -323,7 +331,7 @@ int net_socket_read( int fd )
 		net_socket_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 	
-	} else if( (read_buffer[0]==0xaa) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"QUIT",4)==0) )
+	} else if( ( fd == local_fd ) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"QUIT",4)==0) )
 	// Shutdown request
 	{
 		char *buffer="QT";
@@ -335,13 +343,13 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
 		set_shutdown_lock(1);
 #ifdef HAVE_ALSA
-	} else if( (read_buffer[0]==0xaa) || (fd==RAVELOXMIDI_ALSA_INPUT) )
+	} else if( ( fd == local_fd ) || (fd==RAVELOXMIDI_ALSA_INPUT) )
 #else
-	} else if( read_buffer[0] == 0xaa )
+	} else if( fd == local_fd )
 #endif
 	// MIDI data on internal socket or ALSA rawmidi device
 	{
-		net_distribute_midi( read_buffer, read_buffer_size , (fd==RAVELOXMIDI_ALSA_INPUT) );
+		net_distribute_midi( read_buffer, read_buffer_size );
 	} else {
 	// RTP MIDI inbound from remote socket
 		rtp_packet_t *rtp_packet = NULL;
@@ -651,7 +659,7 @@ int net_socket_get_data_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT];
+	return sockets[NET_SOCKET_DATA_PORT];
 }
 
 int net_socket_get_control_socket( void )
@@ -659,7 +667,15 @@ int net_socket_get_control_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[DATA_PORT - 1];
+	return sockets[NET_SOCKET_CONTROL_PORT];
+}
+
+int net_socket_get_local_socket( void )
+{
+	if( num_sockets <= 0 ) return -1;
+	if( ! sockets ) return -1;
+
+	return sockets[NET_SOCKET_LOCAL_PORT];
 }
 
 int net_socket_get_shutdown_fd( void )

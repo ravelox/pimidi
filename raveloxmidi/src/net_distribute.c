@@ -63,18 +63,16 @@ extern int errno;
 #include "raveloxmidi_alsa.h"
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( unsigned char *packet, size_t recv_len, char first_byte_ignore )
+void net_distribute_midi( unsigned char *packet, size_t recv_len)
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
 	size_t packed_rtp_buffer_len = 0;
-	char offset = 0;
 
 	midi_note_t *midi_note = NULL;
 	midi_control_t *midi_control = NULL;
 	midi_program_t *midi_program = NULL;
 	midi_payload_t *initial_midi_payload = NULL;
-
 
 	unsigned char *packed_rtp_payload = NULL;
 
@@ -88,12 +86,10 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len, char first_byt
 	enum midi_message_type_t message_type = 0;
 	size_t midi_payload_len = 0;
 
-	offset = ( first_byte_ignore ? 0 : 1 );
-
 	// Convert the buffer into a set of commands
-	midi_payload_len = recv_len - offset;
+	midi_payload_len = recv_len;
 	initial_midi_payload = midi_payload_create();
-	midi_payload_set_buffer( initial_midi_payload, packet + offset , &midi_payload_len );
+	midi_payload_set_buffer( initial_midi_payload, packet, &midi_payload_len );
 	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
 	midi_payload_destroy( &initial_midi_payload );
 
