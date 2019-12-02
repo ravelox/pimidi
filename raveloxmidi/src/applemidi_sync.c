@@ -54,8 +54,6 @@ net_response_t * applemidi_sync_responder( void *data )
 	long delta = 0;
 	long current_time = 0;
 
-	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: start\n");
-
 	if( ! data ) return NULL;
 
 	sync = ( net_applemidi_sync *) data;

@@ -165,7 +165,6 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 	// Loop through the controllers
 	while( ( current_size >= PACKED_CONTROLLER_LOG_SIZE ) && ( index < MAX_CHAPTER_C_CONTROLLERS ) )
 	{
-		logging_printf(LOGGING_DEBUG,"chapter_c_pack: Checking %u = (%u)\n", index, chapter_c->controller_log[index].number);
 		// Short-circuit if the controller isn't active
 		if( chapter_c->controller_log[index].number == index )
 		{
