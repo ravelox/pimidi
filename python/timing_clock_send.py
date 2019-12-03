@@ -21,7 +21,7 @@ s = socket.socket( family, socket.SOCK_DGRAM )
 s.connect( connect_tuple )
 
 # Timing Clock
-bytes = struct.pack( "BB", 0xaa, 0xF8)
+bytes = struct.pack( "B", 0xF8)
 s.send( bytes )
 
 s.close()

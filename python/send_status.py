@@ -7,7 +7,7 @@ import sys
 local_port = 5006
 
 # Request status
-bytes = struct.pack( "B4s", 0xaa, "STAT" )
+bytes = struct.pack( "4s", "STAT" )
 print bytes
 
 if len(sys.argv) == 1:

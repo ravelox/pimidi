@@ -26,10 +26,10 @@ s.connect( connect_tuple )
 
 def send_note( velocity):
 	# Note ON
-	bytes = struct.pack( "BBBB", 0xaa, 0x96, 0x1f, velocity )
+	bytes = struct.pack( "BBB", 0x96, 0x1f, velocity )
 	s.send( bytes )
 	# Note OFF
-	bytes = struct.pack( "BBBB", 0xaa, 0x86, 0x1f, velocity )
+	bytes = struct.pack( "BBB", 0x86, 0x1f, velocity )
 	s.send( bytes )
 
 # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)

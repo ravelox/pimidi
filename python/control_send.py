@@ -23,9 +23,9 @@ s.setblocking(0)
 s.connect( connect_tuple )
 
 # Control Change
-bytes = struct.pack( "BBBB", 0xaa, 0xB6, 0x3c, 0x7f )
+bytes = struct.pack( "BBB", 0xB6, 0x3c, 0x7f )
 s.send( bytes )
-bytes = struct.pack( "BBBB", 0xaa, 0xB6, 0x3e, 0x7f )
+bytes = struct.pack( "BBB", 0xB6, 0x3e, 0x7f )
 s.send( bytes )
 
 s.close()

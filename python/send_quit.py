@@ -1,13 +1,13 @@
 #!/usr/bin/python
 
-import sys
 import socket
 import struct
+import sys
 
 local_port = 5006
 
-# Request status
-bytes = struct.pack( "B4s", 0xaa, "QUIT" )
+# Request shutdown
+bytes = struct.pack( "4s", "QUIT" )
 print bytes
 
 if len(sys.argv) == 1:
@@ -29,7 +29,7 @@ s.sendall( bytes )
 data = ''
 while True:
 	try:
-		data = s.recv(2)
+		data,addr = s.recvfrom(2)
 	except:
 		pass
 	if data:

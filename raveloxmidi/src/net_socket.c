@@ -321,7 +321,7 @@ int net_socket_read( int fd )
 		}
 
 		net_applemidi_cmd_destroy( &command );
-	} else if( ( fd == local_fd ) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"STAT",4)==0) )
+	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp(read_buffer,"STAT",4)==0) )
 	// Heartbeat request
 	{
 		char *buffer="OK";
@@ -331,7 +331,7 @@ int net_socket_read( int fd )
 		net_socket_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 	
-	} else if( ( fd == local_fd ) && (read_buffer_size == 5) && ( strncmp( (const char *)&(read_buffer[1]),"QUIT",4)==0) )
+	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp( read_buffer,"QUIT",4)==0) )
 	// Shutdown request
 	{
 		char *buffer="QT";

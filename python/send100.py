@@ -9,19 +9,19 @@ local_port = 5006
 
 def note_send():
 	# Note ON
-	bytes = struct.pack( "BBBB", 0xaa, 0x96, 0x3c, 0x7f )
+	bytes = struct.pack( "BBB", 0x96, 0x3c, 0x7f )
 	s.send( bytes )
 	
 	time.sleep( 0.25 );
 	
 	# Note OFF
-	bytes = struct.pack( "BBBB", 0xaa, 0x86, 0x3c, 0x7f )
+	bytes = struct.pack( "BBB", 0x86, 0x3c, 0x7f )
 	s.send( bytes )
 	print "note_send"
 
 def control_send():
 	# Control Change
-	bytes = struct.pack( "BBBB", 0xaa, 0xB6, 0x3c, 0x7f )
+	bytes = struct.pack( "BBB", 0xB6, 0x3c, 0x7f )
 	s.send( bytes )
 	print "control_send"
 

@@ -22,13 +22,13 @@ s = socket.socket( family, socket.SOCK_DGRAM )
 s.connect( connect_tuple )
 
 # Note ON
-bytes = struct.pack( "BBBB", 0xaa, 0x90, 0x30, 0x40 )
+bytes = struct.pack( "BBB", 0x90, 0x30, 0x40 )
 s.send( bytes )
 
 time.sleep( 0.25 );
 
 # Note OFF
-bytes = struct.pack( "BBBB", 0xaa, 0x80, 0x30, 0x40 )
+bytes = struct.pack( "BBB", 0x80, 0x30, 0x40 )
 s.send( bytes )
 
 s.close()
