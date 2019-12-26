@@ -218,7 +218,7 @@ void raveloxmidi_alsa_set_poll_fds( int fd )
 	{
 		for( i = 0 ; i < pd_count; i++ )
 		{
-			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_init: poll_descriptor[%u]=%u\n", fd, poll_descriptors[i].fd);
+			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_init: poll_descriptor[%u]=%u\n", i, poll_descriptors[i].fd);
 			poll_descriptors[i].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
 		}
 	}
