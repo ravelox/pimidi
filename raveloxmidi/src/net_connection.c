@@ -339,7 +339,9 @@ void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
 {
 	if( ! midi_note ) return;
 	if( ! ctx) return;
+	net_ctx_lock();
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
+	net_ctx_unlock();
 	net_ctx_journal_dump( ctx );
 }
 
@@ -347,7 +349,9 @@ void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
 {
 	if( ! midi_control ) return;
 	if( !ctx ) return;
+	net_ctx_lock();
 	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
+	net_ctx_unlock();
 	net_ctx_journal_dump( ctx );
 }
 
@@ -355,7 +359,9 @@ void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
 {
 	if( !midi_program ) return;
 	if( !ctx ) return;
+	net_ctx_lock();
 	midi_journal_add_program( ctx->journal, ctx->seq, midi_program );
+	net_ctx_unlock();
 	net_ctx_journal_dump( ctx );
 }
 
@@ -363,9 +369,15 @@ void net_ctx_journal_dump( net_ctx_t *ctx )
 {
 	if( ! ctx) return;
 
+	net_ctx_lock();
 	logging_printf( LOGGING_DEBUG, "net_ctx_journal_dump: has_data=%s\n", ( journal_has_data( ctx->journal ) ? "YES" : "NO" ) );
-	if( ! journal_has_data( ctx->journal ) ) return;
+	if( ! journal_has_data( ctx->journal ) )
+	{
+		net_ctx_unlock();
+		return;
+	}
 	journal_dump( ctx->journal );
+	net_ctx_unlock();
 }
 
 void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size)
@@ -375,15 +387,19 @@ void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journa
 
 	if( ! ctx) return;
 
+	net_ctx_lock();
 	journal_pack( ctx->journal, journal_buffer, journal_buffer_size );
+	net_ctx_unlock();
 }
 	
 void net_ctx_journal_reset( net_ctx_t *ctx )
 {
 	if( ! ctx) return;
 
+	net_ctx_lock();
 	logging_printf(LOGGING_DEBUG,"net_ctx_journal_reset:ssrc=0x%08x\n", ctx->ssrc );
 	journal_reset( ctx->journal);
+	net_ctx_unlock();
 }
 
 void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet)
