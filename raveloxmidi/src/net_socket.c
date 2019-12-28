@@ -348,7 +348,7 @@ int net_socket_read( int fd )
 #endif
 	// MIDI data on internal socket or ALSA rawmidi device
 	{
-		net_distribute_midi( read_buffer, read_buffer_size );
+		net_distribute_midi( read_buffer, read_buffer_size, fd );
 	} else {
 	// RTP MIDI inbound from remote socket
 		rtp_packet_t *rtp_packet = NULL;
@@ -366,7 +366,7 @@ int net_socket_read( int fd )
 		midi_payload_unpack( &midi_payload, rtp_packet->payload, read_buffer_size );
 
 		// Read all the commands in the packet into an array
-		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands, &num_midi_commands );
+		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands, &num_midi_commands, fd );
 
 		// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
 		response = applemidi_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );

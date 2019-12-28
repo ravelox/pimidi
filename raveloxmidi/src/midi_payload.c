@@ -38,7 +38,67 @@
 //original MIDI source data stream might not have a status octet (in
 // this case, the source would be coding the command using running
 // status)
-static unsigned char running_status = 0;
+typedef struct midi_running_status_t {
+	int fd;
+	unsigned char status;
+} midi_running_status_t;
+static midi_running_status_t *running_status;
+static int running_status_size;
+
+unsigned char *midi_payload_get_running_status( int fd )
+{
+	int i;
+
+	if (!running_status) 
+	{
+		running_status = (midi_running_status_t *)malloc(sizeof(midi_running_status_t));
+
+		if (!running_status)
+		{
+			logging_printf(LOGGING_ERROR, "midi_payload_get_running_status: Unable to allocate memory for running status\n");
+			return NULL;
+		}
+
+		running_status_size = 1;
+
+		running_status[0].fd = fd;
+		running_status[0].status = 0;
+
+		return &(running_status[0].status);
+	}
+
+	for (i = 0; i < running_status_size; i++)
+	{
+		if (running_status[i].fd == fd)
+			return &(running_status[i].status);
+	}
+
+	running_status = (midi_running_status_t *)realloc(running_status, (running_status_size + 1) * sizeof(midi_running_status_t));
+
+	if (!running_status)
+	{
+		logging_printf(LOGGING_ERROR, "midi_payload_get_running_status: Unable to reallocate memory for running status\n");
+		return NULL;
+	}
+
+	running_status_size += 1;
+
+	running_status[i].fd = fd;
+	running_status[i].status = 0;
+
+	return &(running_status[i].status);
+}
+
+void midi_payload_set_running_status( int fd, unsigned char status )
+{
+	if (status >= 0xf8)
+		return;
+
+	unsigned char *running_status = midi_payload_get_running_status(fd);
+
+	if (running_status) 
+		*running_status = status < 0xf0 ? status : 0;
+}
 
 void midi_payload_destroy( midi_payload_t **payload )
 {
@@ -154,7 +214,7 @@ void midi_payload_unset_p( midi_payload_t *payload )
 }
 
 
-void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , size_t *buffer_size)
+void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , size_t *buffer_size, int fd )
 {
 	int status_present = 0;
 	if( ! payload ) return;
@@ -178,9 +238,11 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 		if( status_present )
 		{
 			memcpy( payload->buffer, buffer, *buffer_size );
+			midi_payload_set_running_status(fd, buffer[0]);
 		} else {
 			memcpy( payload->buffer + 1, buffer, *buffer_size - 1 );
-			payload->buffer[0] = running_status;
+			unsigned char *running_status = midi_payload_get_running_status(fd);
+			payload->buffer[0] = running_status ? *running_status : 0;
 		}
 	}
 }
@@ -311,7 +373,7 @@ midi_payload_unpack_success:
 	return;
 }
 
-void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands )
+void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands, int fd )
 {
 	unsigned char *p;
 	size_t current_len;
@@ -377,14 +439,21 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 		if( current_len > 0 )
 		{
 			data_byte = *p;
+			unsigned char status = data_byte;
 
-			if( data_byte & 0x80 )
+			if( status & 0x80 )
 			{
-				running_status = data_byte;
+				midi_payload_set_running_status(fd, status);
 				p++;
 				current_len--;
 			}
-			(*commands)[index].status = running_status;
+			else
+			{
+				unsigned char *running_status = midi_payload_get_running_status(fd);
+				status = running_status ? *running_status : 0;
+			}
+
+			(*commands)[index].status = status;
 		}
 
 		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
@@ -511,7 +580,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	} while( current_len > 0 );
 }
 
-void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload )
+void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload, int fd )
 {
 	size_t new_payload_size = 0;
 	unsigned char *new_payload_buffer = NULL;
@@ -541,7 +610,7 @@ void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload 
 	new_payload_buffer[0] = command->status;
 	memcpy( new_payload_buffer + 1 , command->data, command->data_len );
 
-	midi_payload_set_buffer( *payload, new_payload_buffer, &new_payload_size );
+	midi_payload_set_buffer( *payload, new_payload_buffer, &new_payload_size, fd );
 
 	free( new_payload_buffer );
 }

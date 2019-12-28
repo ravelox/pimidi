@@ -21,6 +21,6 @@
 #ifndef _NET_DISTRIBUTE_H
 #define _NET_DISTRIBUTE_H
 
-void net_distribute_midi( unsigned char *packet, size_t recv_len );
+void net_distribute_midi( unsigned char *packet, size_t recv_len, int fd );
 
 #endif

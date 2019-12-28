@@ -63,7 +63,7 @@ extern int errno;
 #include "raveloxmidi_alsa.h"
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( unsigned char *packet, size_t recv_len)
+void net_distribute_midi( unsigned char *packet, size_t recv_len, int fd )
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
@@ -89,8 +89,8 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	// Convert the buffer into a set of commands
 	midi_payload_len = recv_len;
 	initial_midi_payload = midi_payload_create();
-	midi_payload_set_buffer( initial_midi_payload, packet, &midi_payload_len );
-	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
+	midi_payload_set_buffer( initial_midi_payload, packet, &midi_payload_len, fd );
+	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands, fd );
 	midi_payload_destroy( &initial_midi_payload );
 
 	for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
@@ -100,7 +100,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 		size_t packed_payload_len = 0;
 
 		/* Extract a single command as a midi payload */
-		midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
+		midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload, fd );
 		if( ! single_midi_payload ) continue;
 
 		midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
