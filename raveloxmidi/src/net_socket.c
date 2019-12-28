@@ -214,7 +214,14 @@ int net_socket_read( int fd )
 	read_buffer_block_size = config_int_get("network.read.blocksize");
 	if( read_buffer_block_size == 0 ) read_buffer_block_size = DEFAULT_BLOCK_SIZE;
 
+#ifdef HAVE_ALSA
+	if (alsa_buffer_size > read_buffer_block_size)
+		read_buffer_block_size = alsa_buffer_size;
+#endif
+
 	logging_printf( LOGGING_DEBUG, "net_socket_read: Block size set to %zu\n", read_buffer_block_size );
+	net_socket_lock();
+
 	while( 1 )
 	{
 		memset( packet, 0, packet_size + 1 );
@@ -247,7 +254,7 @@ int net_socket_read( int fd )
 #endif
 		if ( recv_len <= 0)
 		{   
-			if( read_buffer_size >= 3 )
+			if( read_buffer_size >= 1 )
 			{
 				if ( errno == EAGAIN ) break;
 				logging_printf(LOGGING_ERROR, "net_socket_read: Socket error (%d) on socket (%d)\n", errno , fd );
@@ -274,6 +281,8 @@ int net_socket_read( int fd )
 			read_buffer_size += recv_len;
 		}
 	}
+
+	net_socket_unlock();
 
 	hex_dump( read_buffer, read_buffer_size );
 
