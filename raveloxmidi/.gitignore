@@ -107,3 +107,4 @@ config.h
 man/raveloxmidi.1
 build_deb
 .deps
+src/raveloxmidi
