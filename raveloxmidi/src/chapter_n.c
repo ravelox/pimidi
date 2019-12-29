@@ -303,7 +303,7 @@ void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size
 
 	*packed = ( unsigned char *)malloc( CHAPTER_N_NOTE_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 
 	memset( *packed, 0, CHAPTER_N_NOTE_PACKED_SIZE );
 	p = *packed;
