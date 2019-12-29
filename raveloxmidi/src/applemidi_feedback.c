@@ -66,7 +66,7 @@ net_response_t * applemidi_feedback_responder( void *data )
 	if( feedback->rtp_seq[1] >= ctx->seq )
 	{
 		logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Resetting journal\n" );
-		journal_reset( ctx->journal );
+		net_ctx_journal_reset(ctx);
 	}
 
 	return NULL;
