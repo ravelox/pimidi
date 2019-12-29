@@ -157,13 +157,14 @@ void remote_connect_init( void )
 	
 
 make_remote_connection:
-	free( remote_service_name );
 
 	if( ! found_service )
 	{
 		logging_printf(LOGGING_WARN, "remote_connect_init: No service found: %s\n", remote_service_name );
+		free( remote_service_name );
 		return;
 	}
+	free( remote_service_name );
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_init: Found name=\"%s\" address=[%s]:%d\n", found_service->name, found_service->ip_address, found_service->port);
 	ssrc = random_number();
