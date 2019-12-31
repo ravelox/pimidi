@@ -1,4 +1,4 @@
-AC_INIT([raveloxmidi],[0.8.0])
+AC_INIT([raveloxmidi],[0.8.1])
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
