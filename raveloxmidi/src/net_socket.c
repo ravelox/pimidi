@@ -182,6 +182,8 @@ int net_socket_teardown( void )
 	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
 	if( packet ) FREENULL( "net_socket_teardown: packet", (void **)&packet );
 
+	pthread_mutex_destroy( &socket_mutex );
+
 	return 0;
 }
 
@@ -440,9 +442,9 @@ static void set_shutdown_lock( int i )
 	pthread_mutex_unlock( &shutdown_lock );
 }
 
-int net_socket_get_shutdown_lock( void )
+int net_socket_get_shutdown_status( void )
 {
-	int i = 0;
+	int i = OK;
 	pthread_mutex_lock( &shutdown_lock );
 	i = net_socket_shutdown;
 	pthread_mutex_unlock( &shutdown_lock );
@@ -454,7 +456,6 @@ void net_socket_loop_init()
 	int err = 0;
 
 	pthread_mutex_init( &shutdown_lock, NULL);
-	pthread_mutex_init( &socket_mutex, NULL );
 	set_shutdown_lock(0);
 	socket_timeout = config_long_get("network.socket_timeout");
 
@@ -474,7 +475,6 @@ void net_socket_loop_init()
 void net_socket_loop_teardown()
 {
 	pthread_mutex_destroy( &shutdown_lock );
-	pthread_mutex_destroy( &socket_mutex );
 }
 
 int net_socket_fd_loop()
@@ -500,7 +500,7 @@ int net_socket_fd_loop()
 				}
 			}
 		}
-	} while( net_socket_shutdown == 0 );
+	} while( net_socket_get_shutdown_status() == OK );
 
 
 	return ret;
@@ -523,6 +523,8 @@ int net_socket_init( void )
 	char *bind_address = NULL;
 	int address_family = 0;
 	int control_port, data_port, local_port;
+
+	pthread_mutex_init( &socket_mutex, NULL );
 
 	num_sockets = 0;
 	max_fd = 0;
@@ -610,7 +612,7 @@ static void * net_socket_alsa_listener( void *data )
 		{
 			net_socket_read( RAVELOXMIDI_ALSA_INPUT );
 		}
-	} while (net_socket_shutdown == 0 );
+	} while ( net_socket_get_shutdown_status() == OK );
 	logging_printf(LOGGING_DEBUG, "net_socket_alsa_listener: Thread stopped\n");
 
 	return NULL;

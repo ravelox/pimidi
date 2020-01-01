@@ -38,7 +38,7 @@ int net_socket_fd_loop(void);
 int net_socket_alsa_loop(void);
 void net_socket_wait_for_alsa(void);
 void net_socket_loop_shutdown(int signal);
-int net_socket_get_shutdown_lock( void) ;
+int net_socket_get_shutdown_status( void) ;
 
 int net_socket_get_data_socket( void );
 int net_socket_get_control_socket( void );
@@ -54,4 +54,6 @@ int net_socket_get_shutdown_fd( void );
 
 #define DEFAULT_BLOCK_SIZE 2048
 
+#define OK		0
+#define SHUTDOWN	1
 #endif

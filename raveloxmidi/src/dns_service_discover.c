@@ -116,7 +116,7 @@ static void browse_callback(
     }
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void discover_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
 
     assert(c);
 
@@ -139,7 +139,7 @@ int dns_discover_services( int use_ipv4, int use_ipv6 )
         goto fail;
     }
 
-    client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
+    client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, discover_callback, NULL, &error);
 
     if (!client) {
         logging_printf(LOGGING_WARN, "dns_discover_services: Failed to create client: %s\n", avahi_strerror(error));

@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 			dns_discover_teardown();
 		}
 
-		if( net_socket_get_shutdown_lock() == 0 )
+		if( net_socket_get_shutdown_status() == OK )
 		{
 #ifdef HAVE_ALSA
 			net_socket_alsa_loop();

@@ -310,7 +310,7 @@ static void *remote_connect_sync_thread( void *data )
 		tv.tv_sec = sync_interval;
 		select( shutdown_fd + 1, &read_fds, NULL , NULL, &tv );
 		logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: select()=\"%s\"\n", strerror( errno ) );
-		if( net_socket_get_shutdown_lock() == 1 )
+		if( net_socket_get_shutdown_status() == SHUTDOWN )
 		{
 			logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received during poll\n");
 			break;
@@ -321,7 +321,7 @@ static void *remote_connect_sync_thread( void *data )
 		net_response_destroy( &response );
 	} while( 1 );
 
-	if( net_socket_get_shutdown_lock() == 1 )
+	if( net_socket_get_shutdown_status() == SHUTDOWN )
 	{
 		logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received\n");
 	}

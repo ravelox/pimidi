@@ -166,7 +166,7 @@ fail:
     avahi_threaded_poll_quit(threaded_poll);
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void publish_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
     assert(c);
 
     /* Called whenever the client or server state changes */
@@ -205,7 +205,11 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
             break;
 
         case AVAHI_CLIENT_CONNECTING:
-            ;
+		break;
+
+	default:
+	   logging_printf(LOGGING_DEBUG, "avahi publish_callback: unknown state\n");
+	   break;
     }
 }
 
@@ -261,7 +265,7 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 	use_ipv4 = service_desc->publish_ipv4;
 	use_ipv6 = service_desc->publish_ipv6;
 
-	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
+	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, publish_callback, NULL, &error);
 
 	if (! client) {
 		logging_printf(LOGGING_ERROR, "Failed to create client: %s\n", avahi_strerror(error));
@@ -279,6 +283,5 @@ void dns_service_publisher_stop( void )
 	{
 		avahi_threaded_poll_stop( threaded_poll );
 	}
-
 	dns_service_publisher_cleanup();
 }
