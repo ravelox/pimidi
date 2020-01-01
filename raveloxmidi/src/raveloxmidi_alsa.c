@@ -34,19 +34,49 @@
 #include "raveloxmidi_alsa.h"
 #include "utils.h"
 #include "logging.h"
+#include "raveloxmidi_config.h"
 
 static snd_rawmidi_t *input_handle = NULL;
-static snd_rawmidi_t *output_handle = NULL;
+static snd_rawmidi_t **outputs = NULL;
+static int num_outputs = 0;
 
 static int pd_count = 0;
 static struct pollfd *poll_descriptors = NULL;
 
 extern int errno;
 
+static void raveloxmidi_alsa_add_output( char *device_name )
+{
+	snd_rawmidi_t *output_handle;
+	snd_rawmidi_t **new_outputs = NULL;
+	int ret = 0;
+
+	if( ! device_name ) return;
+
+	ret = snd_rawmidi_open( NULL, &output_handle, device_name, SND_RAWMIDI_NONBLOCK );
+	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", device_name, ret, snd_strerror( ret ) );
+	if( ret != 0 ) return;
+
+	raveloxmidi_alsa_dump_rawmidi( output_handle );
+
+	new_outputs = (snd_rawmidi_t **)realloc( outputs , ( num_outputs + 1 ) * sizeof(snd_rawmidi_t *) );
+
+	if(! new_outputs )
+	{
+		logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_add_output: Insufficient memory for new item: %s\n", device_name);
+		return;
+	}
+
+	outputs = new_outputs;
+	outputs[ num_outputs++ ] = output_handle;
+}
 
 void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer_size)
 {
 	int ret = 0;
+
+	outputs = NULL;
+	num_outputs = 0;
 
 	if( input_name )
 	{
@@ -72,12 +102,33 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 
 	if( output_name )
 	{
-		ret = snd_rawmidi_open( NULL, &output_handle, output_name, SND_RAWMIDI_NONBLOCK );
-		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", output_name, ret, snd_strerror( ret ) );
-		if( ret == 0 ) 
+		snd_rawmidi_t *output_handle;
+		raveloxmidi_config_iter_t *output_key;
+
+		/* Look for config item by literal name */
+		if( config_is_set( output_name ) )
 		{
-			raveloxmidi_alsa_dump_rawmidi( output_handle );
+			raveloxmidi_alsa_add_output( config_string_get( output_name ) );
 		}
+	
+		/* Now look for multiple config items */
+		output_key = config_iter_create( output_name );
+		while(1)
+		{
+			char *full_output_name = NULL;
+			if( ! config_iter_is_set( output_key ) ) break;
+
+			full_output_name = config_iter_string_get( output_key );
+
+			if( full_output_name )
+			{
+				raveloxmidi_alsa_add_output( full_output_name );
+			}
+
+			config_iter_next( output_key );
+		}
+		config_iter_destroy( &output_key );
+
 	}
 }
 
@@ -91,13 +142,25 @@ void raveloxmidi_alsa_handle_destroy( snd_rawmidi_t *rawmidi )
 
 void raveloxmidi_alsa_teardown( void )
 {
+	int i = 0;
+
 	raveloxmidi_alsa_handle_destroy( input_handle );
-	raveloxmidi_alsa_handle_destroy( output_handle );
+
+	
+	if( num_outputs > 0 )
+	{
+		for( i = 0 ; i < num_outputs ; i++ )
+		{
+			raveloxmidi_alsa_handle_destroy( outputs[i] );
+		}
+		num_outputs = 0;
+		free( outputs );
+		outputs = NULL;
+	}
 
 	FREENULL( "poll_descriptors", (void **)&poll_descriptors );
 
 	input_handle = NULL;
-	output_handle = NULL;
 }
 
 void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
@@ -134,9 +197,10 @@ void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
 	logging_printf(LOGGING_DEBUG, "\tavailable_min=%lu, buffer_size=%lu, active_sensing=%d\n", available_min, buffer_size, active_sensing);
 	snd_rawmidi_params_free( params );
 }
+
 int raveloxmidi_alsa_out_available( void )
 {
-	return output_handle != NULL;
+	return num_outputs > 0;
 }
 
 int raveloxmidi_alsa_in_available( void )
@@ -146,12 +210,13 @@ int raveloxmidi_alsa_in_available( void )
 
 int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
 {
+	int i = 0;
 	size_t bytes_written = 0;
 
-	if( output_handle ) 
+	for( i = 0; i < num_outputs; i++ )
 	{
-		bytes_written = snd_rawmidi_write( output_handle, buffer, buffer_size );
-		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: bytes_written=%u\n", bytes_written );
+		bytes_written = snd_rawmidi_write( outputs[i], buffer, buffer_size );
+		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d bytes_written=%u\n", i, bytes_written );
 	}
 
 	return bytes_written;

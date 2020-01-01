@@ -39,7 +39,20 @@ Display help information including default values for some parameters.
 .B -C
 Display the current config to stderr
 .SH NOTES
-The available options for the configuration file are as follows:
+The available options for the configuration file are listed below. Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.
+For example, if there is a parameter called \fBalsa.output_device\fP you can use either:
+.LP
+alsa.output_device = device_name
+.LP
+or
+.LP
+alsa.output_device.0 = first_device
+.br
+alsa.output_device.1 = second_device
+.LP
+A multi-value configuration option \fBmust\fP start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then \fBonly\fP 0 and 1 will be detected.
+.LP
+The available options are:
 .TP
 .B network.bind_address
 IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
@@ -175,6 +188,8 @@ If ALSA is detected, the following options are also available:
 .TP
 .B alsa.output_device
 Name of the rawmidi ALSA device to send MIDI events to.
+.br
+This is a multi-value configuration option. See the \fBNOTES\fP section above for how to specify multiple values.
 .TP
 .B alsa.input_device
 Name of the rawmidi ALSA device to read MIDI events from.

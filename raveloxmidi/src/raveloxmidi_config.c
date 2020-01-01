@@ -261,6 +261,109 @@ int config_is_set( char *key )
 	return ( ( item != NULL ) && ( item->value != NULL ) && ( strlen(item->value) > 0 ) );
 }
 
+raveloxmidi_config_iter_t *config_iter_create( char *prefix )
+{
+	raveloxmidi_config_iter_t *new_iter = NULL;
+	if( ! prefix ) return NULL;
+	new_iter = ( raveloxmidi_config_iter_t * ) malloc( sizeof( raveloxmidi_config_iter_t ) );
+	if( ! new_iter ) return NULL;
+	new_iter->prefix = ( char * ) strdup( prefix );
+	new_iter->index = 0;
+
+	return new_iter;
+}
+
+void config_iter_destroy( raveloxmidi_config_iter_t **iter )
+{
+	if( ! iter ) return;
+	if( ! *iter ) return;
+
+	if( (*iter)->prefix )
+	{
+		free( (*iter)->prefix );
+		(*iter)->prefix = NULL;
+	}
+
+	free( *iter );
+	*iter = NULL;
+}
+
+void config_iter_reset( raveloxmidi_config_iter_t *iter )
+{
+	if( ! iter ) return;
+	iter->index = 0;
+}
+
+void config_iter_next( raveloxmidi_config_iter_t *iter )
+{
+	if( ! iter ) return;
+	if( iter->index < MAX_ITER_INDEX ) iter->index += 1;
+}
+
+static char *config_make_key( char *prefix , int index )
+{
+	size_t key_len = 0;
+	char *key = NULL;
+	if( ! prefix ) return NULL;
+	key_len = strlen( prefix ) + 7;
+	key = ( char * ) malloc( key_len );
+	if( ! key ) return NULL;
+	sprintf( key, "%s.%d", prefix, index );
+	return key;
+}
+
+char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
+{
+	char *key = NULL;
+	char *result = NULL;
+	if( ! iter ) return NULL;
+	if( ! iter->prefix ) return NULL;
+	key = config_make_key( iter->prefix, iter->index );
+	if( ! key ) return NULL;
+	result = config_string_get( key );
+	free( key );
+	return result;
+}
+
+int config_iter_int_get( raveloxmidi_config_iter_t *iter )
+{
+	char *key = NULL;
+	int result = 0;
+	if( ! iter ) return 0;
+	if( ! iter->prefix ) return 0;
+	key = config_make_key( iter->prefix, iter->index );
+	if( ! key ) return 0;
+	result = config_int_get( key );
+	free( key );
+	return result;
+}
+
+long config_iter_long_get( raveloxmidi_config_iter_t *iter )
+{
+	char *key = NULL;
+	long result = 0;
+	if( ! iter ) return 0;
+	if( ! iter->prefix ) return 0;
+	key = config_make_key( iter->prefix, iter->index );
+	if( ! key ) return 0;
+	result = config_long_get( key );
+	free( key );
+	return result;
+}
+
+int config_iter_is_set( raveloxmidi_config_iter_t *iter )
+{
+	char *key = NULL;
+	int result = 0;
+	if( ! iter ) return 0;
+	if( ! iter->prefix ) return 0;
+	key = config_make_key( iter->prefix , iter->index);
+	if( ! key ) return 0;
+	result = config_is_set( key );
+	free( key );
+	return result;
+}
+
 void config_add_item(char *key, char *value )
 {
 	kv_add_item( config_items, key, value );

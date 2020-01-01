@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
 
 #ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
+	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
 #endif
 
 	if( is_yes( config_string_get("run_as_daemon") ) )
