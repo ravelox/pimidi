@@ -390,7 +390,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 	if( ! midi_note ) return;
 
 	channel = midi_note->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
@@ -461,7 +461,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	if( ! midi_control ) return;
 
 	channel = midi_control->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	controller = midi_control->controller_number;
 	if( controller > (MAX_CHAPTER_C_CONTROLLERS - 1) ) return;
@@ -508,7 +508,7 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t 
 	if( ! midi_program ) return;
 
 	channel = midi_program->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
