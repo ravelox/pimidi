@@ -271,7 +271,7 @@ int net_socket_read( int fd )
 			logging_printf( LOGGING_ERROR, "net_socket_read: Unable to allocate memory for read_buffer ( %u )\n", read_buffer_block_count * read_buffer_block_size );
 		} else {
 			read_buffer = new_read_buffer;
-			logging_printf( LOGGING_DEBUG, "net_socket_read: Copying %ld bytes to read_buffer at postion %u (block_count=%u)\n", recv_len , read_buffer_size , read_buffer_block_count );
+			logging_printf( LOGGING_DEBUG, "net_socket_read: Copying %ld bytes to read_buffer at position %u (block_count=%u)\n", recv_len , read_buffer_size , read_buffer_block_count );
 			memcpy( read_buffer + read_buffer_size, packet, recv_len );
 			read_buffer_size += recv_len;
 		}
