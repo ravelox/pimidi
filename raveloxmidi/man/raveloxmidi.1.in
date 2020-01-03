@@ -111,7 +111,7 @@ To connect directly to a server/port, use the format:
 .br
 A port number \fBmust\fP be specified if making a direct connection.
 .TP
-.B remote.use_control
+.B remote.use_control_for_ck
 Indicates whether CK (AppleMIDI Feedback) messages are sent to the a remote connection using the control port.
 .br
 Default is yes

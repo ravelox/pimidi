@@ -45,8 +45,6 @@
 
 #include "raveloxmidi_config.h"
 
-static pthread_mutex_t	discover_mutex;
-
 static dns_service_t **services = NULL;
 static int num_services = 0;
 
@@ -254,7 +252,6 @@ void dns_discover_free_services( void )
 
 void dns_discover_init( void )
 {
-	pthread_mutex_init( &discover_mutex , NULL );
 	dns_discover_free_services();
 	num_services = 0;
 }
@@ -262,7 +259,6 @@ void dns_discover_init( void )
 void dns_discover_teardown( void )
 {
 	dns_discover_free_services();
-	pthread_mutex_destroy( &discover_mutex );
 }
 
 void dns_discover_dump( void )

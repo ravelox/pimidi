@@ -91,9 +91,6 @@ int main(int argc, char *argv[])
 
 	net_ctx_init();
 
-        signal( SIGINT , net_socket_loop_shutdown);
-        signal( SIGTERM , net_socket_loop_shutdown);
-        signal( SIGUSR2 , net_socket_loop_shutdown);
 
 	ret = dns_service_publisher_start( &service_desc );
 	
@@ -102,6 +99,10 @@ int main(int argc, char *argv[])
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 	} else {
 		net_socket_loop_init();
+
+		signal( SIGINT , net_socket_loop_shutdown);
+		signal( SIGTERM , net_socket_loop_shutdown);
+		signal( SIGUSR2 , net_socket_loop_shutdown);
 
 		if( config_string_get("remote.connect") )
 		{

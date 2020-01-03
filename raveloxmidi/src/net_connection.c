@@ -48,7 +48,7 @@ static net_ctx_t *_ctx_head = NULL;
 static unsigned int _max_ctx = 0;
 static net_ctx_t *_iterator_current = NULL;
 
-static pthread_mutex_t ctx_mutex;
+static pthread_mutex_t ctx_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void net_ctx_lock( void )
 {

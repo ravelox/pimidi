@@ -47,7 +47,7 @@ static name_map_t loglevel_map[] = {
 	{ NULL, -1}
 };
 
-static pthread_mutex_t	logging_mutex;
+static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int logging_enabled = 0;
 static char *logging_file_name = NULL;

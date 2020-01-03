@@ -131,7 +131,7 @@ remote.connect
 		To connect directly to a server/port, use the format:
 			remote.connect = [address]:port
 			A port number must be specified if making a direct connection.
-remote.use_control
+remote.use_control_for_ck
 	Indicates whether CK (AppleMIDI Feedback) messages are sent to the a remote connection using the control port.
 	Default is yes
 client.name

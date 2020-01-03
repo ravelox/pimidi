@@ -77,13 +77,13 @@ static size_t alsa_buffer_size = 0;
 static fd_set read_fds;
 static int max_fd = 0;
 
-static pthread_mutex_t shutdown_lock;
-static pthread_mutex_t socket_mutex;
+static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_t alsa_listener_thread;
 int socket_timeout = 0;
 int pipe_fd[2] = { 0, 0 };
 
-static void set_shutdown_lock( int i );
+static void net_socket_set_shutdown_lock( int i );
 
 void net_socket_lock( void )
 {
@@ -342,7 +342,7 @@ int net_socket_read( int fd )
 		net_socket_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
-		set_shutdown_lock(1);
+		net_socket_set_shutdown_lock(1);
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (fd==RAVELOXMIDI_ALSA_INPUT) )
 #else
@@ -435,18 +435,22 @@ int net_socket_read( int fd )
 	return ret;
 }
 
-static void set_shutdown_lock( int i )
+static void net_socket_set_shutdown_lock( int i )
 {
 	pthread_mutex_lock( &shutdown_lock );
+	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: %d\n", i);
 	net_socket_shutdown = i;
+	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: exit\n");
 	pthread_mutex_unlock( &shutdown_lock );
 }
 
 int net_socket_get_shutdown_status( void )
 {
 	int i = OK;
+
 	pthread_mutex_lock( &shutdown_lock );
 	i = net_socket_shutdown;
+	logging_printf(LOGGING_DEBUG, "net_socket_get_shutdown_status: %d\n", i);
 	pthread_mutex_unlock( &shutdown_lock );
 	return i;
 }
@@ -456,7 +460,7 @@ void net_socket_loop_init()
 	int err = 0;
 
 	pthread_mutex_init( &shutdown_lock, NULL);
-	set_shutdown_lock(0);
+	net_socket_set_shutdown_lock(0);
 	socket_timeout = config_long_get("network.socket_timeout");
 
 // Set up a pipe as a shutdown signal
@@ -510,7 +514,7 @@ void net_socket_loop_shutdown(int signal)
 {
 	int ret = 0;
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
-	set_shutdown_lock( 1 );
+	net_socket_set_shutdown_lock( 1 );
 	ret = write( pipe_fd[0] , "X", 1 );
 	ret = write( pipe_fd[1] , "X", 1 );
 	close( pipe_fd[0] );

@@ -276,7 +276,7 @@ static void *remote_connect_sync_thread( void *data )
 	fd_set read_fds;
 	struct timeval tv;
 	int sync_interval = 0;
-	int use_control = 0;
+	int use_control_for_ck = 0;
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: start\n");
 	logging_printf( LOGGING_DEBUG, "rmeote_connect_sync_thread: sync.interval=%s\n", config_string_get("sync.interval"));
@@ -289,11 +289,11 @@ static void *remote_connect_sync_thread( void *data )
 
 	/* Determine if CK messages are sent over the control port or not */
 	/* This is a workaround for rtpMIDI not responding unless CK messages are sent via the data port */
-	if( config_is_set("remote.use_control") )
+	if( config_is_set("remote.use_control_for_ck") )
 	{
-		use_control = ( is_yes( config_string_get("remote.use_control") ) ? 1 : 0 );
+		use_control_for_ck = ( is_yes( config_string_get("remote.use_control_for_ck") ) ? 1 : 0 );
 	} else {
-		use_control = 1;
+		use_control_for_ck = 1;
 	}
 
 	do
@@ -316,7 +316,7 @@ static void *remote_connect_sync_thread( void *data )
 			break;
 		}
 		response = net_response_sync( ctx->send_ssrc , ctx->start );
-		net_ctx_send( ctx, response->buffer, response->len, use_control );
+		net_ctx_send( ctx, response->buffer, response->len, use_control_for_ck );
 		hex_dump( response->buffer, response->len );
 		net_response_destroy( &response );
 	} while( 1 );
