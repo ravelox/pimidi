@@ -208,8 +208,11 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
-	if( ! buffer ) return;
-	if( len <= 0 ) return;
+	if( !buffer || len <= 0)
+	{
+		utils_unlock();
+		return;
+	}
 
 	for( i = 0 ; i < len ; i++ )
 	{

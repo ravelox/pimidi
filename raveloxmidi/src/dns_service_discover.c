@@ -211,7 +211,7 @@ void dns_discover_add( const char *name, char *address, int port)
 		return;
 	}
 
-	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t) * ( num_services + 1 ) ) ;
+	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t *) * ( num_services + 1 ) ) ;
 
 	if( new_services_list )	
 	{
