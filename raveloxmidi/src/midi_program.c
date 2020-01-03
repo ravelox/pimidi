@@ -96,7 +96,7 @@ int midi_program_pack( midi_program_t *midi_program, unsigned char **buffer, siz
 
 	*buffer = (unsigned char *)malloc( PACKED_MIDI_PROGRAM_SIZE );
 	
-	if( !buffer) return -1;
+	if( !*buffer) return -1;
 
 	*buffer_len = PACKED_MIDI_PROGRAM_SIZE;
 

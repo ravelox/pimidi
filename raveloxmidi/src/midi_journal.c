@@ -42,7 +42,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 
 	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 	memset( *packed, 0 , JOURNAL_HEADER_PACKED_SIZE );
 
 	p = *packed;
@@ -88,7 +88,7 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 	*packed = ( unsigned char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 
 	memset( *packed, 0, CHANNEL_HEADER_PACKED_SIZE );
 
@@ -176,7 +176,7 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 
 	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size );
 
-	if( ! packed ) goto channel_pack_cleanup;
+	if( ! *packed ) goto channel_pack_cleanup;
 
 	p = *packed;
 
@@ -331,7 +331,7 @@ int journal_init( journal_t **journal )
 
 	*journal = ( journal_t * ) malloc( sizeof ( journal_t ) );
 
-	if( ! journal )
+	if( ! *journal )
 	{
 		return -1;
 	}
