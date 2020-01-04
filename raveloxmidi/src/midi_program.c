@@ -62,7 +62,7 @@ int midi_program_unpack( midi_program_t **midi_program, unsigned char *buffer, s
 
 	if( ! buffer ) return -1;
 
-	if( buffer_len != sizeof( PACKED_MIDI_PROGRAM_SIZE ))
+	if( buffer_len < PACKED_MIDI_PROGRAM_SIZE)
 	{
 		logging_printf( LOGGING_DEBUG, "midi_program_unpack: Expecting %d, got %zd\n", PACKED_MIDI_PROGRAM_SIZE, buffer_len );
 		return -1;
