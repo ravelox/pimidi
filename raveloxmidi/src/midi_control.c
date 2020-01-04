@@ -91,7 +91,7 @@ int midi_control_pack( midi_control_t *midi_control, unsigned char **buffer, siz
 
 	*buffer = (unsigned char *)malloc( PACKED_MIDI_CONTROL_SIZE );
 	
-	if( !buffer) return -1;
+	if( !*buffer) return -1;
 
 	*buffer_len = PACKED_MIDI_CONTROL_SIZE;
 

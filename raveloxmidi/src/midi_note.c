@@ -91,7 +91,7 @@ int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buff
 
 	*buffer = (unsigned char *)malloc( PACKED_MIDI_NOTE_SIZE );
 	
-	if( !buffer) return -1;
+	if( !*buffer) return -1;
 
 	*buffer_len = PACKED_MIDI_NOTE_SIZE;
 
