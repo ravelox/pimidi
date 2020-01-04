@@ -43,7 +43,7 @@ void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed 
 	chapter_n_header_dump( header );
 	*packed = ( unsigned char *)malloc( CHAPTER_N_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 	memset( *packed, 0 , CHAPTER_N_HEADER_PACKED_SIZE );
 
 	p = *packed;
@@ -145,7 +145,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	// Now pack it all together
 	*packed = ( unsigned char * ) malloc( *size );
 
-	if( ! packed ) goto chapter_n_pack_cleanup;
+	if( ! *packed ) goto chapter_n_pack_cleanup;
 
 	p = *packed;
 
