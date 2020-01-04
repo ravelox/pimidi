@@ -101,14 +101,17 @@ void net_socket_add( int new_socket )
 
 	if( new_socket < 0 ) return;
 
-	num_sockets++;
-	new_socket_list = (int *) realloc( sockets, sizeof(int) * num_sockets );
+	new_socket_list = (int *) realloc( sockets, sizeof(int) * (num_sockets + 1) );
 	if( ! new_socket_list )
 	{
-		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets );
+		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets + 1 );
 	}
-	sockets = new_socket_list;
-	sockets[num_sockets - 1 ] = new_socket;
+	else 
+	{
+		num_sockets++;
+		sockets = new_socket_list;
+		sockets[num_sockets - 1 ] = new_socket;
+	}
 }
 
 int net_socket_create(int family, char *ip_address, unsigned int port )
