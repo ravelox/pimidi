@@ -86,6 +86,9 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	enum midi_message_type_t message_type = 0;
 	size_t midi_payload_len = 0;
 
+	int i = 0;
+	int total_connections = 0;
+
 	// Convert the buffer into a set of commands
 	midi_payload_len = recv_len;
 	initial_midi_payload = midi_payload_create();
@@ -124,10 +127,11 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 				break;
 		}
 
-		// Build the RTP packet
-		for( net_ctx_iter_start_head() ; net_ctx_iter_has_current(); net_ctx_iter_next())
+		total_connections = net_ctx_get_num_connections();
+		// Build the RTP packet for each connection
+		for( i = 0; i < total_connections; i++ )
 		{
-			net_ctx_t *current_ctx = net_ctx_iter_current();
+			net_ctx_t *current_ctx = net_ctx_find_by_index( i );
 
 			logging_printf( LOGGING_DEBUG, "net_distribute: net_ctx_iter_current()=%p\n", current_ctx );
 			if(! current_ctx ) continue;

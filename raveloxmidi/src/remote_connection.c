@@ -187,8 +187,10 @@ make_remote_connection:
 		{
 			logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 		} else {
+			net_ctx_lock( ctx );
 			ctx->send_ssrc = ssrc;
 			ctx->status = NET_CTX_STATUS_FIRST_INV;
+			net_ctx_unlock( ctx );
 			logging_printf( LOGGING_DEBUG, "remote_connect_init: Sending INV request to [%s]:%d\n", ctx->ip_address, ctx->control_port );
 			net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
 		}
@@ -230,9 +232,11 @@ void remote_connect_teardown( void )
 		return;
 	}
 
+	net_ctx_lock( ctx );
 	by->ssrc = ctx->send_ssrc;
 	by->version = 2;
 	by->initiator = ctx->initiator;
+	net_ctx_unlock( ctx );
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_END );
 	

@@ -23,8 +23,18 @@
 
 #include "config.h"
 
-void net_socket_lock( void );
-void net_socket_unlock( void );
+typedef struct raveloxmidi_socket_t {
+	int fd;
+	unsigned char *packet;
+	size_t packet_size;
+	pthread_mutex_t	lock;
+} raveloxmidi_socket_t;
+
+void net_socket_lock( raveloxmidi_socket_t *raveloxmidi_socket );
+void net_socket_unlock( raveloxmidi_socket_t *raveloxmidi_socket );
+
+void net_socklist_lock( void );
+void net_socklist_unlock( void );
 void net_socket_add( int new_socket );
 int net_socket_create( int family, char *ip_address, unsigned int port );
 int net_socket_listener_create( int family, char *ip_address, unsigned int port );

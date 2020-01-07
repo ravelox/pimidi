@@ -49,6 +49,7 @@ net_response_t * applemidi_feedback_responder( void *data )
 {
 	net_applemidi_feedback  *feedback;
 	net_ctx_t *ctx = NULL;
+	uint32_t seq = 0;
 
 	if( ! data ) return NULL;
 
@@ -62,8 +63,12 @@ net_response_t * applemidi_feedback_responder( void *data )
 		return NULL;
 	}
 
-	logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], ctx->seq );
-	if( feedback->rtp_seq[1] >= ctx->seq )
+	net_ctx_lock( ctx );
+	seq = ctx->seq;
+	net_ctx_unlock( ctx );
+
+	logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Context found ( search=%u, found=%u )\n", feedback->rtp_seq[1], seq );
+	if( feedback->rtp_seq[1] >= seq )
 	{
 		logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Resetting journal\n" );
 		net_ctx_journal_reset(ctx);

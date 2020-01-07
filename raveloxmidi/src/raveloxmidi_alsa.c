@@ -205,6 +205,7 @@ int raveloxmidi_alsa_out_available( void )
 
 int raveloxmidi_alsa_in_available( void )
 {
+	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_in_available: %d\n", input_handle != NULL );
 	return input_handle != NULL;
 }
 

@@ -62,7 +62,7 @@ net_response_t * applemidi_sync_responder( void *data )
 
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: No context found for ssrc=%s\n", sync->ssrc );
+		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: No context found for ssrc=0x%08x\n", sync->ssrc );
 		return NULL;
 	}
 

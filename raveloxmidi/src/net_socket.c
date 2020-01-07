@@ -63,45 +63,99 @@ extern int errno;
 
 #include "raveloxmidi_alsa.h"
 
+static raveloxmidi_socket_t **sockets = NULL;
 static int num_sockets = 0;
-static int *sockets = NULL;
-static int net_socket_shutdown;
-static int inbound_midi_fd = -1;
-static unsigned char *packet = NULL;
-static size_t packet_size = 0;
 
-#ifdef HAVE_ALSA
-static size_t alsa_buffer_size = 0;
-#endif
+static int net_socket_shutdown = 0;
+static int inbound_midi_fd = -1;
 
 static fd_set read_fds;
 static int max_fd = 0;
 
 static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t socket_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_t alsa_listener_thread;
+static pthread_mutex_t socklist_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t alsa_listener_thread;
 int socket_timeout = 0;
 int pipe_fd[2] = { 0, 0 };
 
 static void net_socket_set_shutdown_lock( int i );
 
-void net_socket_lock( void )
+void net_socklist_lock( void )
 {
-	pthread_mutex_lock( &socket_mutex );
+	pthread_mutex_lock( &socklist_mutex );
 }
 
-void net_socket_unlock( void )
+void net_socklist_unlock( void )
 {
-	pthread_mutex_unlock( &socket_mutex );
+	pthread_mutex_unlock( &socklist_mutex );
 }
 
-void net_socket_add( int new_socket )
+static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
 {
-	int *new_socket_list = NULL;
+	int i = 0;
+	if( ! sockets ) return NULL;
 
-	if( new_socket < 0 ) return;
+	for( i = 0; i < num_sockets; i++ )
+	{
+		if( sockets[i] )
+		{
+			if( sockets[i]->fd == fd_to_find )
+			{
+				return sockets[i];
+			}
+		}
+	}
+	return NULL;
+}
 
-	new_socket_list = (int *) realloc( sockets, sizeof(int) * (num_sockets + 1) );
+static raveloxmidi_socket_t *net_socket_create_item( void )
+{
+	raveloxmidi_socket_t *new_socket = NULL;
+#ifdef HAVE_ALSA
+	size_t alsa_buffer_size = 0;
+#endif
+
+	new_socket = (raveloxmidi_socket_t *)malloc( sizeof(raveloxmidi_socket_t) );
+
+	if( ! new_socket )
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create new socket item\n");
+		return NULL;
+	}
+
+	new_socket->fd = 0;
+	new_socket->packet = NULL;
+
+#ifdef HAVE_ALSA
+	alsa_buffer_size = config_int_get("alsa.input_buffer_size");
+	new_socket->packet_size = MAX( NET_APPLEMIDI_UDPSIZE, alsa_buffer_size );
+#else
+	new_socket->packet_size = NET_APPLEMIDI_UDPSIZE;
+#endif
+
+	new_socket->packet = ( unsigned char * ) malloc( new_socket->packet_size + 1 );
+	if( ! new_socket->packet )
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create socket buffer\n");
+		free( new_socket );
+		new_socket = NULL;
+	}
+
+	return new_socket;
+}
+
+void net_socket_add( int new_socket_fd )
+{
+	raveloxmidi_socket_t **new_socket_list = NULL;
+	raveloxmidi_socket_t *new_socket_item = NULL;
+
+	if( (new_socket_fd < 0) && (new_socket_fd != RAVELOXMIDI_ALSA_INPUT ) ) return;
+
+	new_socket_item = net_socket_create_item();
+
+	if( ! new_socket_item ) return;
+
+	new_socket_list = (raveloxmidi_socket_t **) realloc( sockets, sizeof(raveloxmidi_socket_t *) * (num_sockets + 1) );
 	if( ! new_socket_list )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets + 1 );
@@ -110,7 +164,10 @@ void net_socket_add( int new_socket )
 	{
 		num_sockets++;
 		sockets = new_socket_list;
-		sockets[num_sockets - 1 ] = new_socket;
+		new_socket_item->fd = new_socket_fd;
+		pthread_mutex_init( &(new_socket_item->lock), NULL );
+		sockets[num_sockets - 1 ] = new_socket_item;
+		logging_printf( LOGGING_DEBUG, "net_socket_add: sockets[%d].fd=%d\n", num_sockets - 1 , new_socket_fd );
 	}
 }
 
@@ -170,22 +227,37 @@ int net_socket_listener_create( int family, char *ip_address, unsigned int port 
 
 int net_socket_teardown( void )
 {
-	int socket;
+	int i=0;
 
-	for(socket = 0 ; socket < num_sockets ; socket++ )
+	net_socklist_lock();
+	if( sockets )
 	{
+		for(i = 0 ; i < num_sockets ; i++ )
+		{
+			if( sockets[i] )
+			{
 #ifdef HAVE_ALSA
-		if( sockets[socket] == RAVELOXMIDI_ALSA_INPUT ) continue;
+				if( sockets[i]->fd == RAVELOXMIDI_ALSA_INPUT ) continue;
 #endif
-		close( sockets[socket] );
+				close( sockets[i]->fd );
+				pthread_mutex_destroy( &sockets[i]->lock );
+				if( sockets[i]->packet )
+				{
+					free( sockets[i]->packet );
+					sockets[i]->packet = NULL;
+				}
+				free( sockets[i] );
+				sockets[i] = NULL;
+			}
+		}	
+
+		free(sockets);
 	}
 
-	free(sockets);
-
 	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
-	if( packet ) FREENULL( "net_socket_teardown: packet", (void **)&packet );
 
-	pthread_mutex_destroy( &socket_mutex );
+	net_socklist_unlock();
+	pthread_mutex_destroy( &socklist_mutex );
 
 	return 0;
 }
@@ -208,6 +280,9 @@ int net_socket_read( int fd )
 	int data_fd = 0;
 	int control_fd = 0;
 	int local_fd = 0;
+	unsigned char *packet = NULL;
+	size_t packet_size = 0;
+	raveloxmidi_socket_t *found_socket = NULL;
 
 	data_fd = net_socket_get_data_socket();
 	control_fd = net_socket_get_control_socket();
@@ -220,13 +295,25 @@ int net_socket_read( int fd )
 	if( read_buffer_block_size == 0 ) read_buffer_block_size = DEFAULT_BLOCK_SIZE;
 
 	logging_printf( LOGGING_DEBUG, "net_socket_read: Block size set to %zu\n", read_buffer_block_size );
+
+	found_socket = net_socket_find_by_fd( fd );
+
+	if( ! found_socket )
+	{
+		logging_printf(LOGGING_ERROR, "net_socket_read: Cannot locate fd=%d\n", fd );
+		return 0;
+	}
+
+	packet = found_socket->packet;
+	packet_size = found_socket->packet_size;
+
 	while( 1 )
 	{
 		memset( packet, 0, packet_size + 1 );
 #ifdef HAVE_ALSA
 		if( fd == RAVELOXMIDI_ALSA_INPUT )
 		{
-			recv_len = raveloxmidi_alsa_read( packet, alsa_buffer_size);
+			recv_len = raveloxmidi_alsa_read( packet, packet_size);
 		} else {
 #endif
 			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
@@ -317,9 +404,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_lock();
+			net_socklist_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_unlock();
+			net_socklist_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 			net_response_destroy( &response );
 		}
@@ -330,9 +417,9 @@ int net_socket_read( int fd )
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
-		net_socket_lock();
+		net_socklist_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_unlock();
+		net_socklist_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 	
 	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp( read_buffer,"QUIT",4)==0) )
@@ -340,12 +427,14 @@ int net_socket_read( int fd )
 	{
 		const char *buffer="QT";
 		size_t bytes_written = 0;
-		net_socket_lock();
+		net_socklist_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_unlock();
+		net_socklist_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
 		net_socket_set_shutdown_lock(1);
+		write( pipe_fd[0] , "X", 1 );
+		write( pipe_fd[1] , "X", 1 );
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (fd==RAVELOXMIDI_ALSA_INPUT) )
 #else
@@ -378,9 +467,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_lock();
+			net_socklist_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_unlock();
+			net_socklist_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 			net_response_destroy( &response );
 		}
@@ -408,16 +497,16 @@ int net_socket_read( int fd )
 
 					if( inbound_midi_fd >= 0 )
 					{
-						net_socket_lock();
+						net_socklist_lock();
 						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-						net_socket_unlock();
+						net_socklist_unlock();
 						logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 					}
 
 #ifdef HAVE_ALSA
-					net_socket_lock();
+					net_socklist_lock();
 					raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-					net_socket_unlock();
+					net_socklist_unlock();
 #endif
 					free( raw_buffer );
 				}
@@ -531,7 +620,7 @@ int net_socket_init( void )
 	int address_family = 0;
 	int control_port, data_port, local_port;
 
-	pthread_mutex_init( &socket_mutex, NULL );
+	pthread_mutex_init( &socklist_mutex, NULL );
 
 	num_sockets = 0;
 	max_fd = 0;
@@ -591,20 +680,6 @@ int net_socket_init( void )
 	}
 #endif
 
-#ifdef HAVE_ALSA
-	alsa_buffer_size = config_int_get("alsa.input_buffer_size");
-	packet_size = MAX( NET_APPLEMIDI_UDPSIZE, alsa_buffer_size );
-#else
-	packet_size = NET_APPLEMIDI_UDPSIZE;
-#endif
-
-	packet = ( unsigned char * ) malloc( packet_size + 1);
-
-	if( ! packet ) 
-	{
-		logging_printf(LOGGING_ERROR, "net_socket_init: Unable to allocate memory for read buffer\n");
-		return -1;
-	}
 	return 0;
 }
 
@@ -640,6 +715,7 @@ void net_socket_wait_for_alsa(void)
 	if( raveloxmidi_alsa_in_available() )
 	{
 		pthread_join( alsa_listener_thread, NULL );
+		logging_printf( LOGGING_DEBUG, "net_socket_wait_for_alsa: %s\n", strerror(errno) );
 	}
 }
 
@@ -651,13 +727,16 @@ void net_socket_set_fds(void)
 
 	max_fd = 0;
 
+	if( ! sockets ) return;
+
 	FD_ZERO( &read_fds );
 	for( i = 0; i < num_sockets; i++ )
 	{
-		if( sockets[i] > 0 )
+		if( ! sockets[i] ) continue;
+		if( sockets[i]->fd > 0 )
 		{
-			FD_SET( sockets[i], &read_fds );
-			max_fd = MAX( max_fd, sockets[i] );
+			FD_SET( sockets[i]->fd, &read_fds );
+			max_fd = MAX( max_fd, sockets[i]->fd );
 		}
 	}
 }
@@ -667,7 +746,7 @@ int net_socket_get_data_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_DATA_PORT];
+	return sockets[NET_SOCKET_DATA_PORT]->fd;
 }
 
 int net_socket_get_control_socket( void )
@@ -675,7 +754,7 @@ int net_socket_get_control_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_CONTROL_PORT];
+	return sockets[NET_SOCKET_CONTROL_PORT]->fd;
 }
 
 int net_socket_get_local_socket( void )
@@ -683,7 +762,7 @@ int net_socket_get_local_socket( void )
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_LOCAL_PORT];
+	return sockets[NET_SOCKET_LOCAL_PORT]->fd;
 }
 
 int net_socket_get_shutdown_fd( void )
