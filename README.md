@@ -84,19 +84,19 @@ For debugging, you can run ```raveloxmidi -N -d``` to keep raveloxmidi in the fo
 
 ### Options
 
-Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.  For example, if
-       there is a parameter called alsa.output_device you can use either:
-
-```        alsa.output_device = device_name```
-
-       or
+Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.  For example, if there is a parameter called ```alsa.output_device``` you can use either:
 
 ```
-       alsa.output_device.0 = first_device
-       alsa.output_device.1 = second_device
+alsa.output_device = device_name
+```
+or
+
+```
+alsa.output_device.0 = first_device
+alsa.output_device.1 = second_device
 ```
 
-       A multi-value configuration option must start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then only 0 and 1 will be detected.
+A multi-value configuration option must start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then only 0 and 1 will be detected.
 
 ```
 network.bind_address
