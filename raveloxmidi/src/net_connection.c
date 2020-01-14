@@ -488,9 +488,9 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 	getsockname(send_socket , (struct sockaddr *)&socket_address, &socket_addr_len);
 	logging_printf( LOGGING_DEBUG, "net_ctx_send: outbound socket=%d\n", ntohs( ((struct sockaddr_in *)&socket_address)->sin_port ) );
 
-	net_socklist_lock();
+	net_socket_socklist_lock();
 	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_CONFIRM, (struct sockaddr *)&send_address, addr_len);
-	net_socklist_unlock();
+	net_socket_socklist_unlock();
 
 	if( bytes_sent < 0 )
 	{

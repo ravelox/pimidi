@@ -193,6 +193,8 @@ This is a multi-value configuration option. See the \fBNOTES\fP section above fo
 .TP
 .B alsa.input_device
 Name of the rawmidi ALSA device to read MIDI events from.
+.br
+This is a multi-value configuration option. See the \fBNOTES\fP section above for how to specify multiple values.
 .TP 
 .B alsa.input_buffer_size
 Size of the buffer to use for reading data from the input device.

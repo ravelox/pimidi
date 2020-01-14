@@ -177,6 +177,7 @@ alsa.output_device
 	This is a multi-value option.
 alsa.input_device
 	Name of the rawmidi ALSA device to read MIDI events from.
+	This is a multi-value option.
 alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device.
 	Default is 4096. Maximum is 65535.

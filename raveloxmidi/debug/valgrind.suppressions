@@ -1,0 +1,2064 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   ioctl(generic)
+   fun:ioctl
+   fun:snd_rawmidi_hw_params
+   fun:snd_rawmidi_params
+   fun:snd_rawmidi_open_conf
+   fun:snd_rawmidi_open_noupdate
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_tls_new
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_run_once
+   fun:pa_cstrerror
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_get_runtime_dir
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.20.2
+   fun:pa_context_connect
+   obj:*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_log_set_ident
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_log_levelv_meta
+   fun:pa_log_level_meta
+   fun:pa_config_parse
+   fun:pa_client_conf_load
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dbus_strdup
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dbus_strdup
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:decompose_rpath
+   fun:cache_rpath
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_threads_init
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dbus_register_shutdown_func
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dbus_register_shutdown_func
+   fun:dbus_message_unref
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply_and_block
+   fun:dbus_bus_register
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:snd_user_file
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_cstrerror
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_socket_client_new_sockaddr
+   fun:pa_socket_client_new_unix
+   fun:pa_socket_client_new_string
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.20.2
+   fun:pa_context_connect
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_xmemdup
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_run_once
+   fun:pa_hashmap_put
+   fun:pa_proplist_sets
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:snd_dlopen
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_mutex_new
+   fun:pa_static_mutex_get
+   fun:pa_once_begin
+   fun:pa_init_i18n
+   fun:pa_mainloop_new
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+   fun:snd1_config_search_alias_hooks
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_mutex_new
+   fun:pa_static_mutex_get
+   fun:pa_once_begin
+   fun:pa_run_once
+   fun:pa_hashmap_put
+   fun:pa_proplist_sets
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_mutex_new
+   fun:pa_static_mutex_get
+   fun:pa_once_begin
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_log_levelv_meta
+   fun:pa_log_level_meta
+   fun:pa_config_parse
+   fun:pa_client_conf_load
+   fun:pa_context_new_with_proplist
+   obj:*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_mutex_new
+   fun:pa_static_mutex_get
+   fun:pa_once_begin
+   fun:pa_page_size
+   fun:pa_mempool_new
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_mutex_new
+   fun:pa_static_mutex_get
+   fun:pa_once_begin
+   fun:pa_run_once
+   fun:pa_cstrerror
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_get_runtime_dir
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.20.2
+   fun:pa_context_connect
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_message_loader_queue_messages
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply_and_block
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dbus_strdup
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:pa_xmalloc
+   fun:pa_hashmap_put
+   fun:pa_proplist_sets
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+   fun:snd1_config_search_alias_hooks
+   fun:snd_config_search_definition
+   fun:snd_rawmidi_open_noupdate
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:strdup
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:open_path
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_snd_config_make
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_message_loader_queue_messages
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_new_method_call
+   fun:dbus_bus_register
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_new_error
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply
+   fun:dbus_connection_send_with_reply_and_block
+   obj:/usr/lib/x86_64-linux-gnu/libavahi-client.so.3.2.9
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_new_error
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply
+   fun:dbus_connection_send_with_reply_and_block
+   fun:avahi_entry_group_new
+   fun:create_services
+   fun:publish_callback
+   obj:/usr/lib/x86_64-linux-gnu/libavahi-client.so.3.2.9
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_message_loader_queue_messages
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply_and_block
+   fun:avahi_entry_group_new
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_new_error
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply
+   fun:dbus_connection_send_with_reply_and_block
+   obj:/usr/lib/x86_64-linux-gnu/libavahi-client.so.3.2.9
+   fun:avahi_entry_group_new
+   fun:create_services
+   fun:publish_callback
+   obj:/usr/lib/x86_64-linux-gnu/libavahi-client.so.3.2.9
+   fun:avahi_client_new
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_delimstring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:config_file_open
+   fun:snd_config_hook_load
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_type_writer_recurse
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_header_set_field_basic
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_iter_append_basic
+   fun:dbus_message_append_args_valist
+   fun:dbus_message_append_args
+   fun:dbus_bus_add_match
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_type_writer_write_basic
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_message_new_method_call
+   fun:avahi_entry_group_add_service_strlst
+   fun:avahi_entry_group_add_service
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_type_writer_recurse
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_header_set_field_basic
+   fun:dbus_message_set_reply_serial
+   fun:dbus_message_new_error
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_close_worker.part.0
+   fun:_dl_close_worker
+   fun:_dl_close
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlclose
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+   fun:snd1_config_search_alias_hooks
+   fun:snd_config_search_definition
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_threads_init
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:avahi_client_new
+   fun:dns_service_publisher_start
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:realloc
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:_dbus_type_writer_write_basic
+   fun:dbus_message_iter_append_basic
+   fun:dbus_message_new_error
+   obj:/lib/x86_64-linux-gnu/libdbus-1.so.3.19.4
+   fun:dbus_connection_send_with_reply
+   fun:dbus_connection_send_with_reply_and_block
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:copy_local_string.isra.4
+   fun:get_freestring
+   fun:get_string
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_array_def
+   fun:parse_array_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:snd_dlopen
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:net_socket_create_item
+   fun:net_socket_add
+   fun:raveloxmidi_alsa_add_poll_fd
+   fun:raveloxmidi_alsa_set_poll_fds
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-11.1.so
+   fun:pa_run_once
+   fun:pa_hashmap_put
+   fun:pa_proplist_sets
+   fun:pa_context_new_with_proplist
+   obj:*
+   fun:snd_config_hooks_call
+   fun:snd_config_hooks.constprop.30
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:net_socket_create_item
+   fun:net_socket_add
+   fun:raveloxmidi_alsa_add_poll_fd
+   fun:raveloxmidi_alsa_set_poll_fds
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   fun:_snd_config_make
+   fun:_snd_config_make_add
+   fun:parse_value
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:parse_def
+   fun:parse_defs
+   fun:snd_config_load1
+   fun:snd_config_update_r
+   fun:snd_config_update_ref
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_exception
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_exception
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_exception
+}

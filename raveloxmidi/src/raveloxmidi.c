@@ -73,10 +73,6 @@ int main(int argc, char *argv[])
 	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
 	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
 
-#ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
-#endif
-
 	if( is_yes( config_string_get("run_as_daemon") ) )
 	{
 		running_as_daemon = 1;
@@ -88,6 +84,10 @@ int main(int argc, char *argv[])
 		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
 		goto daemon_stop;
 	}
+
+#ifdef HAVE_ALSA
+	raveloxmidi_alsa_init( "alsa.input_device" , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
+#endif
 
 	net_ctx_init();
 
@@ -114,12 +114,12 @@ int main(int argc, char *argv[])
 		if( net_socket_get_shutdown_status() == OK )
 		{
 #ifdef HAVE_ALSA
-			net_socket_alsa_loop();
+			raveloxmidi_alsa_loop();
 #endif
 			net_socket_fd_loop();
 		}
 #ifdef HAVE_ALSA
-		net_socket_wait_for_alsa();
+		raveloxmidi_wait_for_alsa();
 #endif
 		net_socket_loop_teardown();
 	}
@@ -129,10 +129,6 @@ int main(int argc, char *argv[])
 	remote_connect_teardown();
 	net_socket_teardown();
 	net_ctx_teardown();
-
-#ifdef HAVE_ALSA
-	raveloxmidi_alsa_teardown();
-#endif
 
 daemon_stop:
 	if( running_as_daemon )

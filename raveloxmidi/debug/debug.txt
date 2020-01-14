@@ -1,0 +1,18 @@
+Some useful code analysis and debugging commands
+================================================
+
+cppcheck:
+	cppcheck src/*.c
+
+ThreadSanitizer:
+CFLAGS="-fsanitize=thread -O0 -g" ./configure
+
+AddressSanitizer:
+CFLAGS="-fsanitize=thread -O0 -g" ./configure
+
+Valgrind:
+	To generate the initial suppressions file:
+	sudo valgrind --leak-check=full --show-reachable=yes --error-limit=no --gen-suppressions=all --log-file=valgrind.suppressions raveloxmidi -c raveloxmidi.conf
+
+	To run using the suppressions file
+	sudo valgrind --leak-check=full --show-reachable=yes --error-limit=no --suppressions=valgrind.suppressions --gen-suppressions=all --log-file=valgrind.suppressions raveloxmidi -c raveloxmidi.conf

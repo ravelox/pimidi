@@ -67,6 +67,8 @@ static raveloxmidi_socket_t **sockets = NULL;
 static int num_sockets = 0;
 
 static int net_socket_shutdown = 0;
+static int shutdown_fd[2] = {0,0};
+
 static int inbound_midi_fd = -1;
 
 static fd_set read_fds;
@@ -74,20 +76,58 @@ static int max_fd = 0;
 
 static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t socklist_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_t alsa_listener_thread;
 int socket_timeout = 0;
-int pipe_fd[2] = { 0, 0 };
 
 static void net_socket_set_shutdown_lock( int i );
 
-void net_socklist_lock( void )
+void net_socket_socklist_lock( void )
 {
 	pthread_mutex_lock( &socklist_mutex );
 }
 
-void net_socklist_unlock( void )
+void net_socket_socklist_unlock( void )
 {
 	pthread_mutex_unlock( &socklist_mutex );
+}
+
+void net_socket_lock( raveloxmidi_socket_t *socket )
+{
+	if( ! socket ) return;
+	pthread_mutex_lock( &(socket->lock) );
+}
+
+void net_socket_unlock( raveloxmidi_socket_t *socket )
+{
+	if(! socket ) return;
+	pthread_mutex_unlock( &(socket->lock) );
+}
+	
+static void net_socket_destroy( raveloxmidi_socket_t **socket )
+{
+
+	if( ! socket ) return;
+	if( ! *socket ) return;
+
+	net_socket_lock( *socket );
+
+	/* We don't destroy the ALSA handle as that gets cleaned up in the ALSA routines */
+	/* Only close the FD if it's a non-ALSA socket */
+	if( (*socket)->type == RAVELOXMIDI_SOCKET_FD_TYPE )
+	{
+		close( (*socket)->fd );
+	}
+
+	if( (*socket)->packet )
+	{
+		free( (*socket)->packet );
+		(*socket)->packet = NULL;
+	}
+
+	net_socket_unlock( *socket );
+	pthread_mutex_destroy( &((*socket)->lock) );
+
+	free( *socket );
+	*socket = NULL;
 }
 
 static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
@@ -123,8 +163,11 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 		return NULL;
 	}
 
+	memset( new_socket, 0, sizeof( raveloxmidi_socket_t ) );
+
 	new_socket->fd = 0;
 	new_socket->packet = NULL;
+	new_socket->type = RAVELOXMIDI_SOCKET_FD_TYPE;
 
 #ifdef HAVE_ALSA
 	alsa_buffer_size = config_int_get("alsa.input_buffer_size");
@@ -144,21 +187,24 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 	return new_socket;
 }
 
-void net_socket_add( int new_socket_fd )
+raveloxmidi_socket_t *net_socket_add( int new_socket_fd )
 {
 	raveloxmidi_socket_t **new_socket_list = NULL;
 	raveloxmidi_socket_t *new_socket_item = NULL;
 
-	if( (new_socket_fd < 0) && (new_socket_fd != RAVELOXMIDI_ALSA_INPUT ) ) return;
+	if( new_socket_fd < 0 ) return NULL;
 
 	new_socket_item = net_socket_create_item();
 
-	if( ! new_socket_item ) return;
+	if( ! new_socket_item ) return NULL;
 
+	net_socket_socklist_lock();
 	new_socket_list = (raveloxmidi_socket_t **) realloc( sockets, sizeof(raveloxmidi_socket_t *) * (num_sockets + 1) );
 	if( ! new_socket_list )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets + 1 );
+		net_socket_destroy( &new_socket_item );
+		new_socket_item = NULL;
 	}
 	else 
 	{
@@ -169,6 +215,10 @@ void net_socket_add( int new_socket_fd )
 		sockets[num_sockets - 1 ] = new_socket_item;
 		logging_printf( LOGGING_DEBUG, "net_socket_add: sockets[%d].fd=%d\n", num_sockets - 1 , new_socket_fd );
 	}
+
+	net_socket_socklist_unlock();
+
+	return new_socket_item;
 }
 
 int net_socket_create(int family, char *ip_address, unsigned int port )
@@ -225,29 +275,19 @@ int net_socket_listener_create( int family, char *ip_address, unsigned int port 
 	return 0;
 }
 
+
 int net_socket_teardown( void )
 {
 	int i=0;
 
-	net_socklist_lock();
+	net_socket_socklist_lock();
 	if( sockets )
 	{
-		for(i = 0 ; i < num_sockets ; i++ )
+		for(i = num_sockets - 1; i >= 0 ; i-- )
 		{
 			if( sockets[i] )
 			{
-#ifdef HAVE_ALSA
-				if( sockets[i]->fd == RAVELOXMIDI_ALSA_INPUT ) continue;
-#endif
-				close( sockets[i]->fd );
-				pthread_mutex_destroy( &sockets[i]->lock );
-				if( sockets[i]->packet )
-				{
-					free( sockets[i]->packet );
-					sockets[i]->packet = NULL;
-				}
-				free( sockets[i] );
-				sockets[i] = NULL;
+				net_socket_destroy( &(sockets[i]) );
 			}
 		}	
 
@@ -256,7 +296,7 @@ int net_socket_teardown( void )
 
 	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
 
-	net_socklist_unlock();
+	net_socket_socklist_unlock();
 	pthread_mutex_destroy( &socklist_mutex );
 
 	return 0;
@@ -311,9 +351,9 @@ int net_socket_read( int fd )
 	{
 		memset( packet, 0, packet_size + 1 );
 #ifdef HAVE_ALSA
-		if( fd == RAVELOXMIDI_ALSA_INPUT )
+		if( found_socket->type  == RAVELOXMIDI_SOCKET_ALSA_TYPE )
 		{
-			recv_len = raveloxmidi_alsa_read( packet, packet_size);
+			recv_len = raveloxmidi_alsa_read( found_socket->handle, packet, packet_size);
 		} else {
 #endif
 			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
@@ -321,7 +361,7 @@ int net_socket_read( int fd )
 			from_port = ntohs( ((struct sockaddr_in *)&from_addr)->sin_port );
 #ifdef HAVE_ALSA
 		}
-		if( fd != RAVELOXMIDI_ALSA_INPUT )
+		if( found_socket->type  != RAVELOXMIDI_SOCKET_ALSA_TYPE )
 		{
 #endif
 			if( recv_len > 0 )
@@ -333,7 +373,7 @@ int net_socket_read( int fd )
 		} else {
 			if( recv_len > 0 )
 			{
-				logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=ALSA recv_len=%ld first_byte=%02x\n", recv_len, packet[0] );
+				logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=ALSA(%d) recv_len=%ld first_byte=%02x\n", fd, recv_len, packet[0] );
 			}
 		}
 #endif
@@ -404,9 +444,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socklist_lock();
+			net_socket_socklist_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socklist_unlock();
+			net_socket_socklist_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 			net_response_destroy( &response );
 		}
@@ -417,9 +457,9 @@ int net_socket_read( int fd )
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
-		net_socklist_lock();
+		net_socket_socklist_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socklist_unlock();
+		net_socket_socklist_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 	
 	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp( read_buffer,"QUIT",4)==0) )
@@ -427,16 +467,16 @@ int net_socket_read( int fd )
 	{
 		const char *buffer="QT";
 		size_t bytes_written = 0;
-		net_socklist_lock();
+		net_socket_socklist_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socklist_unlock();
+		net_socket_socklist_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
 		net_socket_set_shutdown_lock(1);
-		write( pipe_fd[0] , "X", 1 );
-		write( pipe_fd[1] , "X", 1 );
+		write( shutdown_fd[0] , "X", 1 );
+		write( shutdown_fd[1] , "X", 1 );
 #ifdef HAVE_ALSA
-	} else if( ( fd == local_fd ) || (fd==RAVELOXMIDI_ALSA_INPUT) )
+	} else if( ( fd == local_fd ) || (found_socket->type==RAVELOXMIDI_SOCKET_ALSA_TYPE) )
 #else
 	} else if( fd == local_fd )
 #endif
@@ -467,9 +507,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socklist_lock();
+			net_socket_socklist_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socklist_unlock();
+			net_socket_socklist_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 			net_response_destroy( &response );
 		}
@@ -497,16 +537,16 @@ int net_socket_read( int fd )
 
 					if( inbound_midi_fd >= 0 )
 					{
-						net_socklist_lock();
+						net_socket_socklist_lock();
 						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-						net_socklist_unlock();
+						net_socket_socklist_unlock();
 						logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 					}
 
 #ifdef HAVE_ALSA
-					net_socklist_lock();
+					net_socket_socklist_lock();
 					raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-					net_socklist_unlock();
+					net_socket_socklist_unlock();
 #endif
 					free( raw_buffer );
 				}
@@ -556,16 +596,16 @@ void net_socket_loop_init()
 	socket_timeout = config_long_get("network.socket_timeout");
 
 // Set up a pipe as a shutdown signal
-	err=pipe( pipe_fd );
+	err=pipe( shutdown_fd );
 	if( err < 0 )
 	{
 		logging_printf( LOGGING_ERROR, "net_socket_loop_init: pipe error: %s\n", strerror(errno));
 	} else {
-		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", pipe_fd[0], pipe_fd[1]);
-		FD_SET( pipe_fd[1], &read_fds );
+		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", shutdown_fd[0], shutdown_fd[1]);
+		FD_SET( shutdown_fd[1], &read_fds );
 	}
-	fcntl(pipe_fd[0], F_SETFL, O_NONBLOCK);
-	fcntl(pipe_fd[1], F_SETFL, O_NONBLOCK);
+	fcntl(shutdown_fd[0], F_SETFL, O_NONBLOCK);
+	fcntl(shutdown_fd[1], F_SETFL, O_NONBLOCK);
 }
 
 void net_socket_loop_teardown()
@@ -581,7 +621,9 @@ int net_socket_fd_loop()
 
 
         do {
+		net_socket_socklist_lock();
 		net_socket_set_fds();
+		net_socket_socklist_unlock();
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = socket_timeout; 
                 ret = select( max_fd + 1 , &read_fds, NULL , NULL , &tv );
@@ -607,10 +649,10 @@ void net_socket_loop_shutdown(int signal)
 	int ret = 0;
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
 	net_socket_set_shutdown_lock( 1 );
-	ret = write( pipe_fd[0] , "X", 1 );
-	ret = write( pipe_fd[1] , "X", 1 );
-	close( pipe_fd[0] );
-	close( pipe_fd[1] );
+	ret = write( shutdown_fd[0] , "X", 1 );
+	ret = write( shutdown_fd[1] , "X", 1 );
+	close( shutdown_fd[0] );
+	close( shutdown_fd[1] );
 }
 
 int net_socket_init( void )
@@ -672,54 +714,8 @@ int net_socket_init( void )
 		}
 	}
 
-#ifdef HAVE_ALSA
-/* Add a dummy socket identifier to indicate that the listener loop should read from the ALSA input device */
-	if( raveloxmidi_alsa_in_available() )
-	{
-		net_socket_add( RAVELOXMIDI_ALSA_INPUT );
-	}
-#endif
-
 	return 0;
 }
-
-#ifdef HAVE_ALSA
-static void * net_socket_alsa_listener( void *data )
-{
-	logging_printf(LOGGING_DEBUG, "net_socket_alsa_listener: Thread started\n");
-	raveloxmidi_alsa_set_poll_fds( pipe_fd[0] );
-	do {
-		// Set poll timeout to be milliseconds
-		if( raveloxmidi_alsa_poll( socket_timeout * 1000 ) == 1 )
-		{
-			net_socket_read( RAVELOXMIDI_ALSA_INPUT );
-		}
-	} while ( net_socket_get_shutdown_status() == OK );
-	logging_printf(LOGGING_DEBUG, "net_socket_alsa_listener: Thread stopped\n");
-
-	return NULL;
-}
-
-int net_socket_alsa_loop()
-{
-	// Only start the thread if the input handle is available
-	if( raveloxmidi_alsa_in_available() )
-	{
-		pthread_create( &alsa_listener_thread, NULL, net_socket_alsa_listener, NULL );
-	}
-	return 0;
-}
-
-void net_socket_wait_for_alsa(void)
-{
-	if( raveloxmidi_alsa_in_available() )
-	{
-		pthread_join( alsa_listener_thread, NULL );
-		logging_printf( LOGGING_DEBUG, "net_socket_wait_for_alsa: %s\n", strerror(errno) );
-	}
-}
-
-#endif
 
 void net_socket_set_fds(void)
 {
@@ -767,5 +763,5 @@ int net_socket_get_local_socket( void )
 
 int net_socket_get_shutdown_fd( void )
 {
-	return pipe_fd[0];
+	return shutdown_fd[0];
 }
