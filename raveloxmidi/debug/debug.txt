@@ -8,7 +8,7 @@ ThreadSanitizer:
 CFLAGS="-fsanitize=thread -O0 -g" ./configure
 
 AddressSanitizer:
-CFLAGS="-fsanitize=thread -O0 -g" ./configure
+CFLAGS="-fsanitize=address -O0 -g" ./configure
 
 Valgrind:
 	To generate the initial suppressions file:
