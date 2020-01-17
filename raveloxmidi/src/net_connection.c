@@ -77,8 +77,9 @@ void net_ctx_destroy( net_ctx_t **ctx )
 	if( ! ctx ) return;
 	if( ! *ctx ) return;
 
-	FREENULL( "name",(void **)&((*ctx)->name) );
-	FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
+	logging_printf(LOGGING_DEBUG,"net_ctx_destroy: ctx=%p\n", *ctx);
+	if( (*ctx)->name ) FREENULL( "name",(void **)&((*ctx)->name) );
+	if( (*ctx)->ip_address) FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
 	journal_destroy( &((*ctx)->journal) );
 
 	pthread_mutex_destroy( &((*ctx)->lock) );
@@ -90,8 +91,8 @@ void net_ctx_dump( net_ctx_t *ctx )
 	DEBUG_ONLY;
 	if( ! ctx ) return;
 	
-	logging_printf( LOGGING_DEBUG, "net_ctx: ssrc=0x%08x,send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u start=%u\n",
-		ctx->ssrc, ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+	logging_printf( LOGGING_DEBUG, "net_ctx: ctx=%p, ssrc=0x%08x,status=[%s],send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u,start=%u\n",
+		ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
 }
 
 void net_ctx_dump_all( void )
@@ -124,13 +125,15 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 		free( ctx->ip_address );
 	}
 	ctx->ip_address = ( char *) strdup( ip_address );
-	ctx->name = ( char *) strdup( name );
 
-	logging_printf( LOGGING_DEBUG, "net_ctx_set\n");
+	if( ctx->name )
+	{
+		free( ctx->name );
+	}
+	ctx->name = ( char *) strdup( name );
 
 	ctx->status = NET_CTX_STATUS_IDLE;
 	net_ctx_unlock( ctx );
-	net_ctx_dump( ctx );
 }
 
 net_ctx_t * net_ctx_find_unused( void )
@@ -161,8 +164,8 @@ net_ctx_t * net_ctx_find_unused( void )
 
 net_ctx_t * net_ctx_create( void )
 {
-	net_ctx_t *new_ctx;
-	journal_t *journal;
+	net_ctx_t *new_ctx = NULL;
+	journal_t *journal = NULL;
 
 	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
 
@@ -186,6 +189,19 @@ net_ctx_t * net_ctx_create( void )
 
 }
 
+void net_ctx_reset( net_ctx_t *ctx )
+{
+	if( ! ctx ) return;
+
+	logging_printf(LOGGING_DEBUG, "net_ctx_reset: ctx=%p\n", ctx );
+	net_ctx_journal_reset( ctx );
+	net_ctx_lock( ctx );
+	ctx->seq = 1;
+	ctx->status = NET_CTX_STATUS_UNUSED;
+	net_ctx_unlock( ctx );
+}
+
+
 void net_ctx_init( void )
 {
 	max_connections = config_int_get("network.max_connections");
@@ -202,14 +218,16 @@ void net_ctx_teardown( void )
 	int i = 0;
 
 	net_connections_lock();
-	for( i = num_connections - 1; i >= 0; i-- )
+	for( i = num_connections; i > 0; i-- )
 	{
-		if( connections[i] )
+		if( connections[i-1] )
 		{
-			net_ctx_destroy( &connections[i] );
+			net_ctx_destroy( &connections[i-1] );
 			num_connections--;
 		}
 	}
+
+	FREENULL("net_ctx_teardown:connections", (void **)&connections);
 	net_connections_unlock();
 
 	pthread_mutex_destroy( &connections_mutex );
@@ -316,6 +334,7 @@ void net_ctx_add( net_ctx_t *ctx )
 	net_ctx_lock( ctx );
 	ctx->status = NET_CTX_STATUS_IDLE;
 	net_ctx_unlock( ctx );
+
 	net_connections_lock();
 	new_list[ num_connections ] = ctx;
 	num_connections++;
@@ -363,7 +382,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	net_ctx_set( new_ctx, ssrc, initiator, send_ssrc, port, ip_address , name);
 
 	/* This is a new slot we need to create */
-	if( ! reuse )
+	if( reuse == 0)
 	{
 		net_ctx_add( new_ctx );
 	}
@@ -502,7 +521,7 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 	net_ctx_unlock( ctx );
 }
 
-char *net_ctx_status_to_string( net_ctx_status_t status )
+const char *net_ctx_status_to_string( net_ctx_status_t status )
 {
 	switch( status )
 	{

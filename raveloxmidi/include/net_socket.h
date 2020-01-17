@@ -27,6 +27,8 @@
 #include "raveloxmidi_alsa.h"
 #endif
 
+#include "midi_state.h"
+
 typedef enum raveloxmidi_socket_type_t {
 	RAVELOXMIDI_SOCKET_FD_TYPE,
 #ifdef HAVE_ALSA
@@ -37,8 +39,9 @@ typedef enum raveloxmidi_socket_type_t {
 typedef struct raveloxmidi_socket_t {
 	int fd;
 	raveloxmidi_socket_type_t type;
-	unsigned char *packet;
+	char *packet;
 	size_t packet_size;
+	midi_state_t *state;
 	pthread_mutex_t	lock;
 #ifdef HAVE_ALSA
 	snd_rawmidi_t	*handle;
@@ -78,6 +81,7 @@ int net_socket_read( int fd );
 #define NET_SOCKET_LOCAL_PORT 2
 
 #define DEFAULT_BLOCK_SIZE 2048
+#define NET_SOCKET_DEFAULT_RING_BUFFER	10240
 
 #define OK		0
 #define SHUTDOWN	1

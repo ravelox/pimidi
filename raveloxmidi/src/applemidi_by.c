@@ -60,8 +60,8 @@ net_response_t * applemidi_by_responder( void *data )
 		return NULL;
 	}
 
+	net_ctx_reset( ctx );
 	net_ctx_dump( ctx );
-	net_ctx_destroy( &ctx );
 
 	return NULL;
 }

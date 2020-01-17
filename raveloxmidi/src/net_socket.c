@@ -123,6 +123,12 @@ static void net_socket_destroy( raveloxmidi_socket_t **socket )
 		(*socket)->packet = NULL;
 	}
 
+	if( (*socket)->state )
+	{
+		midi_state_destroy( &( (*socket)->state ) );
+		(*socket)->state = NULL;
+	}
+
 	net_socket_unlock( *socket );
 	pthread_mutex_destroy( &((*socket)->lock) );
 
@@ -151,9 +157,11 @@ static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
 static raveloxmidi_socket_t *net_socket_create_item( void )
 {
 	raveloxmidi_socket_t *new_socket = NULL;
+	midi_state_t *new_state = NULL;
 #ifdef HAVE_ALSA
 	size_t alsa_buffer_size = 0;
 #endif
+	size_t ring_buffer_size = 0;
 
 	new_socket = (raveloxmidi_socket_t *)malloc( sizeof(raveloxmidi_socket_t) );
 
@@ -179,9 +187,22 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 	new_socket->packet = ( unsigned char * ) malloc( new_socket->packet_size + 1 );
 	if( ! new_socket->packet )
 	{
-		logging_printf(LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create socket buffer\n");
+		logging_printf(LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create socket buffer. Need %zu\n", new_socket->packet_size + 1);
 		free( new_socket );
 		new_socket = NULL;
+	} else {
+		ring_buffer_size = config_int_get("read.ring_buffer_size");
+		ring_buffer_size = MAX( NET_SOCKET_DEFAULT_RING_BUFFER, ring_buffer_size );
+
+		new_state = midi_state_create( ring_buffer_size );
+		if( ! new_state )
+		{
+			logging_printf( LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create midi state. Need %zu\n", ring_buffer_size );
+			net_socket_destroy( &new_socket );
+			new_socket = NULL;
+		} else {
+			new_socket->state = new_state;
+		}
 	}
 
 	return new_socket;
@@ -346,6 +367,24 @@ int net_socket_read( int fd )
 
 	packet = found_socket->packet;
 	packet_size = found_socket->packet_size;
+
+	if( fd == data_fd )
+	{
+		logging_printf(LOGGING_INFO, "net_socket_read: data_fd\n");
+	} else if (fd == control_fd ) {
+		logging_printf(LOGGING_INFO, "net_socket_read: control_fd\n");
+	} else if (fd == local_fd ) {
+		logging_printf(LOGGING_INFO, "net_socket_read: local_fd\n");
+	}
+
+#ifdef HAVE_ALSA
+	if( found_socket->type == RAVELOXMIDI_SOCKET_ALSA_TYPE )
+	{
+		logging_printf(LOGGING_INFO, "net_socket_read: alsa handle\n");
+	} 
+#endif
+
+	
 
 	while( 1 )
 	{
@@ -739,26 +778,41 @@ void net_socket_set_fds(void)
 
 int net_socket_get_data_socket( void )
 {
+	int fd = -1;
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_DATA_PORT]->fd;
+	net_socket_socklist_lock();
+	fd =  sockets[NET_SOCKET_DATA_PORT]->fd;
+	net_socket_socklist_unlock();
+
+	return fd;
 }
 
 int net_socket_get_control_socket( void )
 {
+	int fd = -1;
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_CONTROL_PORT]->fd;
+	net_socket_socklist_lock();
+	fd = sockets[NET_SOCKET_CONTROL_PORT]->fd;
+	net_socket_socklist_unlock();
+
+	return fd;
 }
 
 int net_socket_get_local_socket( void )
 {
+	int fd = -1;
 	if( num_sockets <= 0 ) return -1;
 	if( ! sockets ) return -1;
 
-	return sockets[NET_SOCKET_LOCAL_PORT]->fd;
+	net_socket_socklist_lock();
+	fd = sockets[NET_SOCKET_LOCAL_PORT]->fd;
+	net_socket_socklist_unlock();
+
+	return fd;
 }
 
 int net_socket_get_shutdown_fd( void )

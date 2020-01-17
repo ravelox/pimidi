@@ -238,8 +238,7 @@ void raveloxmidi_alsa_teardown( void )
 			num_outputs--;
 		}
 		num_inputs = 0;
-		free( inputs );
-		inputs = NULL;
+		FREENULL("raveloxmidi_alsa_teardown:inputs",(void **)&inputs);
 		pthread_mutex_unlock( &input_table_lock );
 	}
 
@@ -253,13 +252,12 @@ void raveloxmidi_alsa_teardown( void )
 			num_outputs--;
 		}
 		num_outputs = 0;
-		free( outputs );
-		outputs = NULL;
+		FREENULL("raveloxmidi_alsa_teardown:outputs",(void **)&outputs);
 		pthread_mutex_unlock( &output_table_lock );
 	}
 
 	pthread_mutex_lock( &poll_table_lock );
-	FREENULL( "poll_descriptors", (void **)&poll_descriptors );
+	FREENULL( "raveloxmidi_alsa_teardown:poll_descriptors", (void **)&poll_descriptors );
 	pthread_mutex_unlock( &poll_table_lock );
 
 	pthread_mutex_destroy( &output_table_lock );

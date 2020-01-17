@@ -70,6 +70,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 		if( ! ctx ) 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Error registering connection\n");
+			return NULL;
 		}
 	}
 
@@ -78,7 +79,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	if( ! cmd )
 	{
 		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command\n");
-		net_ctx_destroy( &ctx );
+		net_ctx_reset( ctx );
 		return NULL;
 	}
 
@@ -87,7 +88,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	if( ! accept_inv ) {
 		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
-		net_ctx_destroy( &ctx );
+		net_ctx_reset( ctx );
 		return NULL;
 	}
 

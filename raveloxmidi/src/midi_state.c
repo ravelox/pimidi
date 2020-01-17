@@ -1,0 +1,113 @@
+/*
+   This file is part of raveloxmidi.
+
+   Copyright (C) 2019 Dave Kelly
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the 
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software Foundation,
+   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "config.h"
+
+#include "midi_state.h"
+#include "midi_command.h"
+#include "utils.h"
+
+#include "logging.h"
+
+// Sec 3.2 of RFC6295
+// As we note above, the first channel command in the MIDI list MUST
+// include a status octet.  However, the corresponding command in the
+//original MIDI source data stream might not have a status octet (in
+// this case, the source would be coding the command using running
+// status)
+static unsigned char running_status = 0;
+
+void midi_state_lock( midi_state_t *state )
+{
+	if( ! state ) return;
+
+	pthread_mutex_lock( &(state->lock) );
+}
+
+void midi_state_unlock( midi_state_t *state )
+{
+	if( ! state ) return;
+
+	pthread_mutex_unlock( &(state->lock) );
+}
+
+midi_state_t *midi_state_create( size_t buffer_size )
+{
+	midi_state_t *new_midi_state = NULL;
+
+	new_midi_state = (midi_state_t *)malloc( sizeof(midi_state_t) );
+
+	if( ! new_midi_state )
+	{
+		logging_printf( LOGGING_ERROR, "midi_state_create: Insufficient memory to allocate new midi state\n");
+		return NULL;
+	}
+
+	new_midi_state->status = 0;
+	new_midi_state->ring = ring_buffer_create( buffer_size );
+	new_midi_state->waiting_bytes = 0;
+	pthread_mutex_init( &(new_midi_state->lock) , NULL);
+
+	return new_midi_state;
+}
+
+int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len )
+{
+	int ret = 0;
+
+	if( ! state ) return ret;
+	if( ! in_buffer ) return ret;
+	if ( in_buffer_len == 0 ) return ret;
+	if( ! state->ring ) return ret;
+
+	midi_state_lock( state );
+
+	ring_buffer_write( state->ring, in_buffer, in_buffer_len );
+
+	midi_state_unlock( state );
+	
+	return 1;
+}
+
+void midi_state_destroy( midi_state_t **state )
+{
+
+	if( ! state ) return;
+	if( ! *state ) return;
+
+	midi_state_lock( (*state) );
+	if( (*state)->ring )
+	{
+		ring_buffer_destroy( &( (*state)->ring ) );
+		(*state)->ring = NULL;
+	}
+	midi_state_unlock( (*state) );
+	pthread_mutex_destroy( &( (*state)->lock ) );
+
+	free( (*state) );
+	*state = NULL;
+}
+
