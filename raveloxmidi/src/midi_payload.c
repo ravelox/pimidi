@@ -157,7 +157,12 @@ void midi_payload_unset_p( midi_payload_t *payload )
 void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , size_t *buffer_size)
 {
 	int status_present = 0;
+	if( ! buffer_size ) return;
+
+	*buffer_size = 0;
+
 	if( ! payload ) return;
+	if( ! buffer ) return;
 
 	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, *buffer_size);
 

@@ -2062,3 +2062,46 @@
    fun:dlopen_doit
    fun:_dl_catch_exception
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:malloc
+   fun:strdup
+   fun:snd_rawmidi_hw_open
+   fun:_snd_rawmidi_hw_open
+   fun:snd_rawmidi_open_conf
+   fun:snd_rawmidi_open_noupdate
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: indirect
+   fun:calloc
+   fun:snd_rawmidi_hw_open
+   fun:_snd_rawmidi_hw_open
+   fun:snd_rawmidi_open_conf
+   fun:snd_rawmidi_open_noupdate
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:calloc
+   fun:snd_rawmidi_hw_open
+   fun:_snd_rawmidi_hw_open
+   fun:snd_rawmidi_open_conf
+   fun:snd_rawmidi_open_noupdate
+   fun:snd_rawmidi_open
+   fun:raveloxmidi_alsa_add_input
+   fun:raveloxmidi_alsa_init
+   fun:main
+}

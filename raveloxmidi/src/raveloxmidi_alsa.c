@@ -34,19 +34,16 @@
 
 #include "net_socket.h"
 #include "raveloxmidi_alsa.h"
+#include "data_table.h"
 #include "utils.h"
 #include "logging.h"
 #include "raveloxmidi_config.h"
 
 /* Table of ALSA output handles */
-static snd_rawmidi_t **outputs = NULL;
-static int num_outputs = 0;
-static pthread_mutex_t output_table_lock;
+static data_table_t *outputs = NULL;
 
 /* Table of ALSA input handles */
-static snd_rawmidi_t **inputs = NULL;
-static int num_inputs = 0;
-static pthread_mutex_t input_table_lock;
+static data_table_t *inputs = NULL;
 
 /* Table of input file descriptors for polling */
 static int num_poll_descriptors = 0;
@@ -58,10 +55,9 @@ static pthread_t alsa_listener_thread;
 extern int errno;
 
 /* Open an output handle for the specified ALSA device and add it to the list */
-static void raveloxmidi_alsa_add_output( char *device_name )
+static void raveloxmidi_alsa_add_output( const char *device_name )
 {
 	snd_rawmidi_t *output_handle = NULL;
-	snd_rawmidi_t **new_outputs = NULL;
 	int ret = 0;
 
 	if( ! device_name ) return;
@@ -72,25 +68,19 @@ static void raveloxmidi_alsa_add_output( char *device_name )
 
 	raveloxmidi_alsa_dump_rawmidi( output_handle );
 
-	new_outputs = (snd_rawmidi_t **)realloc( outputs , ( num_outputs + 1 ) * sizeof(snd_rawmidi_t *) );
-
-	if(! new_outputs )
+	if( data_table_add_item( outputs, output_handle ) == 0 )
 	{
 		/* Close the open handle */
-		raveloxmidi_alsa_handle_destroy( output_handle );
+		raveloxmidi_alsa_handle_destroy( (void **)&output_handle );
 		logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_add_output: Insufficient memory for new item: %s\n", device_name);
 		return;
 	}
-
-	outputs = new_outputs;
-	outputs[ num_outputs++ ] = output_handle;
 }
 
 /* Open an input handle for the specified ALSA device and add it to the list */
-static void raveloxmidi_alsa_add_input( char *device_name , size_t buffer_size)
+static void raveloxmidi_alsa_add_input( const char *device_name , size_t buffer_size)
 {
 	snd_rawmidi_t *input_handle = NULL;
-	snd_rawmidi_t **new_inputs = NULL;
 	int ret = 0;
 
 	if( ! device_name ) return;
@@ -114,18 +104,13 @@ static void raveloxmidi_alsa_add_input( char *device_name , size_t buffer_size)
 
 	raveloxmidi_alsa_dump_rawmidi( input_handle );
 
-	new_inputs = (snd_rawmidi_t **)realloc( inputs, ( num_inputs + 1 ) * sizeof( snd_rawmidi_t * ) );
-	if( ! new_inputs )
-	{
-		
+	if(data_table_add_item( inputs, input_handle ) == 0 )
+	{ 
 		/* Close the open handle */
-		raveloxmidi_alsa_handle_destroy( input_handle );
+		raveloxmidi_alsa_handle_destroy( (void **)&input_handle );
 		logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_add_input: Insufficient memory for new item: %s\n", device_name);
 		return;
 	}
-
-	inputs = new_inputs;
-	inputs[ num_inputs++ ] = input_handle;
 
 	/* Add the file descriptors to the polling table */
 	raveloxmidi_alsa_set_poll_fds( input_handle );
@@ -135,14 +120,20 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 {
 	int ret = 0;
 
-	outputs = NULL;
-	num_outputs = 0;
+	outputs = data_table_create( "ALSA outputs", raveloxmidi_alsa_handle_destroy , raveloxmidi_alsa_dump_rawmidi);
+	if(! outputs )
+	{
+		logging_printf(LOGGING_ERROR, "raveloxmidi_alsa_init: Unable to create outputs table\n");
+		return;
+	}
 
-	inputs = NULL;
-	num_inputs = 0;
+	inputs = data_table_create( "ALSA inputs", raveloxmidi_alsa_handle_destroy , raveloxmidi_alsa_dump_rawmidi);
+	if(! inputs )
+	{
+		logging_printf(LOGGING_ERROR, "raveloxmidi_alsa_init: Unable to create inputs table\n");
+		return;
+	}
 
-	pthread_mutex_init( &output_table_lock , NULL);
-	pthread_mutex_init( &input_table_lock , NULL);
 	pthread_mutex_init( &poll_table_lock , NULL);
 
 	if( input_name )
@@ -204,20 +195,26 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 	}
 }
 
-void raveloxmidi_alsa_handle_destroy( snd_rawmidi_t *rawmidi )
+void raveloxmidi_alsa_handle_destroy( void **data )
 {
 	int status = 0;
+	snd_rawmidi_t *rawmidi = NULL;
 
+	if(! data ) return;
+
+	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_handle_destroy\n");
+
+	rawmidi = ( snd_rawmidi_t *)(*data);
 	if( ! rawmidi ) return;
 
 	status = snd_rawmidi_drain( rawmidi );
-	if( status < 0 )
+	if( status > 0 )
 	{
-		logging_printf(LOGGING_WARN, "raveloxmidi_alsa_handle_destroy: snd_rawmidi_drain()=%d : %s\n", status, snd_strerror(status) );
+		logging_printf(LOGGING_ERROR, "raveloxmidi_alsa_handle_destroy: snd_rawmidi_drain()=%d : %s\n", status, snd_strerror(status) );
 	}
 
 	status = snd_rawmidi_close( rawmidi );
-	if( status < 0 )
+	if( status > 0 )
 	{
 		logging_printf(LOGGING_WARN, "raveloxmidi_alsa_handle_destroy: snd_rawmidi_close()=%d : %s\n", status, snd_strerror(status) );
 	}
@@ -228,60 +225,40 @@ void raveloxmidi_alsa_teardown( void )
 	int i = 0;
 
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: start\n");
-	if( num_inputs > 0 )
-	{
-		pthread_mutex_lock( &input_table_lock );
-		for( i = num_inputs - 1 ; i >= 0; i-- )
-		{
-			raveloxmidi_alsa_handle_destroy( inputs[i] );
-			inputs[i] = NULL;
-			num_outputs--;
-		}
-		num_inputs = 0;
-		FREENULL("raveloxmidi_alsa_teardown:inputs",(void **)&inputs);
-		pthread_mutex_unlock( &input_table_lock );
-	}
 
-	if( num_outputs > 0 )
-	{
-		pthread_mutex_lock( &output_table_lock );
-		for( i = num_outputs - 1 ; i >= 0; i-- )
-		{
-			raveloxmidi_alsa_handle_destroy( outputs[i] );
-			outputs[i] = NULL;
-			num_outputs--;
-		}
-		num_outputs = 0;
-		FREENULL("raveloxmidi_alsa_teardown:outputs",(void **)&outputs);
-		pthread_mutex_unlock( &output_table_lock );
-	}
+	data_table_destroy( &inputs );
+	data_table_destroy( &outputs );
 
 	pthread_mutex_lock( &poll_table_lock );
 	FREENULL( "raveloxmidi_alsa_teardown:poll_descriptors", (void **)&poll_descriptors );
 	pthread_mutex_unlock( &poll_table_lock );
 
-	pthread_mutex_destroy( &output_table_lock );
-	pthread_mutex_destroy( &input_table_lock );
 	pthread_mutex_destroy( &poll_table_lock );
 
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: end\n");
 }
 
-void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
+void raveloxmidi_alsa_dump_rawmidi( void *data )
 {
+	snd_rawmidi_t *rawmidi = NULL;
 	snd_rawmidi_info_t *info = NULL;
 	snd_rawmidi_params_t *params = NULL;
 	int card_number = 0;
 	unsigned int device_number = 0, rawmidi_flags = 0;
-	const char *hw_id = NULL, *hw_driver_name = NULL, *handle_id = NULL, *sub_name = NULL;
+	const char *name = NULL, *hw_id = NULL, *hw_driver_name = NULL, *handle_id = NULL, *sub_name = NULL;
 	size_t available_min = 0, buffer_size = 0;
 	int active_sensing = 0;
 
 	DEBUG_ONLY;
+
+	if( ! data ) return;
+
+	rawmidi = (snd_rawmidi_t *)data;
 	if( ! rawmidi ) return;
 
 	snd_rawmidi_info_malloc( &info );
 	snd_rawmidi_info( rawmidi, info );
+	name = snd_rawmidi_info_get_name( info );
 	card_number = snd_rawmidi_info_get_card( info );
 	device_number = snd_rawmidi_info_get_device( info );
 	rawmidi_flags = snd_rawmidi_info_get_flags( info );
@@ -289,8 +266,8 @@ void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
 	hw_driver_name = snd_rawmidi_info_get_name( info );
 	sub_name = snd_rawmidi_info_get_subdevice_name( info );
 	handle_id = snd_rawmidi_name( rawmidi );
-	logging_printf(LOGGING_DEBUG, "rawmidi: handle=\"%s\" hw_id=\"%s\" hw_driver_name=\"%s\" subdevice_name=\"%s\" flags=%u card=%d device=%u\n",
-		handle_id, hw_id, hw_driver_name, sub_name, rawmidi_flags, card_number, device_number );
+	logging_printf(LOGGING_DEBUG, "rawmidi: name=[%s] handle=[%s] hw_id=[%s] hw_driver_name=[%s] subdevice_name=[%s] flags=%u card=%d device=%u\n",
+		name, handle_id, hw_id, hw_driver_name, sub_name, rawmidi_flags, card_number, device_number );
 	snd_rawmidi_info_free( info );
 
 	snd_rawmidi_params_malloc( &params );
@@ -304,25 +281,48 @@ void raveloxmidi_alsa_dump_rawmidi( snd_rawmidi_t *rawmidi )
 
 int raveloxmidi_alsa_out_available( void )
 {
-	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_out_available: %d\n", num_outputs > 0 );
-	return num_outputs > 0;
+	size_t unused = 0;
+	size_t count = 0;
+	int ret = 0;
+
+	unused = data_table_unused_count( outputs );
+	count = data_table_item_count( outputs );
+
+	return ( count > unused );
 }
 
 int raveloxmidi_alsa_in_available( void )
 {
-	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_in_available: %d\n", num_inputs > 0 );
-	return num_inputs > 0;
+	size_t unused = 0;
+	size_t count = 0;
+	int ret = 0;
+
+	unused = data_table_unused_count( inputs );
+	count = data_table_item_count( inputs );
+
+	return ( count > unused );
 }
 
 int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
 {
 	int i = 0;
+	size_t num_outputs = 0;
 	size_t bytes_written = 0;
 
+	num_outputs = data_table_item_count( outputs );
 	for( i = 0; i < num_outputs; i++ )
 	{
-		bytes_written = snd_rawmidi_write( outputs[i], buffer, buffer_size );
-		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d bytes_written=%u\n", i, bytes_written );
+		
+		if( data_table_item_is_unused( outputs, i ) == 0 )
+		{
+			snd_rawmidi_t *handle = NULL;
+			handle = (snd_rawmidi_t *)data_table_item_get( outputs, i );
+			if( handle )
+			{
+				bytes_written = snd_rawmidi_write( handle, buffer, buffer_size );
+				logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d bytes_written=%u\n", i, bytes_written );
+			}
+		}
 	}
 
 	return bytes_written;

@@ -62,9 +62,9 @@ extern int errno;
 #include "logging.h"
 
 #include "raveloxmidi_alsa.h"
+#include "data_table.h"
 
-static raveloxmidi_socket_t **sockets = NULL;
-static int num_sockets = 0;
+static data_table_t *sockets = NULL;
 
 static int net_socket_shutdown = 0;
 static int shutdown_fd[2] = {0,0};
@@ -75,19 +75,19 @@ static fd_set read_fds;
 static int max_fd = 0;
 
 static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
-static pthread_mutex_t socklist_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t send_lock = PTHREAD_MUTEX_INITIALIZER;
 int socket_timeout = 0;
 
 static void net_socket_set_shutdown_lock( int i );
 
-void net_socket_socklist_lock( void )
+void net_socket_send_lock( void )
 {
-	pthread_mutex_lock( &socklist_mutex );
+	pthread_mutex_lock( &send_lock );
 }
 
-void net_socket_socklist_unlock( void )
+void net_socket_send_unlock( void )
 {
-	pthread_mutex_unlock( &socklist_mutex );
+	pthread_mutex_unlock( &send_lock );
 }
 
 void net_socket_lock( raveloxmidi_socket_t *socket )
@@ -102,52 +102,67 @@ void net_socket_unlock( raveloxmidi_socket_t *socket )
 	pthread_mutex_unlock( &(socket->lock) );
 }
 	
-static void net_socket_destroy( raveloxmidi_socket_t **socket )
+void net_socket_destroy( void **data )
 {
+	raveloxmidi_socket_t *socket = NULL;
+	
+	if(! data ) return;
+	if(! *data ) return;
 
+	logging_printf( LOGGING_DEBUG, "net_socket_destroy: data=%p\n", *data);
+
+	socket = (raveloxmidi_socket_t *)(*data);
 	if( ! socket ) return;
-	if( ! *socket ) return;
 
-	net_socket_lock( *socket );
+	net_socket_lock( socket );
 
 	/* We don't destroy the ALSA handle as that gets cleaned up in the ALSA routines */
+	/* so just NULL out the handle */
+	if( socket->handle ) socket->handle = NULL;
+
 	/* Only close the FD if it's a non-ALSA socket */
-	if( (*socket)->type == RAVELOXMIDI_SOCKET_FD_TYPE )
+	if( socket->type == RAVELOXMIDI_SOCKET_FD_TYPE )
 	{
-		close( (*socket)->fd );
+		close( socket->fd );
 	}
 
-	if( (*socket)->packet )
+	if( socket->packet )
 	{
-		free( (*socket)->packet );
-		(*socket)->packet = NULL;
+		free( socket->packet );
+		socket->packet = NULL;
 	}
 
-	if( (*socket)->state )
+	if( socket->state )
 	{
-		midi_state_destroy( &( (*socket)->state ) );
-		(*socket)->state = NULL;
+		midi_state_destroy( &( socket->state ) );
+		socket->state = NULL;
 	}
 
-	net_socket_unlock( *socket );
-	pthread_mutex_destroy( &((*socket)->lock) );
+	net_socket_unlock( socket );
+	pthread_mutex_destroy( &(socket->lock) );
 
-	free( *socket );
-	*socket = NULL;
+	free( *data );
+	*data = NULL;
 }
 
 static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
 {
-	int i = 0;
-	if( ! sockets ) return NULL;
+	size_t i = 0;
+	size_t num_sockets = 0;
+
+	if( data_table_item_count( sockets ) == 0 ) return NULL;
 
 	for( i = 0; i < num_sockets; i++ )
 	{
-		if( sockets[i] )
+		raveloxmidi_socket_t *socket = NULL;
+
+		socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, i );
+
+		if( socket )
 		{
-			if( sockets[i]->fd == fd_to_find )
+			if( socket->fd == fd_to_find )
 			{
-				return sockets[i];
+				return socket;
 			}
 		}
 	}
@@ -198,8 +213,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 		if( ! new_state )
 		{
 			logging_printf( LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create midi state. Need %zu\n", ring_buffer_size );
-			net_socket_destroy( &new_socket );
-			new_socket = NULL;
+			net_socket_destroy( (void **)&new_socket );
 		} else {
 			new_socket->state = new_state;
 		}
@@ -216,28 +230,9 @@ raveloxmidi_socket_t *net_socket_add( int new_socket_fd )
 	if( new_socket_fd < 0 ) return NULL;
 
 	new_socket_item = net_socket_create_item();
-
 	if( ! new_socket_item ) return NULL;
 
-	net_socket_socklist_lock();
-	new_socket_list = (raveloxmidi_socket_t **) realloc( sockets, sizeof(raveloxmidi_socket_t *) * (num_sockets + 1) );
-	if( ! new_socket_list )
-	{
-		logging_printf(LOGGING_ERROR, "net_socket_add: Insufficient memory to create socket %d list entry\n", num_sockets + 1 );
-		net_socket_destroy( &new_socket_item );
-		new_socket_item = NULL;
-	}
-	else 
-	{
-		num_sockets++;
-		sockets = new_socket_list;
-		new_socket_item->fd = new_socket_fd;
-		pthread_mutex_init( &(new_socket_item->lock), NULL );
-		sockets[num_sockets - 1 ] = new_socket_item;
-		logging_printf( LOGGING_DEBUG, "net_socket_add: sockets[%d].fd=%d\n", num_sockets - 1 , new_socket_fd );
-	}
-
-	net_socket_socklist_unlock();
+	data_table_add_item( sockets, new_socket_item );
 
 	return new_socket_item;
 }
@@ -299,26 +294,9 @@ int net_socket_listener_create( int family, char *ip_address, unsigned int port 
 
 int net_socket_teardown( void )
 {
-	int i=0;
-
-	net_socket_socklist_lock();
-	if( sockets )
-	{
-		for(i = num_sockets - 1; i >= 0 ; i-- )
-		{
-			if( sockets[i] )
-			{
-				net_socket_destroy( &(sockets[i]) );
-			}
-		}	
-
-		free(sockets);
-	}
-
 	if( inbound_midi_fd >= 0 ) close(inbound_midi_fd);
 
-	net_socket_socklist_unlock();
-	pthread_mutex_destroy( &socklist_mutex );
+	data_table_destroy( &sockets );
 
 	return 0;
 }
@@ -333,11 +311,6 @@ int net_socket_read( int fd )
 	uint16_t from_port = 0;
 	net_applemidi_command *command;
 	int ret = 0;
-	unsigned char *read_buffer = NULL;
-	unsigned char *new_read_buffer = NULL;
-	ssize_t read_buffer_size = 0;
-	unsigned int read_buffer_block_count = 0;
-	unsigned int read_buffer_block_size = 0;
 	int data_fd = 0;
 	int control_fd = 0;
 	int local_fd = 0;
@@ -345,17 +318,17 @@ int net_socket_read( int fd )
 	size_t packet_size = 0;
 	raveloxmidi_socket_t *found_socket = NULL;
 
+	char *read_buffer = NULL;
+	size_t read_buffer_size = 0;
+
+	net_socket_send_lock();
 	data_fd = net_socket_get_data_socket();
 	control_fd = net_socket_get_control_socket();
 	local_fd = net_socket_get_local_socket();
+	net_socket_send_unlock();
 
 	memset( ip_address, 0, INET6_ADDRSTRLEN );
 	from_len = sizeof( from_addr );
-
-	read_buffer_block_size = config_int_get("network.read.blocksize");
-	if( read_buffer_block_size == 0 ) read_buffer_block_size = DEFAULT_BLOCK_SIZE;
-
-	logging_printf( LOGGING_DEBUG, "net_socket_read: Block size set to %zu\n", read_buffer_block_size );
 
 	found_socket = net_socket_find_by_fd( fd );
 
@@ -416,42 +389,20 @@ int net_socket_read( int fd )
 			}
 		}
 #endif
-		if ( recv_len <= 0)
-		{   
-			if( read_buffer_size >= 3 )
-			{
-				if ( errno == EAGAIN ) break;
-				logging_printf(LOGGING_ERROR, "net_socket_read: Socket error (%d) on socket (%d)\n", errno , fd );
-				break;
-			} else {
-				continue;
-			}
-		}
+		if ( recv_len <= 0) break;
 
-		if( ( read_buffer_size + recv_len ) > ( read_buffer_block_count * read_buffer_block_size ) )
-		{
-			logging_printf( LOGGING_DEBUG, "net_socket_read: %ld > %ld, incrementing block count\n", ( read_buffer_size + recv_len ), ( read_buffer_block_count * read_buffer_block_size ) );
-			read_buffer_block_count++;
-			new_read_buffer = realloc( read_buffer, ( read_buffer_block_count * read_buffer_block_size ) );
-		}
+		midi_state_write( found_socket->state, packet, recv_len );
 
-		if( ! new_read_buffer )
-		{
-			logging_printf( LOGGING_ERROR, "net_socket_read: Unable to allocate memory for read_buffer ( %u )\n", read_buffer_block_count * read_buffer_block_size );
-		} else {
-			read_buffer = new_read_buffer;
-			logging_printf( LOGGING_DEBUG, "net_socket_read: Copying %ld bytes to read_buffer at position %u (block_count=%u)\n", recv_len , read_buffer_size , read_buffer_block_count );
-			memcpy( read_buffer + read_buffer_size, packet, recv_len );
-			read_buffer_size += recv_len;
-		}
 	}
 
-	hex_dump( read_buffer, read_buffer_size );
-
 	// Apple MIDI command
-	if( read_buffer[0] == 0xff )
+	if( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 )
 	{
 		net_response_t *response = NULL;
+
+		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
+
+		hex_dump( read_buffer, read_buffer_size );
 
 		ret = net_applemidi_unpack( &command, read_buffer, read_buffer_size );
 		net_applemidi_command_dump( command );
@@ -483,32 +434,32 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_socklist_lock();
+			net_socket_send_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_socklist_unlock();
+			net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 			net_response_destroy( &response );
 		}
 
 		net_applemidi_cmd_destroy( &command );
-	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp(read_buffer,"STAT",4)==0) )
+	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
 	// Heartbeat request
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
-		net_socket_socklist_lock();
+		net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_socklist_unlock();
+		net_socket_send_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
-	
-	} else if( ( fd == local_fd ) && (read_buffer_size == 4) && ( strncmp( read_buffer,"QUIT",4)==0) )
+		midi_state_advance( found_socket->state, 4);
+	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	// Shutdown request
 	{
 		const char *buffer="QT";
 		size_t bytes_written = 0;
-		net_socket_socklist_lock();
+		net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_socklist_unlock();
+		net_socket_send_unlock();
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
 		net_socket_set_shutdown_lock(1);
@@ -521,6 +472,7 @@ int net_socket_read( int fd )
 #endif
 	// MIDI data on internal socket or ALSA rawmidi device
 	{
+		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 		net_distribute_midi( read_buffer, read_buffer_size );
 	} else {
 	// RTP MIDI inbound from remote socket
@@ -530,6 +482,8 @@ int net_socket_read( int fd )
 		size_t num_midi_commands=0;
 		net_response_t *response = NULL;
 		size_t midi_command_index = 0;
+
+		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 
 		rtp_packet = rtp_packet_create();
 		rtp_packet_unpack( read_buffer, read_buffer_size, rtp_packet );
@@ -546,9 +500,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_socklist_lock();
+			net_socket_send_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_socklist_unlock();
+			net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 			net_response_destroy( &response );
 		}
@@ -576,16 +530,16 @@ int net_socket_read( int fd )
 
 					if( inbound_midi_fd >= 0 )
 					{
-						net_socket_socklist_lock();
+						net_socket_send_lock();
 						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-						net_socket_socklist_unlock();
+						net_socket_send_unlock();
 						logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 					}
 
 #ifdef HAVE_ALSA
-					net_socket_socklist_lock();
+					net_socket_send_lock();
 					raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
-					net_socket_socklist_unlock();
+					net_socket_send_unlock();
 #endif
 					free( raw_buffer );
 				}
@@ -660,9 +614,9 @@ int net_socket_fd_loop()
 
 
         do {
-		net_socket_socklist_lock();
+		net_socket_send_lock();
 		net_socket_set_fds();
-		net_socket_socklist_unlock();
+		net_socket_send_unlock();
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = socket_timeout; 
                 ret = select( max_fd + 1 , &read_fds, NULL , NULL , &tv );
@@ -701,11 +655,18 @@ int net_socket_init( void )
 	int address_family = 0;
 	int control_port, data_port, local_port;
 
-	pthread_mutex_init( &socklist_mutex, NULL );
+	pthread_mutex_init( &send_lock, NULL );
 
-	num_sockets = 0;
 	max_fd = 0;
 	FD_ZERO( &read_fds );
+
+	sockets = data_table_create("sockets", net_socket_destroy, NULL );
+
+	if( ! sockets ) 
+	{
+		logging_printf( LOGGING_ERROR, "net_socket_init: Unable to create sockets table\n");
+		return -1;
+	}
 
 	control_port = config_int_get("network.control.port");
 	data_port = config_int_get("network.data.port");
@@ -759,19 +720,26 @@ int net_socket_init( void )
 void net_socket_set_fds(void)
 {
 	int i = 0;
+	size_t num_sockets = 0;
 
 	max_fd = 0;
 
-	if( ! sockets ) return;
+	num_sockets = data_table_item_count( sockets );
+
+	if( num_sockets == 0 ) return;
 
 	FD_ZERO( &read_fds );
 	for( i = 0; i < num_sockets; i++ )
 	{
-		if( ! sockets[i] ) continue;
-		if( sockets[i]->fd > 0 )
+		raveloxmidi_socket_t *socket = NULL;
+
+		socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, i );
+
+		if( ! socket ) continue;
+		if( socket->fd > 0 )
 		{
-			FD_SET( sockets[i]->fd, &read_fds );
-			max_fd = MAX( max_fd, sockets[i]->fd );
+			FD_SET( socket->fd, &read_fds );
+			max_fd = MAX( max_fd, socket->fd );
 		}
 	}
 }
@@ -779,12 +747,14 @@ void net_socket_set_fds(void)
 int net_socket_get_data_socket( void )
 {
 	int fd = -1;
-	if( num_sockets <= 0 ) return -1;
-	if( ! sockets ) return -1;
+	raveloxmidi_socket_t *socket = NULL;
 
-	net_socket_socklist_lock();
-	fd =  sockets[NET_SOCKET_DATA_PORT]->fd;
-	net_socket_socklist_unlock();
+	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_DATA_PORT);
+
+	if( socket )
+	{
+		fd =  socket->fd;
+	}
 
 	return fd;
 }
@@ -792,12 +762,14 @@ int net_socket_get_data_socket( void )
 int net_socket_get_control_socket( void )
 {
 	int fd = -1;
-	if( num_sockets <= 0 ) return -1;
-	if( ! sockets ) return -1;
+	raveloxmidi_socket_t *socket = NULL;
 
-	net_socket_socklist_lock();
-	fd = sockets[NET_SOCKET_CONTROL_PORT]->fd;
-	net_socket_socklist_unlock();
+	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_CONTROL_PORT);
+
+	if( socket )
+	{
+		fd =  socket->fd;
+	}
 
 	return fd;
 }
@@ -805,12 +777,14 @@ int net_socket_get_control_socket( void )
 int net_socket_get_local_socket( void )
 {
 	int fd = -1;
-	if( num_sockets <= 0 ) return -1;
-	if( ! sockets ) return -1;
+	raveloxmidi_socket_t *socket = NULL;
 
-	net_socket_socklist_lock();
-	fd = sockets[NET_SOCKET_LOCAL_PORT]->fd;
-	net_socket_socklist_unlock();
+	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_LOCAL_PORT);
+
+	if( socket )
+	{
+		fd =  socket->fd;
+	}
 
 	return fd;
 }

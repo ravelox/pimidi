@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2019 Dave Kelly
+   Copyright (C) 2020 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -79,9 +79,9 @@ int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len
 	int ret = 0;
 
 	if( ! state ) return ret;
+	if( ! state->ring ) return ret;
 	if( ! in_buffer ) return ret;
 	if ( in_buffer_len == 0 ) return ret;
-	if( ! state->ring ) return ret;
 
 	midi_state_lock( state );
 
@@ -111,3 +111,37 @@ void midi_state_destroy( midi_state_t **state )
 	*state = NULL;
 }
 
+int midi_state_compare( midi_state_t *state, const char *compare, size_t compare_len )
+{
+	if( ! state ) return -1;
+	if( ! state->ring ) return -1;
+
+	return ring_buffer_compare( state->ring, compare, compare_len );
+}
+
+int midi_state_char_compare( midi_state_t *state, char compare, size_t index )
+{
+	if(! state ) return -1;
+	if( ! state->ring ) return -1;
+
+	return ring_buffer_char_compare( state->ring, compare, index );
+}
+
+char *midi_state_drain( midi_state_t *state, size_t *len)
+{
+	if( ! len ) return NULL;
+
+	*len = 0;
+	if( ! state ) return NULL;
+	if( ! state->ring ) return NULL;
+
+	return ring_buffer_drain( state->ring, len );
+}
+
+void midi_state_advance( midi_state_t *state, size_t steps )
+{
+	if( ! state ) return;
+	if( ! state->ring ) return;
+	
+	ring_buffer_advance( state->ring, steps );
+}

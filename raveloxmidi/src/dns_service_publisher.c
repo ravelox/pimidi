@@ -120,6 +120,7 @@ static void create_services(AvahiClient *c) {
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
+	logging_printf( LOGGING_DEBUG, "create_services: use_ipv4=%d, use_ipv6=%d\n", use_ipv4, use_ipv6 );
 	if( use_ipv4 && use_ipv6 )
 	{
 		protocol = AVAHI_PROTO_UNSPEC;

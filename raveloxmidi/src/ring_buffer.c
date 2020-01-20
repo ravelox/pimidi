@@ -45,7 +45,7 @@ void ring_buffer_dump( ring_buffer_t *ring )
 
 	if( ! ring ) return;
 
-	logging_printf( LOGGING_DEBUG, "ring_buffer=%p, size=%zu, start=%zu, end=%zu, used=%zu\n", ring, ring->size, ring->start, ring->end, ring->used);
+	logging_printf( LOGGING_DEBUG, "ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", ring, ring->data,ring->size, ring->start, ring->end, ring->used);
 	hex_dump( ring->data, ring->size );
 }
 
@@ -181,8 +181,6 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 		ring->used += len;
 	}
 
-	ring_buffer_dump( ring );
-
 	ring_buffer_unlock( ring );
 }
 
@@ -211,11 +209,10 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 	/* 1: Data is stored contiguously */
 	if( ring->start < ring->end )
 	{
-		char *src = ring->data + ring->start;
+		src = ring->data + ring->start;
 
 		memcpy( dest, src, len );
-		memset( src, 0, len );
-		
+
 		if( advance == RING_YES )
 		{
 			/* Update the pointers */
@@ -234,13 +231,11 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 		src = ring->data + ring->start;
 		first_part = ring->size - ring->start;
 		memcpy( dest,  src, first_part );
-		memset( src, 0, first_part );
 		
 		/* Copy the second part */
 		src = ring->data;
 		second_part = len - first_part;
 		memcpy( dest + first_part, src, second_part );
-		memset( src, 0, second_part );
 
 		if( advance == RING_YES )
 		{
@@ -250,7 +245,7 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 		}
 	}
 	ring_buffer_unlock( ring );
-	
+
 	return dest;
 }
 
@@ -299,10 +294,9 @@ char *ring_buffer_drain( ring_buffer_t *ring , size_t *len)
 	char *data = NULL;
 	*len = 0;
 	if( ! ring ) return NULL;
+
 	*len = ring->used;
 	data = ring_buffer_read( ring, ring->used , RING_YES );
-
-	ring_buffer_reset( ring, ring->size );
 
 	return data;
 }
@@ -313,4 +307,60 @@ int ring_buffer_available( ring_buffer_t *ring, size_t requested )
 	if( requested == 0 ) return 0;
 
 	return( requested <= ring->used );
+}
+
+int ring_buffer_compare( ring_buffer_t *ring, const char *compare, size_t compare_len )
+{
+	int ret = 0;
+	char *data = NULL;
+
+	if( ! ring ) return -1;
+
+	data = ring_buffer_read( ring, ring->used, RING_NO );
+
+	if( ! data ) return -1;
+
+	if( compare_len > 0 )
+	{
+		ret = strncmp( data, compare , compare_len);
+	} else {
+		ret = strcmp( data, compare );
+	}
+
+	free(data);
+	return ret;
+}
+
+int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )
+{
+	int ret = 0;
+	char *data = NULL;
+
+	if( ! ring ) return 0;
+
+	if( index > ring->used ) return 0;
+
+	data = ring_buffer_read( ring, ring->used, RING_NO );
+
+	if(! data ) return 0;
+
+	ret = ( data[index] == compare );
+
+	free(data);
+
+	return ret;
+}
+
+void ring_buffer_advance( ring_buffer_t *ring, size_t steps )
+{
+	char *data = NULL;
+	size_t real_steps = 0;
+
+	if( ! ring ) return;
+	if( steps == 0 ) return;
+
+	real_steps = MIN( steps, ring->used );
+
+	data = ring_buffer_read( ring, real_steps, RING_YES );
+	free(data);
 }
