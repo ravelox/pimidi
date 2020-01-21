@@ -47,12 +47,11 @@
 
 #include "utils.h"
 
-static int running_as_daemon=0;
-
 int main(int argc, char *argv[])
 {
 	dns_service_desc_t service_desc;
 	int ret = 0;
+	int running_as_daemon = 0;
 
 	utils_init();
 

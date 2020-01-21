@@ -102,6 +102,19 @@ void net_socket_unlock( raveloxmidi_socket_t *socket )
 	pthread_mutex_unlock( &(socket->lock) );
 }
 	
+void net_socket_dump( void *data )
+{
+	raveloxmidi_socket_t *socket = NULL;
+
+	if( ! data ) return;
+
+	socket = ( raveloxmidi_socket_t *)data;
+
+	net_socket_lock( socket );
+	logging_printf(LOGGING_DEBUG, "net_socket: fd=%d, packet_size=%u\n", socket->fd, socket->packet_size );
+	net_socket_unlock( socket );
+}
+
 void net_socket_destroy( void **data )
 {
 	raveloxmidi_socket_t *socket = NULL;
@@ -150,7 +163,9 @@ static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
 	size_t i = 0;
 	size_t num_sockets = 0;
 
-	if( data_table_item_count( sockets ) == 0 ) return NULL;
+	num_sockets = data_table_item_count( sockets );
+
+	if( num_sockets == 0 ) return NULL;
 
 	for( i = 0; i < num_sockets; i++ )
 	{
@@ -231,6 +246,8 @@ raveloxmidi_socket_t *net_socket_add( int new_socket_fd )
 
 	new_socket_item = net_socket_create_item();
 	if( ! new_socket_item ) return NULL;
+
+	new_socket_item->fd = new_socket_fd;
 
 	data_table_add_item( sockets, new_socket_item );
 
@@ -419,13 +436,13 @@ int net_socket_read( int fd )
 				logging_printf( LOGGING_ERROR, "net_socket_read: Connection rejected host=%s, port=%u\n", ip_address, from_port);
 				break;
 			case NET_APPLEMIDI_CMD_END:
-				response = applemidi_by_responder( command->data );
+				applemidi_by_responder( command->data );
 				break;
 			case NET_APPLEMIDI_CMD_SYNC:
 				response = applemidi_sync_responder( command->data );
 				break;
 			case NET_APPLEMIDI_CMD_FEEDBACK:
-				response = applemidi_feedback_responder( command->data );
+				applemidi_feedback_responder( command->data );
 				break;
 			case NET_APPLEMIDI_CMD_BITRATE:
 				break;
@@ -447,24 +464,31 @@ int net_socket_read( int fd )
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
+
 		net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
 		net_socket_send_unlock();
+
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		midi_state_advance( found_socket->state, 4);
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	// Shutdown request
 	{
+		int ret = 0;
 		const char *buffer="QT";
 		size_t bytes_written = 0;
+
 		net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
 		net_socket_send_unlock();
+
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
+
 		net_socket_set_shutdown_lock(1);
-		write( shutdown_fd[0] , "X", 1 );
-		write( shutdown_fd[1] , "X", 1 );
+
+		ret = write( shutdown_fd[0] , "X", 1 );
+		ret = write( shutdown_fd[1] , "X", 1 );
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (found_socket->type==RAVELOXMIDI_SOCKET_ALSA_TYPE) )
 #else
@@ -660,7 +684,7 @@ int net_socket_init( void )
 	max_fd = 0;
 	FD_ZERO( &read_fds );
 
-	sockets = data_table_create("sockets", net_socket_destroy, NULL );
+	sockets = data_table_create("sockets", net_socket_destroy, net_socket_dump );
 
 	if( ! sockets ) 
 	{

@@ -22,6 +22,8 @@
 #define UTILS_H
 
 #include <netinet/in.h>
+#include <stdint.h>
+#include <unistd.h>
 
 uint64_t ntohll(const uint64_t value);
 uint64_t htonll(const uint64_t value);

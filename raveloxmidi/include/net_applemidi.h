@@ -21,6 +21,8 @@
 #ifndef NET_APPLEMIDI_H
 #define NET_APPLEMIDI_H
 
+#include <stdint.h>
+
 #define NET_APPLEMIDI_DONE	0
 #define NET_APPLEMIDI_NEED_DATA	1
 #define NET_APPLEMIDI_NO_MEMORY	2

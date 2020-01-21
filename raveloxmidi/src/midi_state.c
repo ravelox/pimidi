@@ -66,9 +66,10 @@ midi_state_t *midi_state_create( size_t buffer_size )
 		return NULL;
 	}
 
-	new_midi_state->status = 0;
+	new_midi_state->status = MIDI_STATE_INIT;
+	new_midi_state->hold = dbuffer_create( DBUFFER_DEFAULT_BLOCK_SIZE );
 	new_midi_state->ring = ring_buffer_create( buffer_size );
-	new_midi_state->waiting_bytes = 0;
+	new_midi_state->running_status = 0;
 	pthread_mutex_init( &(new_midi_state->lock) , NULL);
 
 	return new_midi_state;
@@ -104,6 +105,13 @@ void midi_state_destroy( midi_state_t **state )
 		ring_buffer_destroy( &( (*state)->ring ) );
 		(*state)->ring = NULL;
 	}
+
+	if( (*state)->hold )
+	{
+		dbuffer_destroy( &( (*state)->hold ) );
+		(*state)->hold = NULL;
+	}
+
 	midi_state_unlock( (*state) );
 	pthread_mutex_destroy( &( (*state)->lock ) );
 
@@ -144,4 +152,31 @@ void midi_state_advance( midi_state_t *state, size_t steps )
 	if( ! state->ring ) return;
 	
 	ring_buffer_advance( state->ring, steps );
+}
+
+int midi_state_read_byte( midi_state_t *state, uint8_t *byte )
+{
+	if( ! state )
+	{
+		*byte = 0;
+		return -1;
+	}
+
+	if( ! state )
+	{
+		*byte = 0;
+		return -1;
+	}
+
+	
+}
+
+midi_command_t *midi_state_get_command( midi_state_t *state )
+{
+	midi_command_t *command = NULL;
+	
+	if(! state ) goto midi_state_get_command_return;
+
+midi_state_get_command_return:
+	return command;
 }

@@ -24,12 +24,21 @@
 #include <pthread.h>
 
 #include "ring_buffer.h"
+#include "dbuffer.h"
+
+typedef enum midi_state_status_t {
+	MIDI_STATE_INIT,
+	MIDI_STATE_STATUS_RECEIVED,
+	MIDI_STATE_WAIT_BYTE_1,
+	MIDI_STATE_WAIT_BYTE_2,
+	MIDI_STATE_WAIT_END_SYSEX,
+} midi_state_status_t;
 
 typedef struct midi_state_t {
-	unsigned int status;
-	size_t buffer_len;
+	midi_state_status_t status;
+	int running_status;
 	ring_buffer_t *ring;
-	size_t waiting_bytes;
+	dbuffer_t *hold;
 	pthread_mutex_t lock;
 } midi_state_t;
 

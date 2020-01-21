@@ -21,6 +21,8 @@
 #ifndef NET_CONNECTION_H
 #define NET_CONNECTION_H
 
+#include <pthread.h>
+
 #include "midi_note.h"
 #include "midi_control.h"
 #include "rtp_packet.h"

@@ -21,14 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
 
 #include <errno.h>
 extern int errno;
@@ -42,13 +34,13 @@ extern int errno;
 
 #include "logging.h"
 
-net_response_t * applemidi_by_responder( void *data )
+void applemidi_by_responder( void *data )
 {
 	net_applemidi_inv *inv = NULL;
 	net_ctx_t *ctx = NULL;
 
 	logging_printf( LOGGING_DEBUG, "applemidi_by_responder: data=%p\n", data );
-	if( ! data ) return NULL;
+	if( ! data ) return;
 
 	inv = ( net_applemidi_inv *) data;
 
@@ -57,11 +49,11 @@ net_response_t * applemidi_by_responder( void *data )
 	if( ! ctx )
 	{
 		logging_printf( LOGGING_WARN, "applemidi_by_responder:No existing connection found\n");
-		return NULL;
+		return;
 	}
 
 	net_ctx_reset( ctx );
 	net_ctx_dump( ctx );
 
-	return NULL;
+	return;
 }

@@ -4,11 +4,17 @@ Some useful code analysis and debugging commands
 cppcheck:
 	cppcheck src/*.c
 
+splint:
+	splint  -I../include -I .. -I /usr/include/alsa -warnposix -mustfreefresh *c 2>&1
+
 ThreadSanitizer:
-CFLAGS="-fsanitize=thread -O0 -g" ./configure
+	CFLAGS="-fsanitize=thread -fno-omite-frame-pointer -fPIE -O0 -g" ./configure
 
 AddressSanitizer:
-CFLAGS="-fsanitize=address -O0 -g" ./configure
+	CFLAGS="-fsanitize=address -O0 -g" ./configure
+
+Run with TSAN log file:
+	sudo TSAN_OPTIONS="log_path=/tmp/raveloxmidi" raveloxmidi -c raveloxmidi.con
 
 Valgrind:
 	To generate the initial suppressions file:

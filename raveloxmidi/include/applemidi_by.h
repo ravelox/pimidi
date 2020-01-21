@@ -21,6 +21,6 @@
 #ifndef APPLEMIDI_BY_H
 #define APPLEMIDI_BY_H
 
-net_response_t * applemidi_by_responder( void *data );
+void applemidi_by_responder( void *data );
 
 #endif

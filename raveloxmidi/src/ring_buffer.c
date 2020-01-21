@@ -39,6 +39,18 @@ void ring_buffer_unlock( ring_buffer_t *ring )
 	pthread_mutex_unlock( &(ring->lock) );
 }
 
+size_t ring_buffer_used( ring_buffer_t *ring )
+{
+	size_t ret = 0;
+	if(! ring ) return 0;
+	if(! ring->data ) return 0;
+
+	ring_buffer_lock( ring );
+	ret = ring->used;
+	ring_buffer_unlock( ring );
+	return ret;
+}
+
 void ring_buffer_dump( ring_buffer_t *ring )
 {
 	DEBUG_ONLY;

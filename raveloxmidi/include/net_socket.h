@@ -75,6 +75,8 @@ int net_socket_get_shutdown_fd( void );
 
 int net_socket_read( int fd );
 
+void net_socket_dump( void * );
+
 /* Indicate which socket should be which in the socket array */
 #define NET_SOCKET_CONTROL_PORT 0
 #define NET_SOCKET_DATA_PORT 1

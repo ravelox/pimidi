@@ -21,9 +21,7 @@
 #ifndef DATA_TABLE_H
 #define DATA_TABLE_H
 
-#include <unistd.h>
 #include <pthread.h>
-
 
 typedef struct data_item_t {
 	void *data;
@@ -42,11 +40,10 @@ typedef struct data_table_t {
 	data_item_dump_t item_dump;
 } data_table_t;
 
-
 void data_table_lock( data_table_t *table );
 void data_table_unlock( data_table_t *table );
-void date_table_dump( data_table_t *table );
-void date_item_dump( data_item_t *item );
+void data_table_dump( data_table_t *table );
+void data_item_dump( data_item_t *item );
 data_table_t *data_table_create( char *name, data_item_destructor_t destructor, data_item_dump_t dump );
 void data_table_destroy( data_table_t **table );
 void data_table_set_item_destructor( data_table_t *table, data_item_destructor_t destructor );

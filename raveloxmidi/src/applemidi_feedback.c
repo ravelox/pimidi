@@ -21,15 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
-
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
 
 #include <errno.h>
 extern int errno;
@@ -45,13 +37,13 @@ extern int errno;
 
 #include "logging.h"
 
-net_response_t * applemidi_feedback_responder( void *data )
+void applemidi_feedback_responder( void *data )
 {
 	net_applemidi_feedback  *feedback;
-	net_ctx_t *ctx = NULL;
+	net_ctx_t *ctx;
 	uint32_t seq = 0;
 
-	if( ! data ) return NULL;
+	if( ! data ) return;
 
 	feedback = ( net_applemidi_feedback *) data;
 
@@ -60,7 +52,7 @@ net_response_t * applemidi_feedback_responder( void *data )
 	if( ! ctx )
 	{
 		logging_printf(LOGGING_DEBUG,"applemidi_feedback_responder: No context found (search=%u)\n", feedback->rtp_seq[1]);
-		return NULL;
+		return;
 	}
 
 	net_ctx_lock( ctx );
@@ -73,8 +65,6 @@ net_response_t * applemidi_feedback_responder( void *data )
 		logging_printf( LOGGING_DEBUG, "applemidi_feedback_responder: Resetting journal\n" );
 		net_ctx_journal_reset(ctx);
 	}
-
-	return NULL;
 }
 
 net_response_t *applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
@@ -85,7 +75,7 @@ net_response_t *applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
 
 	feedback = net_applemidi_feedback_create();
 
-	if( ! feedback ) return NULL;
+	if( feedback == NULL  ) return NULL;
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_FEEDBACK );
 

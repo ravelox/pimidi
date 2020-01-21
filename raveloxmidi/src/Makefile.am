@@ -33,7 +33,8 @@ raveloxmidi_SOURCES = \
 	raveloxmidi_alsa.c \
 	kv_table.c \
 	net_distribute.c \
-	data_table.c
+	data_table.c \
+	dbuffer.c
 
 raveloxmidi_LDADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@

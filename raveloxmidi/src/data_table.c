@@ -173,28 +173,28 @@ int data_table_add_item( data_table_t *table, void *data )
 
 	if( ! new_item )
 	{
-		data_item_t **new_list;
+		data_item_t **new_items;
 
-		logging_printf( LOGGING_DEBUG, "data_table_item_add: create new item\n");
 		/* Create a new item for the list */
 		new_item = ( data_item_t * )malloc( sizeof( data_item_t ) );
 		if( ! new_item )
 		{
 			logging_printf(LOGGING_ERROR,"data_table_add_item: Insufficient memory to create new table item\n");
+			data_table_unlock( table );
 			return 0;
 		}
 	
 		/* Extend the list */
-		new_list = ( data_item_t **)realloc( table->items, sizeof( data_item_t * ) * (table->count + 1) );
-		if(! new_list )
+		new_items = ( data_item_t **)realloc( table->items, sizeof( data_item_t * ) * (table->count + 1) );
+		if(! new_items )
 		{
 			logging_printf(LOGGING_ERROR,"data_table_add_item: Insufficient memory to extend table list\n");
 			free(new_item);
+			data_table_unlock( table );
 			return 0;
 		}
 
-		logging_printf(LOGGING_DEBUG,"data_table_add_item: Extended list\n");
-		table->items = new_list;
+		table->items = new_items;
 		table->items[ table->count ] = new_item;
 		table->count++;
 
@@ -213,7 +213,6 @@ size_t data_table_item_count( data_table_t *table )
 	size_t ret = 0;
 
 	if( ! table ) return ret;
-	if( ! table->items ) return ret;
 	
 	data_table_lock( table );
 	ret = table->count;
@@ -227,10 +226,12 @@ size_t data_table_unused_count( data_table_t *table )
 	size_t ret = 0;
 
 	if(! table ) return 0;
-	if(! table->items) return 0;
-	if(table->count == 0) return 0;
 
 	data_table_lock( table );
+
+	if(! table->items) goto data_table_unused_count_end;
+	if(table->count == 0) goto data_table_unused_count_end;
+
 	for( i = 0; i < table->count; i++ )
 	{
 		if( table->items[i] )
@@ -241,6 +242,7 @@ size_t data_table_unused_count( data_table_t *table )
 			}
 		}
 	}
+data_table_unused_count_end:
 	data_table_unlock( table );
 
 	return ret;
@@ -264,20 +266,22 @@ int data_table_item_is_unused( data_table_t *table, size_t index )
 void *data_table_item_get( data_table_t *table, size_t index )
 {
 	void *ret = NULL;
-	void *data = NULL;
 
 	if( ! table ) return ret;
-	if( ! table->items ) return ret;
-	if( table->count == 0 ) return ret;
-	if( index > table->count ) return ret;
-
-	if( ! table->items[ index ] ) return ret;
 
 	data_table_lock( table );
-	data = table->items[index]->data;
+
+	if( ! table->items ) goto data_table_item_get_end;
+	if( table->count == 0 ) goto data_table_item_get_end;
+	if( index > table->count ) goto data_table_item_get_end;
+	if( ! table->items[ index ] ) goto data_table_item_get_end;
+
+	ret  = table->items[index]->data;
+
+data_table_item_get_end:
 	data_table_unlock( table );
 
-	return data;
+	return ret;
 }
 
 void data_table_delete_item( data_table_t *table, size_t index )
@@ -294,7 +298,9 @@ void data_table_delete_item( data_table_t *table, size_t index )
 	if( table->item_destructor )
 	{
 		data_table_lock( table );
-		table->item_destructor( table->items[index] );
+		table->item_destructor( table->items[index]->data );
+		free( &(table->items[index]->data) );
+		table->items[index]->data = NULL;
 		table->items[index]->used = 0;
 	}
 

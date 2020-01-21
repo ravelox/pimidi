@@ -22,8 +22,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 #include <getopt.h>
+#include <ctype.h>
 
 #include <errno.h>
 extern int errno;
