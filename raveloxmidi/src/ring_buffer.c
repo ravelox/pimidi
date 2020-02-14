@@ -133,23 +133,27 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 
 size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 {
+	size_t return_val = 0;
 	size_t remain = 0;
 
 	if( !ring ) return 0;
 	if( !data ) return 0;
 	if( len == 0 ) return 0;
 
+	ring_buffer_lock( ring );
+
 	/* Not enough space */
 	if( ring->used + len > ring->size )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_write: Insufficient space available in buffer\n");
-		return 0;
+		return_val = 0;
+		goto ring_buffer_write_end;
 	}
 
 	ring_buffer_lock( ring );
 
 	/* There are a number of possible cases */
-
+	return_val = len;
 	if( ring->start <= ring->end )
 	{
 		/* 1: The buffer isn't wrapped and data can be stored contiguously */
@@ -193,7 +197,10 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 		ring->used += len;
 	}
 
+ring_buffer_write_end:
 	ring_buffer_unlock( ring );
+
+	return return_val;
 }
 
 char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
@@ -203,16 +210,16 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 	size_t first_part = 0;
 	size_t second_part = 0;
 
-	if( ! ring ) return NULL;
-	if( ! ring->data ) return NULL;
-	if( len > ring->used ) return NULL;
-	if( len == 0 ) return NULL;
+	if( ! ring ) goto ring_buffer_read_end;
+	if( ! ring->data ) goto ring_buffer_read_end;
+	if( len > ring->used ) goto ring_buffer_read_end;
+	if( len == 0 ) goto ring_buffer_read_end;
 
 	dest = ( char * ) malloc( len );
 	if( ! dest )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_read: Insufficient memory to allocate read output buffer\n");
-		return NULL;
+		goto ring_buffer_read_end;
 	}
 
 	memset( dest, 0, len );
@@ -256,6 +263,8 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 			ring->start = second_part;
 		}
 	}
+
+ring_buffer_read_end:
 	ring_buffer_unlock( ring );
 
 	return dest;
@@ -263,6 +272,7 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 {
+	int return_status = 0;
 	char *new_data = NULL;
 	char *old_data = NULL;
 	size_t bytes_used = 0;
@@ -278,7 +288,10 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 
 	memset( new_data, 0, new_size );
 
+	ring_buffer_lock( ring );
 	bytes_used = ring->used;
+	ring_buffer_unlock( ring );
+
 	old_data = ring_buffer_read( ring, bytes_used, RING_NO);
 	if( old_data )
 	{
@@ -297,7 +310,6 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 		ring_buffer_reset( ring, new_size );
 	}
 		
-
 	return 1;
 }
 
@@ -341,6 +353,11 @@ int ring_buffer_compare( ring_buffer_t *ring, const char *compare, size_t compar
 
 	free(data);
 	return ret;
+}
+
+char ring_buffer_char( ring_buffer_t *ring, char *status )
+{
+	if( ! status ) return 0;
 }
 
 int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )

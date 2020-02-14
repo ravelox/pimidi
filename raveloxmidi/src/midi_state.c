@@ -156,9 +156,8 @@ void midi_state_advance( midi_state_t *state, size_t steps )
 
 int midi_state_read_byte( midi_state_t *state, uint8_t *byte )
 {
-	if( ! state )
+	if( ! byte )
 	{
-		*byte = 0;
 		return -1;
 	}
 
@@ -167,8 +166,6 @@ int midi_state_read_byte( midi_state_t *state, uint8_t *byte )
 		*byte = 0;
 		return -1;
 	}
-
-	
 }
 
 midi_command_t *midi_state_get_command( midi_state_t *state )
