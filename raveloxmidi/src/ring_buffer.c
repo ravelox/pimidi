@@ -150,8 +150,6 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 		goto ring_buffer_write_end;
 	}
 
-	ring_buffer_lock( ring );
-
 	/* There are a number of possible cases */
 	return_val = len;
 	if( ring->start <= ring->end )
