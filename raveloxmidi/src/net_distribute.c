@@ -82,6 +82,10 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	int i = 0;
 	int total_connections = 0;
 
+	if( ! packet ) return;
+
+	logging_printf( LOGGING_DEBUG, "net_distribute_midi: packet=%p, recv_len=%u\n", packet, recv_len );
+
 	// Convert the buffer into a set of commands
 	midi_payload_len = recv_len;
 	initial_midi_payload = midi_payload_create();

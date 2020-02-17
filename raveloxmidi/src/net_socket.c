@@ -496,6 +496,8 @@ int net_socket_read( int fd )
 #endif
 	// MIDI data on internal socket or ALSA rawmidi device
 	{
+		midi_state_dump( found_socket->state );
+
 		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 		net_distribute_midi( read_buffer, read_buffer_size );
 	} else {

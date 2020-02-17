@@ -177,3 +177,30 @@ midi_command_t *midi_state_get_command( midi_state_t *state )
 midi_state_get_command_return:
 	return command;
 }
+
+const char *midi_status_to_string( midi_state_status_t status )
+{
+	switch( status )
+	{
+		case MIDI_STATE_INIT: return "MIDI_STATE_INIT";
+		case MIDI_STATE_STATUS_RECEIVED: return "MIDI_STATE_STATUS_RECEIVED";
+		case MIDI_STATE_WAIT_BYTE_1: return "MIDI_STATE_WAIT_BYTE_1";
+		case MIDI_STATE_WAIT_BYTE_2: return "MIDI_STATE_WAIT_BYTE_2";
+		case MIDI_STATE_WAIT_END_SYSEX: return "MIDI_STATE_WAIT_END_SYSEX";
+		default: return "Unknown";
+	}
+	return "Unknown";
+}
+
+void midi_state_dump( midi_state_t *state )
+{
+	if( ! state ) return;
+
+	DEBUG_ONLY;
+
+	logging_printf( LOGGING_DEBUG, "midi_state=%p, status=[%s], running_status=0x%02x\n", 
+		state, midi_status_to_string( state->status ), state->running_status);
+
+	ring_buffer_dump( state->ring );
+	dbuffer_dump( state->hold );
+}

@@ -158,7 +158,6 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 	int status_present = 0;
 	if( ! buffer_size ) return;
 
-	*buffer_size = 0;
 
 	if( ! payload ) return;
 	if( ! buffer ) return;
@@ -166,6 +165,8 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, *buffer_size);
 
 	status_present = buffer[0] & 0x80;
+
+	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: status_present=%d\n", status_present);
 
 	/* If the first byte doesn't include a status then add one */
 	if( ! status_present )
@@ -188,7 +189,6 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 		}
 	}
 }
-
 
 void midi_payload_header_dump( midi_payload_header_t *header )
 {
