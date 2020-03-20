@@ -300,8 +300,10 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 {
         struct addrinfo hints;
         struct addrinfo *result;
+	struct addrinfo *addr;
         int val;
         char portaddr[32];
+	char ip_string[100];
 
         if( ! ip_address ) return 1;
 
@@ -310,13 +312,35 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
         sprintf( portaddr, "%d", port ); 
         hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV | AI_NUMERICHOST | AI_CANONNAME;
 
         val = getaddrinfo(ip_address, portaddr, &hints, &result );
 	if( val )
 	{
-		logging_printf(LOGGING_WARN, "get_sock_addr: Invalid address: [%s]:%d\n", ip_address, port );
+		logging_printf(LOGGING_WARN, "get_sock_info: Invalid address: [%s]:%d\n", ip_address, port );
 		freeaddrinfo( result );
 		return 1;
+	}
+
+	/* Display all the results */
+	addr = result;
+	while(addr)
+	{
+		logging_printf(LOGGING_DEBUG, "get_sock_info: result: ai_flags=%d, ai_family=%d, ai_sock_type=%d, ai_protocol=%d, ai_addrlen=%u, ai_canonname=[%s]\n",
+			addr->ai_flags, addr->ai_family, addr->ai_socktype, addr->ai_protocol, addr->ai_addrlen, addr->ai_canonname );
+
+		if( addr->ai_addr )
+		{
+			struct sockaddr_in *sock_in;
+
+			sock_in = ( struct sockaddr_in *)addr->ai_addr;
+
+			memset( ip_string, 0, 100 );
+			get_ip_string( addr->ai_addr, ip_string, 100 );
+			logging_printf(LOGGING_DEBUG, "\t\tai_addr=[ sin_family=%d, sin_port=%d, sin_addr=%s]\n",
+				sock_in->sin_family, ntohs(sock_in->sin_port), ip_string );
+		}
+		addr = addr->ai_next;
 	}
 
 	if( socket )

@@ -54,7 +54,6 @@ void net_socket_unlock( raveloxmidi_socket_t *raveloxmidi_socket );
 void net_socket_send_lock( void );
 void net_socket_send_unlock( void );
 raveloxmidi_socket_t *net_socket_add( int new_socket );
-int net_socket_create( int family, char *ip_address, unsigned int port );
 int net_socket_listener_create( int family, char *ip_address, unsigned int port );
 int net_socket_init( void );
 int net_socket_teardown( void );
