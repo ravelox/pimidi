@@ -524,6 +524,12 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_DEBUG, "net_socket_read: inbound MIDI received\n");
 		rtp_packet_dump( rtp_packet );
 
+		if( rtp_packet->header.v != RTP_VERSION )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Invalid RTP packet received: version=%u\n", rtp_packet->header.v );
+			goto net_socket_read_rtp_clean;
+		}
+
 		midi_payload_unpack( &midi_payload, rtp_packet->payload, read_buffer_size );
 
 		// Read all the commands in the packet into an array
@@ -587,6 +593,8 @@ int net_socket_read( int fd )
 			midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
 		}
 		free( midi_commands );
+
+net_socket_read_rtp_clean:
 		rtp_packet_destroy( &rtp_packet );
 	}
 
