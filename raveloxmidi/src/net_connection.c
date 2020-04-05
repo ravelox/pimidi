@@ -581,8 +581,8 @@ char *net_ctx_connections_to_string( void )
 
 		connection_count += 1;
 		memset( ctx_buffer, 0, sizeof(ctx_buffer) );
-		sprintf( ctx_buffer, "{\"id\":%d,\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
-			i, ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+		sprintf( ctx_buffer, "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
+			i, ( ctx->name ? ctx->name : "unknown"), ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
 		dstring_append( dstring, ctx_buffer );
 
 		if( (i+1) < num_connections )
