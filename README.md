@@ -79,13 +79,16 @@ raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write t
 ## Command interface
 raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. The commands can only be received on the local listening port ( default is 5006 ). The commands are:
 
-*STAT* 
+*STAT*
+
 This is the heartbeat command. The response will always be *OK* if raveloxmidi is running. The script python/send_stat.py is available for this command.
 
 *QUIT*
+
 This will shut down raveloxmidi. The response will always be *QT* to indicate that the command has been received. The script python/send_quit.py is available for this command.
 
 *LIST*
+
 This requests a lists of current connections into raveloxmidi. The response will be a JSON blob of information. The script python/send_list.py is available for this command.
 The JSON data looks like this:
 
@@ -111,7 +114,7 @@ The JSON data looks like this:
     "count": 1
 }
 ```
-To parse the data, the *count* field will be the number of connections in the list. The connections array holds each connection. The fields in the connections array are as follows:
+To parse the data, the *count* field will be the number of connections in the list. The connections array holds each connection. The *id* field in the connections array is an internal id for the array. The value of that field *may* change. It is recommended that you use the *ssrc* field as the uniq identifier for the connection.
 
 ## Configuration
 raveloxmidi can be run with a -c parameter to specify a configuration file with the options listed below.
