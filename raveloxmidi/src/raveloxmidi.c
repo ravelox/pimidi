@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 		}
 #ifdef HAVE_ALSA
 		raveloxmidi_wait_for_alsa();
+		raveloxmidi_alsa_teardown();
 #endif
 		net_socket_loop_teardown();
 	}

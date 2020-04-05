@@ -400,7 +400,7 @@ int net_socket_read( int fd )
 	}
 
 	// Apple MIDI command
-	if( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 )
+	if( ( ( fd == control_fd ) || ( fd == data_fd ) ) && ( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 ) )
 	{
 		net_response_t *response = NULL;
 
@@ -446,8 +446,8 @@ int net_socket_read( int fd )
 		}
 
 		net_applemidi_cmd_destroy( &command );
-	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
 	// Heartbeat request
+	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
@@ -458,8 +458,8 @@ int net_socket_read( int fd )
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		midi_state_advance( found_socket->state, 4);
-	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	// Shutdown request
+	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	{
 		int ret = 0;
 		const char *buffer="QT";
@@ -476,6 +476,27 @@ int net_socket_read( int fd )
 
 		ret = write( shutdown_fd[0] , "X", 1 );
 		ret = write( shutdown_fd[1] , "X", 1 );
+	// Connection list request
+	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
+	{
+		int ret = 0;
+		char *buffer = NULL;
+		size_t bytes_written = 0;
+
+		buffer = net_ctx_connections_to_string();
+		if( buffer )
+		{
+			hex_dump( buffer, strlen( buffer ) );
+
+			net_socket_send_lock();
+			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
+			net_socket_send_unlock();
+
+			free( buffer );
+		}
+
+		logging_printf(LOGGING_DEBUG, "net_socket_read: List request. Response written: %u\n", bytes_written);
+
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (found_socket->type==RAVELOXMIDI_SOCKET_ALSA_TYPE) )
 #else

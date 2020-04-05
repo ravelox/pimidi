@@ -41,6 +41,8 @@ extern int errno;
 #include "rtp_packet.h"
 #include "utils.h"
 
+#include "dstring.h"
+
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
@@ -552,4 +554,58 @@ net_ctx_t *net_ctx_find_by_index( int index )
 	if( num_connections < index ) return NULL;
 
 	return connections[ index ];
+}
+
+char *net_ctx_connections_to_string( void )
+{
+	dstring_t *dstring = NULL;
+	unsigned char *out_buffer = NULL;
+	int i = 0;
+	char ctx_buffer[1024];
+	unsigned int connection_count = 0;
+
+	dstring = dstring_create( DSTRING_DEFAULT_BLOCK_SIZE );
+
+	net_connections_lock();
+
+	memset(ctx_buffer, 0, sizeof(ctx_buffer) );
+	sprintf( ctx_buffer, "{\"connections\":[");
+	dstring_append( dstring, ctx_buffer );
+
+	for( i=0 ; i < num_connections; i++ )
+	{
+		net_ctx_t *ctx = NULL;
+		ctx = connections[i];
+
+		if( ctx->status == NET_CTX_STATUS_UNUSED ) continue;
+
+		connection_count += 1;
+		memset( ctx_buffer, 0, sizeof(ctx_buffer) );
+		sprintf( ctx_buffer, "{\"id\":%d,\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
+			i, ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+		dstring_append( dstring, ctx_buffer );
+
+		if( (i+1) < num_connections )
+		{
+			dstring_append(dstring, ",");
+		}
+
+	}
+	dstring_append( dstring, "]" );
+
+	memset( ctx_buffer, 0, sizeof(ctx_buffer ) );
+	sprintf( ctx_buffer, ",\"count\":%u}", connection_count );
+	dstring_append( dstring, ctx_buffer );
+
+	net_connections_unlock();
+
+	out_buffer = strdup( dstring_value( dstring ) );
+
+	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
+
+	hex_dump( out_buffer, strlen( out_buffer));
+
+	dstring_destroy( &dstring );
+
+	return out_buffer;
 }

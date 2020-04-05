@@ -119,12 +119,12 @@ size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len 
 
 	dbuffer_lock( dbuffer );
 	
-	if( dbuffer->len < ( dbuffer->len + in_buffer_len ) )
+	if( dbuffer->len < ( dbuffer->len + in_buffer_len + 1) )
 	{
 		char *new_dbuffer_data = NULL;
 		size_t new_block_count = 0;
 
-		new_block_count = ( ( dbuffer->len + in_buffer_len ) / dbuffer->block_size ) + 1 ;
+		new_block_count = ( ( dbuffer->len + in_buffer_len + 1 ) / dbuffer->block_size ) + 1 ;
 		new_dbuffer_data = (char *)realloc( dbuffer->data, new_block_count * dbuffer->block_size );
 
 		if( ! new_dbuffer_data )
@@ -135,6 +135,10 @@ size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len 
 
 		dbuffer->num_blocks = new_block_count;
 		dbuffer->data = new_dbuffer_data;
+
+		// Initialise the new memory
+		memset( dbuffer->data + dbuffer->len, 0, in_buffer_len + 1 );
+
 	}
 
 	memcpy( dbuffer->data + dbuffer->len, in_buffer, in_buffer_len );
@@ -155,7 +159,10 @@ size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
 
 	dbuffer_lock( dbuffer );
 
+	dbuffer_dump( dbuffer );
+
 	*out_buffer = ( char * ) malloc( dbuffer->len );
+	memset( *out_buffer, 0, dbuffer->len );
 	if( ! *out_buffer )
 	{
 		logging_printf( LOGGING_DEBUG, "dbuffer_read: Insufficient memory to create output buffer\n");

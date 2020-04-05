@@ -61,7 +61,7 @@ static void raveloxmidi_alsa_add_output( const char *device_name )
 	if( ! device_name ) return;
 
 	ret = snd_rawmidi_open( NULL, &output_handle, device_name, SND_RAWMIDI_NONBLOCK );
-	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init output: device=%s ret=%d %s\n", device_name, ret, snd_strerror( ret ) );
+	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_add_output: device=%s ret=%d %s\n", device_name, ret, snd_strerror( ret ) );
 	if( ret != 0 ) return;
 
 	raveloxmidi_alsa_dump_rawmidi( output_handle );
@@ -84,7 +84,7 @@ static void raveloxmidi_alsa_add_input( const char *device_name , size_t buffer_
 	if( ! device_name ) return;
 
 	ret = snd_rawmidi_open( &input_handle, NULL, device_name, SND_RAWMIDI_NONBLOCK );
-	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_init input: device=%s ret=%d %s\n", device_name, ret, snd_strerror( ret ) );
+	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_add_input: device=%s ret=%d %s\n", device_name, ret, snd_strerror( ret ) );
 
 	if( ret != 0 ) return;
 
