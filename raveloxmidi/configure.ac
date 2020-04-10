@@ -1,4 +1,4 @@
-m4_define([VERSION_NUMBER],[0.8.4])
+m4_define([VERSION_NUMBER],[0.8.5])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
 AC_INIT([raveloxmidi],[FULL_VERSION])
