@@ -222,7 +222,7 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 	if( ring->used == 0 ) goto ring_buffer_read_end;
 	if( len > ring->used ) goto ring_buffer_read_end;
 
-	logging_printf( LOGGING_ERROR, "ring_buffer_read: ring=%p\tused=%zu\tstart=%zu\tend=%zu\tlen=%zu\n",
+	logging_printf( LOGGING_DEBUG, "ring_buffer_read: ring=%p\tused=%zu\tstart=%zu\tend=%zu\tlen=%zu\n",
 		ring, ring->used, ring->start, ring->end, len );
 	dest = ( char * ) malloc( len );
 	if( ! dest )
