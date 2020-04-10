@@ -32,6 +32,7 @@ typedef enum midi_state_status_t {
 	MIDI_STATE_WAIT_BYTE_1,
 	MIDI_STATE_WAIT_BYTE_2,
 	MIDI_STATE_WAIT_END_SYSEX,
+	MIDI_STATE_COMMAND_RECEIVED
 } midi_state_status_t;
 
 typedef struct midi_state_t {

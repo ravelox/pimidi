@@ -21,4 +21,4 @@ Valgrind:
 	sudo valgrind --leak-check=full --show-reachable=yes --error-limit=no --gen-suppressions=all --log-file=valgrind.suppressions raveloxmidi -c raveloxmidi.conf
 
 	To run using the suppressions file
-	sudo valgrind --leak-check=full --show-reachable=yes --error-limit=no --suppressions=valgrind.suppressions --gen-suppressions=all --log-file=valgrind.log raveloxmidi -c raveloxmidi.conf
+	sudo valgrind --leak-check=full --show-reachable=yes --error-limit=no --suppressions=valgrind.suppressions raveloxmidi -c raveloxmidi.conf

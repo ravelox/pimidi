@@ -48,6 +48,7 @@ extern int errno;
 #include "rtp_packet.h"
 #include "midi_command.h"
 #include "midi_payload.h"
+#include "data_table.h"
 #include "utils.h"
 
 #include "raveloxmidi_config.h"
@@ -69,7 +70,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 
 	unsigned char *packed_rtp_payload = NULL;
 
-	midi_command_t *midi_commands=NULL;
+	data_table_t *midi_commands = NULL;
 	size_t num_midi_commands=0;
 	size_t midi_command_index = 0;
 
@@ -90,34 +91,37 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	midi_payload_len = recv_len;
 	initial_midi_payload = midi_payload_create();
 	midi_payload_set_buffer( initial_midi_payload, packet, &midi_payload_len );
-	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands, &num_midi_commands );
+	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands);
 	midi_payload_destroy( &initial_midi_payload );
 
+	num_midi_commands = data_table_item_count( midi_commands );
 	for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 	{
 		midi_payload_t *single_midi_payload = NULL;
 		unsigned char *packed_payload = NULL;
 		size_t packed_payload_len = 0;
+		midi_command_t *command = NULL;
 
 		/* Extract a single command as a midi payload */
-		midi_command_to_payload( &(midi_commands[ midi_command_index ]), &single_midi_payload );
+		command = (midi_command_t *)data_table_item_get( midi_commands, midi_command_index );
+		midi_command_to_payload( command, &single_midi_payload );
 		if( ! single_midi_payload ) continue;
 
-		midi_command_map( &(midi_commands[ midi_command_index ]), &description, &message_type );
-		midi_command_dump( &(midi_commands[ midi_command_index ]) );
+		midi_command_map( command, &description, &message_type );
+		midi_command_dump( command );
 		switch( message_type )
 		{
 			case MIDI_NOTE_OFF:
 			case MIDI_NOTE_ON:
-				midi_note_from_command( &(midi_commands[midi_command_index]), &midi_note);
+				midi_note_from_command( command, &midi_note);
 				midi_note_dump( midi_note );
 				break;
 			case MIDI_CONTROL_CHANGE:	
-				midi_control_from_command( &(midi_commands[midi_command_index]), &midi_control);
+				midi_control_from_command( command, &midi_control);
 				midi_control_dump( midi_control );
 				break;
 			case MIDI_PROGRAM_CHANGE:
-				midi_program_from_command( &(midi_commands[midi_command_index]), &midi_program);
+				midi_program_from_command( command, &midi_program);
 				midi_program_dump( midi_program );
 				break;
 			default:
@@ -213,9 +217,7 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 			default:
 				break;
 		}
-
-		midi_command_reset( &(midi_commands[midi_command_index]) );
 	}
 
-	free( midi_commands );
+	data_table_destroy( &midi_commands );
 }

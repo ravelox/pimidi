@@ -476,6 +476,8 @@ int net_socket_read( int fd )
 
 		ret = write( shutdown_fd[0] , "X", 1 );
 		ret = write( shutdown_fd[1] , "X", 1 );
+
+		midi_state_advance( found_socket->state, 4);
 	// Connection list request
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
 	{
@@ -497,6 +499,8 @@ int net_socket_read( int fd )
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: List request. Response written: %u\n", bytes_written);
 
+		midi_state_advance( found_socket->state, 4);
+
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (found_socket->type==RAVELOXMIDI_SOCKET_ALSA_TYPE) )
 #else
@@ -512,7 +516,7 @@ int net_socket_read( int fd )
 	// RTP MIDI inbound from remote socket
 		rtp_packet_t *rtp_packet = NULL;
 		midi_payload_t *midi_payload=NULL;
-		midi_command_t *midi_commands=NULL;
+		data_table_t *midi_commands=NULL;
 		size_t num_midi_commands=0;
 		net_response_t *response = NULL;
 		size_t midi_command_index = 0;
@@ -533,7 +537,11 @@ int net_socket_read( int fd )
 		midi_payload_unpack( &midi_payload, rtp_packet->payload, read_buffer_size );
 
 		// Read all the commands in the packet into an array
-		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands, &num_midi_commands );
+		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands);
+		if( midi_commands )
+		{
+			num_midi_commands = data_table_item_count( midi_commands );
+		}
 
 		// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
 		response = applemidi_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
@@ -557,28 +565,35 @@ int net_socket_read( int fd )
 			logging_printf(LOGGING_DEBUG, "net_socket_read: output_enabled\n");
 			for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
 			{
-				unsigned char *raw_buffer = (unsigned char *)malloc( 2 + midi_commands[midi_command_index].data_len );
+				midi_command_t *command = NULL;
+				unsigned char *raw_buffer = NULL;
+
+				command = data_table_item_get( midi_commands, midi_command_index );
+
+				if( ! command ) continue;
+
+				raw_buffer = (unsigned char *)malloc( 2 + command->data_len );
 
 				if( raw_buffer )
 				{
 					size_t bytes_written = 0;
-					raw_buffer[0]=midi_commands[midi_command_index].status;
-					if( midi_commands[midi_command_index].data_len > 0 )
+					raw_buffer[0]=command->status;
+					if( command->data_len > 0 )
 					{
-						memcpy( raw_buffer + 1, midi_commands[midi_command_index].data, midi_commands[midi_command_index].data_len );
+						memcpy( raw_buffer + 1, command->data, command->data_len );
 					}
 
 					if( inbound_midi_fd >= 0 )
 					{
 						net_socket_send_lock();
-						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
 						net_socket_send_unlock();
 						logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 					}
 
 #ifdef HAVE_ALSA
 					net_socket_send_lock();
-					raveloxmidi_alsa_write( raw_buffer, 1 + midi_commands[midi_command_index].data_len );
+					raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len );
 					net_socket_send_unlock();
 #endif
 					free( raw_buffer );
@@ -588,11 +603,7 @@ int net_socket_read( int fd )
 
 		// Clean up
 		midi_payload_destroy( &midi_payload );
-		for( ; num_midi_commands >= 1 ; num_midi_commands-- )
-		{
-			midi_command_reset( &(midi_commands[num_midi_commands - 1]) );
-		}
-		free( midi_commands );
+		data_table_destroy( &midi_commands );
 
 net_socket_read_rtp_clean:
 		rtp_packet_destroy( &rtp_packet );

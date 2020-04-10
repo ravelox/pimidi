@@ -27,6 +27,7 @@
 
 #include "midi_command.h"
 #include "midi_payload.h"
+#include "data_table.h"
 #include "utils.h"
 
 #include "logging.h"
@@ -315,7 +316,7 @@ midi_payload_unpack_success:
 	return;
 }
 
-void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands )
+void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, data_table_t **table )
 {
 	unsigned char *p;
 	size_t current_len;
@@ -325,10 +326,9 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	enum midi_message_type_t message_type;
 	size_t index, sysex_len;
 	unsigned char *sysex_start_byte = NULL;
-	
+	midi_command_t *command = NULL;
 
-	*commands = NULL;
-	*num_commands = 0;
+	*table = data_table_create("midi_commands", midi_command_destroy, midi_command_dump);
 
 	if( ! payload ) return;
 
@@ -348,7 +348,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 		if( data_type == MIDI_PAYLOAD_RTP )
 		{
 			/* If the Z flag == 0 then no delta time is present for the first midi command */
-			if( ( payload->header->Z == 0 ) && ( *num_commands == 0 ) )
+			if( ( payload->header->Z == 0 ) && ( data_table_item_count(*table)== 0 ) )
 			{ 
 				/*Do nothing*/
 			} else {
@@ -364,18 +364,12 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 			}	
 		}
 
-		(*num_commands)++;
-
 		logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: next byte = 0x%02x\n", *p );
-		midi_command_t *temp_commands = (midi_command_t * ) realloc( *commands, sizeof(midi_command_t) * (*num_commands) );
 
-		if( ! temp_commands ) break;
-		*commands = temp_commands;
-		index = (*num_commands) - 1;
-
-		(*commands)[index].delta = current_delta;
-		(*commands)[index].data_len = 0;
-		(*commands)[index].data = NULL;
+		command = midi_command_create();
+		command->delta = current_delta;
+		command->data_len = 0;
+		command->data = NULL;
 
 		// Get the status byte. If bit 7 is not set, use the running status
 		if( current_len > 0 )
@@ -388,11 +382,11 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 				p++;
 				current_len--;
 			}
-			(*commands)[index].status = running_status;
+			command->status = running_status;
 		}
 
-		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
-		midi_command_dump( &((*commands)[index]));
+		midi_command_map( command , &command_description, &message_type );
+		midi_command_dump( command );
 
 		switch( message_type )
 		{
@@ -404,11 +398,11 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 			case MIDI_SONG_POSITION:
 				if( current_len >= 2 )
 				{
-					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
-					if( (*commands)[index].data )
+					command->data = ( unsigned char * ) malloc( 2 );
+					if( command->data )
 					{
-						memcpy( (*commands)[index].data, p, 2 );
-						(*commands)[index].data_len = 2;
+						memcpy( command->data, p, 2 );
+						command->data_len = 2;
 					}
 					current_len -= 2;
 					p+=2;
@@ -420,12 +414,12 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 			case MIDI_SONG_SELECT:
 				if( current_len >= 1 )
 				{
-					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
-					memset( (*commands)[index].data, 0, 2 );
-					if( (*commands)[index].data )
+					command->data = ( unsigned char * ) malloc( 2 );
+					if( command->data )
 					{
-						memcpy( (*commands)[index].data, p, 1);
-						(*commands)[index].data_len = 1;
+						memset( command->data, 0, 2 );
+						memcpy( command->data, p, 1);
+						command->data_len = 1;
 					}
 					current_len -= 1;
 					p+=1;
@@ -466,11 +460,11 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 				}
 				if( sysex_len > 0 )
 				{
-					(*commands)[index].data = (unsigned char *) malloc( sysex_len );
-					if( (*commands)[index].data ) 
+					command->data = (unsigned char *) malloc( sysex_len );
+					if( command->data ) 
 					{
-						memcpy( (*commands)[index].data, sysex_start_byte, sysex_len );
-						(*commands)[index].data_len = sysex_len;
+						memcpy( command->data, sysex_start_byte, sysex_len );
+						command->data_len = sysex_len;
 					}
 				}
 				break;
@@ -494,7 +488,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 			case MIDI_PITCH_BEND:
 			case MIDI_PROGRAM_CHANGE:
 			case MIDI_CHANNEL_PRESSURE:
-				logging_printf( LOGGING_INFO, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
+				logging_printf( LOGGING_INFO, "\tChannel: %u\n", command->status & 0x0f );
 				break;
 			case MIDI_SYSEX:
 			case MIDI_TIME_CODE_QF:
@@ -512,6 +506,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 				break;
 		}
 
+		data_table_add_item( *table, command );
 	} while( current_len > 0 );
 }
 

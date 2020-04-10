@@ -28,6 +28,7 @@
 
 #include "midi_state.h"
 #include "midi_command.h"
+#include "data_table.h"
 #include "utils.h"
 
 #include "logging.h"
@@ -137,21 +138,35 @@ int midi_state_char_compare( midi_state_t *state, char compare, size_t index )
 
 char *midi_state_drain( midi_state_t *state, size_t *len)
 {
+	char *return_buffer = NULL;
+
+	if( ! state ) return NULL;
 	if( ! len ) return NULL;
 
-	*len = 0;
-	if( ! state ) return NULL;
-	if( ! state->ring ) return NULL;
+	midi_state_lock( state );
 
-	return ring_buffer_drain( state->ring, len );
+	*len = 0;
+	if( ! state->ring ) goto midi_state_drain_end;
+
+	return_buffer = ring_buffer_drain( state->ring, len );
+
+midi_state_drain_end:
+	midi_state_unlock( state );
+
+	return return_buffer;
 }
 
 void midi_state_advance( midi_state_t *state, size_t steps )
 {
 	if( ! state ) return;
-	if( ! state->ring ) return;
+
+	midi_state_lock( state );
+	if( ! state->ring ) goto midi_state_advance_end;
 	
 	ring_buffer_advance( state->ring, steps );
+
+midi_state_advance_end:
+	midi_state_unlock( state );
 }
 
 int midi_state_read_byte( midi_state_t *state, uint8_t *byte )
@@ -203,4 +218,99 @@ void midi_state_dump( midi_state_t *state )
 
 	ring_buffer_dump( state->ring );
 	dbuffer_dump( state->hold );
+}
+
+void midi_state_to_commands( midi_state_t *state , data_table_t **command_table)
+{
+	uint8_t byte = 0;
+	uint8_t current_command = 0;
+	unsigned char bytes_needed = 0;
+
+	if( ! state ) return;
+
+	*command_table = data_table_create("midi_commands", midi_command_destroy, midi_command_dump );
+
+	while( 1 )
+	{
+		// If no bytes available...return
+
+		// Read 1 byte
+
+		switch( state->status )
+		{
+			MIDI_STATE_INIT:
+				if( byte < 0x80 )
+				{
+					// If this is a data byte but there is no running status, we need to loop
+					if( state->running_status == 0 ) continue;
+					
+					// Using the running status, determine how many bytes we need
+					bytes_needed = midi_command_bytes_needed( state->running_status );
+					
+					// Copy the running status into the hold buffer
+					// Copy the byte into the hold buffer
+
+					if( bytes_needed == 1)
+					{
+						state->status = MIDI_STATE_COMMAND_RECEIVED;
+						break;
+					}
+	
+					if( bytes_needed == 2 )
+					{
+						state->status = MIDI_STATE_WAIT_BYTE_1;
+						break;
+					}
+				} else {
+					// This is a command byte
+					// Copy command byte to hold buffer
+	
+					// Special cases for SysEx
+					if( byte == 0xF0 )
+					{
+						state->status = MIDI_STATE_WAIT_END_SYSEX;
+						break;
+					}
+
+					bytes_needed = midi_command_bytes_needed( byte & 0xF0 );
+
+					switch( bytes_needed )
+					{
+						case 1:
+							state->status = MIDI_STATE_WAIT_BYTE_1;
+							break;
+						case 2:
+							state->status = MIDI_STATE_WAIT_BYTE_2;
+							break;
+						case 0:
+						default:
+							state->status = MIDI_STATE_COMMAND_RECEIVED;
+							break;
+					}
+				}
+				break;
+			MIDI_STATE_WAIT_BYTE_2:
+				// Copy byte to hold buffer
+				state->status = MIDI_STATE_WAIT_BYTE_1;
+				break;
+			MIDI_STATE_WAIT_BYTE_1:
+				// Copy byte to hold buffer
+				state->status = MIDI_STATE_COMMAND_RECEIVED;
+				break;
+			MIDI_STATE_WAIT_END_SYSEX:
+				// Copy byte to hold buffer
+				if( byte == 0xF7 )
+				{
+					state->status = MIDI_STATE_COMMAND_RECEIVED;
+				}
+				break;
+		}
+
+
+		// If we're waiting for more data, loop around
+		if( state->status != MIDI_STATE_COMMAND_RECEIVED) continue;
+
+		// Take the full command from the hold buffer
+		// Add it to the command list
+	}
 }

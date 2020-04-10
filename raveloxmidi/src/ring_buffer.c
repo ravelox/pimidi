@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "logging.h"
 #include "ring_buffer.h"
+#include "dbuffer.h"
 
 void ring_buffer_lock( ring_buffer_t *ring )
 {
@@ -57,8 +58,11 @@ void ring_buffer_dump( ring_buffer_t *ring )
 
 	if( ! ring ) return;
 
+	ring_buffer_lock( ring );
+
 	logging_printf( LOGGING_DEBUG, "ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", ring, ring->data,ring->size, ring->start, ring->end, ring->used);
-	hex_dump( ring->data, ring->size );
+
+	ring_buffer_unlock( ring );
 }
 
 void ring_buffer_reset( ring_buffer_t *ring , size_t size)
@@ -208,11 +212,18 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 	size_t first_part = 0;
 	size_t second_part = 0;
 
+
 	if( ! ring ) goto ring_buffer_read_end;
-	if( ! ring->data ) goto ring_buffer_read_end;
-	if( len > ring->used ) goto ring_buffer_read_end;
 	if( len == 0 ) goto ring_buffer_read_end;
 
+	ring_buffer_lock( ring );
+
+	if( ! ring->data ) goto ring_buffer_read_end;
+	if( ring->used == 0 ) goto ring_buffer_read_end;
+	if( len > ring->used ) goto ring_buffer_read_end;
+
+	logging_printf( LOGGING_ERROR, "ring_buffer_read: ring=%p\tused=%zu\tstart=%zu\tend=%zu\tlen=%zu\n",
+		ring, ring->used, ring->start, ring->end, len );
 	dest = ( char * ) malloc( len );
 	if( ! dest )
 	{
@@ -222,7 +233,6 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 
 	memset( dest, 0, len );
 
-	ring_buffer_lock( ring );
 	/* 1: Data is stored contiguously */
 	if( ring->start < ring->end )
 	{
@@ -286,9 +296,7 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 
 	memset( new_data, 0, new_size );
 
-	ring_buffer_lock( ring );
-	bytes_used = ring->used;
-	ring_buffer_unlock( ring );
+	bytes_used = ring_buffer_used( ring );
 
 	old_data = ring_buffer_read( ring, bytes_used, RING_NO);
 	if( old_data )
@@ -317,8 +325,8 @@ char *ring_buffer_drain( ring_buffer_t *ring , size_t *len)
 	*len = 0;
 	if( ! ring ) return NULL;
 
-	*len = ring->used;
-	data = ring_buffer_read( ring, ring->used , RING_YES );
+	*len = ring_buffer_used( ring );
+	data = ring_buffer_read( ring, *len, RING_YES );
 
 	return data;
 }
