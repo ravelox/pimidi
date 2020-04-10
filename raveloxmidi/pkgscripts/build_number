@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# Update the build number
+BRANCHNAME="$(git rev-parse --abbrev-ref HEAD)"
+git log "${BRANCHNAME}" --pretty=oneline | wc -l

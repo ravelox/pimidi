@@ -1,4 +1,8 @@
-AC_INIT([raveloxmidi],[0.8.2])
+m4_define([VERSION_NUMBER],[0.8.3])
+m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
+m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
+AC_INIT([raveloxmidi],[FULL_VERSION])
+
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
