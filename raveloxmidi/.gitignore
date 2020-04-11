@@ -108,5 +108,6 @@ man/raveloxmidi.1
 build_deb
 .deps
 src/raveloxmidi
+raveloxmidi.spec
 
 build/

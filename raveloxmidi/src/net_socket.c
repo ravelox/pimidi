@@ -342,6 +342,8 @@ int net_socket_read( int fd )
 		return 0;
 	}
 
+	net_socket_lock( found_socket );
+
 	packet = found_socket->packet;
 	packet_size = found_socket->packet_size;
 
@@ -360,8 +362,6 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_INFO, "net_socket_read: alsa handle\n");
 	} 
 #endif
-
-	
 
 	while( 1 )
 	{
@@ -395,12 +395,13 @@ int net_socket_read( int fd )
 #endif
 		if ( recv_len <= 0) break;
 
+		hex_dump( packet, recv_len );
 		midi_state_write( found_socket->state, packet, recv_len );
 
 	}
 
 	// Apple MIDI command
-	if( ( ( fd == control_fd ) || ( fd == data_fd ) ) && ( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 ) )
+	if( ( ( fd == control_fd ) || ( fd == data_fd ) ) && ( ( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 )  && ( midi_state_char_compare( found_socket->state, 0xff, 1 ) == 1 ) ) )
 	{
 		net_response_t *response = NULL;
 
@@ -609,6 +610,7 @@ net_socket_read_rtp_clean:
 		rtp_packet_destroy( &rtp_packet );
 	}
 
+	net_socket_unlock( found_socket );
 	free( read_buffer );
 	return ret;
 }
