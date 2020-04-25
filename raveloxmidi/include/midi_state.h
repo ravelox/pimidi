@@ -53,5 +53,7 @@ int midi_state_char_compare( midi_state_t *state, char compare, size_t index );
 char *midi_state_drain( midi_state_t *state, size_t *len);
 void midi_state_advance( midi_state_t *state, size_t steps );
 
+void midi_state_reset( midi_state_t *state );
+
 void midi_state_dump( midi_state_t *state );
 #endif

@@ -171,7 +171,9 @@ static raveloxmidi_socket_t *net_socket_find_by_fd( int fd_to_find )
 	{
 		raveloxmidi_socket_t *socket = NULL;
 
+		data_table_lock( sockets );
 		socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, i );
+		data_table_unlock( sockets );
 
 		if( socket )
 		{
@@ -569,7 +571,9 @@ int net_socket_read( int fd )
 				midi_command_t *command = NULL;
 				unsigned char *raw_buffer = NULL;
 
+				data_table_lock( midi_commands );
 				command = data_table_item_get( midi_commands, midi_command_index );
+				data_table_unlock( midi_commands );
 
 				if( ! command ) continue;
 
@@ -788,7 +792,9 @@ void net_socket_set_fds(void)
 	{
 		raveloxmidi_socket_t *socket = NULL;
 
+		data_table_lock( sockets );
 		socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, i );
+		data_table_unlock( sockets );
 
 		if( ! socket ) continue;
 		if( socket->fd > 0 )
@@ -804,7 +810,9 @@ int net_socket_get_data_socket( void )
 	int fd = -1;
 	raveloxmidi_socket_t *socket = NULL;
 
+	data_table_lock( sockets );
 	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_DATA_PORT);
+	data_table_unlock( sockets );
 
 	if( socket )
 	{
@@ -819,7 +827,9 @@ int net_socket_get_control_socket( void )
 	int fd = -1;
 	raveloxmidi_socket_t *socket = NULL;
 
+	data_table_lock( sockets );
 	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_CONTROL_PORT);
+	data_table_unlock( sockets );
 
 	if( socket )
 	{
@@ -834,7 +844,9 @@ int net_socket_get_local_socket( void )
 	int fd = -1;
 	raveloxmidi_socket_t *socket = NULL;
 
+	data_table_lock( sockets );
 	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_LOCAL_PORT);
+	data_table_unlock( sockets );
 
 	if( socket )
 	{

@@ -27,6 +27,7 @@
 #include "midi_control.h"
 #include "rtp_packet.h"
 #include "midi_journal.h"
+#include "midi_state.h"
 
 // Maximum number of connection entries in the connection table
 #define MAX_CTX 8
@@ -54,13 +55,14 @@ typedef struct net_ctx_t {
 	char * 		ip_address;
 	char *		name;
 	journal_t	*journal;
+	midi_state_t	*midi_state;
 	pthread_mutex_t	lock;
 } net_ctx_t;
 
 net_ctx_t *net_ctx_create( void );
 void net_ctx_reset( net_ctx_t *ctx );
-void net_ctx_destroy( net_ctx_t **ctx );
-void net_ctx_dump( net_ctx_t *ctx );
+void net_ctx_destroy( void **data );
+void net_ctx_dump( void *data );
 void net_ctx_dump_all( void );
 void net_ctx_lock( net_ctx_t *ctx );
 void net_ctx_unlock( net_ctx_t *ctx );

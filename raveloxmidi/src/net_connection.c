@@ -36,6 +36,7 @@ extern int errno;
 #include "config.h"
 
 #include "midi_journal.h"
+#include "midi_state.h"
 #include "net_connection.h"
 #include "net_socket.h"
 #include "rtp_packet.h"
@@ -46,20 +47,18 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
-static unsigned int max_connections = 0;
-static unsigned int num_connections = 0;
-static net_ctx_t **connections = NULL;
+#include "data_table.h"
 
-static pthread_mutex_t connections_mutex = PTHREAD_MUTEX_INITIALIZER;
+static data_table_t *connections = NULL;
 
 void net_connections_lock( void )
 {
-	pthread_mutex_lock( &connections_mutex );
+	data_table_lock( connections );
 }
 
 void net_connections_unlock( void )
 {
-	pthread_mutex_unlock( &connections_mutex );
+	data_table_unlock( connections );
 }
 
 void net_ctx_lock( net_ctx_t *ctx )
@@ -74,27 +73,35 @@ void net_ctx_unlock( net_ctx_t *ctx )
 	pthread_mutex_unlock( &(ctx->lock) );
 }
 
-void net_ctx_destroy( net_ctx_t **ctx )
+void net_ctx_destroy( void **data )
 {
+	net_ctx_t **ctx = NULL;
 	if( ! ctx ) return;
-	if( ! *ctx ) return;
 
+	ctx = (net_ctx_t **)data;
 	logging_printf(LOGGING_DEBUG,"net_ctx_destroy: ctx=%p\n", *ctx);
 	if( (*ctx)->name ) FREENULL( "name",(void **)&((*ctx)->name) );
 	if( (*ctx)->ip_address) FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
 	journal_destroy( &((*ctx)->journal) );
 
+	if( (*ctx)->midi_state )
+	{
+		midi_state_destroy( &((*ctx)->midi_state) );
+	}
 	pthread_mutex_destroy( &((*ctx)->lock) );
-	FREENULL( "net_ctx_destroy: ctx", (void**)ctx );
+	FREENULL( "net_ctx_destroy: ctx", data );
 }
 
-void net_ctx_dump( net_ctx_t *ctx )
+void net_ctx_dump( void *data )
 {
+	net_ctx_t *ctx = NULL;
 	DEBUG_ONLY;
-	if( ! ctx ) return;
+	if( ! data ) return;
 	
+	ctx = ( net_ctx_t *)data;
 	logging_printf( LOGGING_DEBUG, "net_ctx: ctx=%p, ssrc=0x%08x,status=[%s],send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u,start=%u\n",
 		ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+	if( ctx->midi_state ) midi_state_dump( ctx->midi_state );
 }
 
 void net_ctx_dump_all( void )
@@ -103,10 +110,8 @@ void net_ctx_dump_all( void )
 	DEBUG_ONLY;
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: start\n");
 
-	for( i=0 ; i < num_connections; i++ )
-	{
-		net_ctx_dump( connections[i] );
-	}
+	data_table_dump( connections );
+
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: end\n");
 }
 
@@ -134,40 +139,50 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	}
 	ctx->name = ( char *) strdup( name );
 
+	if( ctx->midi_state )
+	{
+		midi_state_reset( ctx->midi_state );
+	}
 	ctx->status = NET_CTX_STATUS_IDLE;
 	net_ctx_unlock( ctx );
 }
 
 net_ctx_t * net_ctx_find_unused( void )
 {
-	net_ctx_t *unused = NULL;
-	int i = 0;
+	net_ctx_t *current_ctx = NULL;
+	size_t i = 0;
+	size_t num_connections = 0;
 
 	/* If there are no connections at all, there can't be any unused ones */
-	if( num_connections == 0 )  return NULL;
+	if( data_table_item_count( connections ) == 0 )  return NULL;
 
 	net_connections_lock();
+
 	/* Work through the current list to find an unused connection */
 	for( i = 0 ; i < num_connections; i++ )
 	{
-		if( connections[i] )
+		current_ctx = (net_ctx_t *) data_table_item_get( connections, i );
+		if( current_ctx )
 		{
-			if( connections[i]->status == NET_CTX_STATUS_UNUSED )
+			if( current_ctx->status == NET_CTX_STATUS_UNUSED )
 			{
-				unused = connections[i];
 				break;
 			}
 		}
+		current_ctx = NULL;
 	}
+
 	net_connections_unlock();
 
-	return unused; 
+	return current_ctx; 
 }
 
 net_ctx_t * net_ctx_create( void )
 {
 	net_ctx_t *new_ctx = NULL;
 	journal_t *journal = NULL;
+	midi_state_t *new_midi_state = NULL;
+	size_t ring_buffer_size = 0;
 
 	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
 
@@ -181,9 +196,17 @@ net_ctx_t * net_ctx_create( void )
 	new_ctx->seq = 1;
 
 	journal_init( &journal );
-
 	new_ctx->journal = journal;
 
+	ring_buffer_size = config_int_get("read.ring_buffer_size");
+	ring_buffer_size = MAX( NET_SOCKET_DEFAULT_RING_BUFFER, ring_buffer_size );
+	new_midi_state = midi_state_create( ring_buffer_size );
+	if( ! new_midi_state )
+	{
+		logging_printf( LOGGING_ERROR, "net_ctx_create: Unable to create midi_state_t for net_ctx_t\n");
+	} else {
+		new_ctx->midi_state = new_midi_state;
+	}
 	new_ctx->status = NET_CTX_STATUS_UNUSED;
 
 	pthread_mutex_init( &new_ctx->lock , NULL);
@@ -200,148 +223,140 @@ void net_ctx_reset( net_ctx_t *ctx )
 	net_ctx_lock( ctx );
 	ctx->seq = 1;
 	ctx->status = NET_CTX_STATUS_UNUSED;
+
+	if( ctx->midi_state )
+	{
+		midi_state_reset( ctx->midi_state );
+	}
+
 	net_ctx_unlock( ctx );
 }
 
 
 void net_ctx_init( void )
 {
-	max_connections = config_int_get("network.max_connections");
-	if( max_connections == 0 ) max_connections = 1;
-
-	num_connections = 0;
-	connections = NULL;
-
-	pthread_mutex_init( &connections_mutex, NULL );
+	connections = data_table_create( "connections", net_ctx_destroy, net_ctx_dump );
 }
 
 void net_ctx_teardown( void )
 {
-	int i = 0;
-
-	net_connections_lock();
-	for( i = num_connections; i > 0; i-- )
-	{
-		if( connections[i-1] )
-		{
-			net_ctx_destroy( &connections[i-1] );
-			num_connections--;
-		}
-	}
-
-	FREENULL("net_ctx_teardown:connections", (void **)&connections);
-	net_connections_unlock();
-
-	pthread_mutex_destroy( &connections_mutex );
+	data_table_destroy( &connections );
 }
 
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 {
-	int i = 0;
+	size_t i = 0;
+	size_t num_connections = 0;
+	net_ctx_t *current_ctx = NULL;
+
+	num_connections = data_table_item_count( connections );
 
 	if( num_connections == 0 ) return NULL;
-	if( ! connections ) return NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ssrc=0x%08x\n", ssrc );
 
 	net_connections_lock();
+
 	for( i = 0; i < num_connections; i++ )
 	{
-		if( connections[i] && (connections[i]->status != NET_CTX_STATUS_UNUSED ) )
+		current_ctx = (net_ctx_t *) data_table_item_get( connections, i );
+		if( current_ctx && (current_ctx->status != NET_CTX_STATUS_UNUSED ) )
 		{
-			if( connections[i]->ssrc == ssrc )
+			if( current_ctx->ssrc == ssrc )
 			{
-				net_connections_unlock();
-				return connections[i];
+				break;
 			}
 		}
 	}
-
-	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: not found\n");
+	if( ! current_ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: not found\n");
+	}
 
 	net_connections_unlock();
-	return NULL;
+
+	return current_ctx;
 }
 
 net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator)
 {
-	int i = 0;
+	size_t i = 0;
+	size_t num_connections = 0;
+	net_ctx_t *current_ctx = NULL;
+
+	num_connections = data_table_item_count( connections );
 
 	if( num_connections == 0 ) return NULL;
-	if( ! connections ) return NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: initiator=0x%08x\n", initiator );
 
 	net_connections_lock();
+
 	for( i = 0; i < num_connections; i++ )
 	{
-		if( connections[i] && (connections[i]->status != NET_CTX_STATUS_UNUSED ) )
+		current_ctx = (net_ctx_t *) data_table_item_get( connections, i );
+		if( current_ctx && (current_ctx->status != NET_CTX_STATUS_UNUSED ) )
 		{
-			if( connections[i]->initiator == initiator )
+			if( current_ctx->initiator == initiator )
 			{
-				net_connections_unlock();
-				return connections[i];
+				break;
 			}
 		}
 	}
-	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: not found\n");
+	if( ! current_ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: not found\n");
+	}
+
 	net_connections_unlock();
-	return NULL;
+
+	return current_ctx;
 }
 
 net_ctx_t * net_ctx_find_by_name( char *name )
 {
-	int i = 0;
+	size_t i = 0;
+	size_t num_connections = 0;
+	net_ctx_t *current_ctx = NULL;
+
+	num_connections = data_table_item_count( connections );
 
 	if( num_connections == 0 ) return NULL;
-	if( ! connections ) return NULL;
-
 	if( ! name ) return NULL;
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: name=%s\n", name );
 
 	net_connections_lock();
+
 	for( i = 0; i < num_connections; i++ )
 	{
-		if( connections[i] && (connections[i]->status != NET_CTX_STATUS_UNUSED ) )
+		current_ctx = (net_ctx_t *)data_table_item_get( connections, i );
+		if( current_ctx && (current_ctx->status != NET_CTX_STATUS_UNUSED ) )
 		{
-			if( strcmp(connections[i]->name, name) == 0 )
+			if( strcmp(current_ctx->name, name) == 0 )
 			{
-				net_connections_unlock();
-				return connections[i];
+				break;
 			}
 		}
 	}
-	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: not found\n");
+
+	if( ! current_ctx )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: not found\n");
+	}
 
 	net_connections_unlock();
-	return NULL;
+
+	return current_ctx;
 }
 	
 void net_ctx_add( net_ctx_t *ctx )
 {
-	net_ctx_t **new_list = NULL;
-
-	if( ! ctx ) return;
-
-
-	new_list = ( net_ctx_t ** ) realloc( connections, ( num_connections + 1 ) * sizeof( net_ctx_t * ) );
-
-	if( ! new_list )
-	{
-		logging_printf( LOGGING_ERROR, "net_ctx_add: Insufficient memory to reallocate new connections list\n");
-		return;
-	}
-
 	net_ctx_lock( ctx );
 	ctx->status = NET_CTX_STATUS_IDLE;
 	net_ctx_unlock( ctx );
 
-	net_connections_lock();
-	new_list[ num_connections ] = ctx;
-	num_connections++;
-	connections = new_list;
-	net_connections_unlock();
+	data_table_add_item( connections, ctx );
 }
 
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port, char *name )
@@ -538,7 +553,7 @@ const char *net_ctx_status_to_string( net_ctx_status_t status )
 
 int net_ctx_get_num_connections( void )
 {
-	return num_connections;
+	return data_table_item_count( connections );
 }
 
 int net_ctx_is_used( net_ctx_t *ctx )
@@ -549,11 +564,7 @@ int net_ctx_is_used( net_ctx_t *ctx )
 
 net_ctx_t *net_ctx_find_by_index( int index )
 {
-	if( ! connections ) return NULL;
-	if( num_connections == 0 ) return NULL;
-	if( num_connections < index ) return NULL;
-
-	return connections[ index ];
+	return (net_ctx_t *)data_table_item_get( connections, index );
 }
 
 char *net_ctx_connections_to_string( void )
@@ -562,10 +573,12 @@ char *net_ctx_connections_to_string( void )
 	unsigned char *out_buffer = NULL;
 	int i = 0;
 	char ctx_buffer[1024];
-	unsigned int connection_count = 0;
+	size_t connection_count = 0;
+	size_t num_connections = 0;
 
 	dstring = dstring_create( DSTRING_DEFAULT_BLOCK_SIZE );
 
+	num_connections = data_table_item_count( connections );
 	net_connections_lock();
 
 	memset(ctx_buffer, 0, sizeof(ctx_buffer) );
@@ -575,7 +588,8 @@ char *net_ctx_connections_to_string( void )
 	for( i=0 ; i < num_connections; i++ )
 	{
 		net_ctx_t *ctx = NULL;
-		ctx = connections[i];
+
+		ctx = data_table_item_get( connections, i );
 
 		if( ctx->status == NET_CTX_STATUS_UNUSED ) continue;
 
@@ -594,7 +608,7 @@ char *net_ctx_connections_to_string( void )
 	dstring_append( dstring, "]" );
 
 	memset( ctx_buffer, 0, sizeof(ctx_buffer ) );
-	sprintf( ctx_buffer, ",\"count\":%u}", connection_count );
+	sprintf( ctx_buffer, ",\"count\":%zu}", connection_count );
 	dstring_append( dstring, ctx_buffer );
 
 	net_connections_unlock();

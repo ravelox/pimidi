@@ -103,7 +103,9 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 		midi_command_t *command = NULL;
 
 		/* Extract a single command as a midi payload */
+		data_table_lock( midi_commands );
 		command = (midi_command_t *)data_table_item_get( midi_commands, midi_command_index );
+		data_table_unlock( midi_commands );
 		midi_command_to_payload( command, &single_midi_payload );
 		if( ! single_midi_payload ) continue;
 

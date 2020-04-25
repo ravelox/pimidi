@@ -76,6 +76,29 @@ midi_state_t *midi_state_create( size_t buffer_size )
 	return new_midi_state;
 }
 
+void midi_state_reset( midi_state_t *state )
+{
+	if( ! state ) return;
+
+	midi_state_lock( state );
+
+	state->status = MIDI_STATE_INIT;
+	state->running_status = 0;
+
+	if( state->hold )
+	{
+		dbuffer_reset( state->hold );
+	}
+
+	if( state->ring )
+	{
+		size_t ring_buffer_size = ring_buffer_get_size( state->ring );
+		ring_buffer_reset( state->ring , ring_buffer_size );
+	}
+
+	midi_state_unlock( state );
+}
+
 int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len )
 {
 	int ret = 0;

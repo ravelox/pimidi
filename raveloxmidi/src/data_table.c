@@ -263,23 +263,19 @@ int data_table_item_is_unused( data_table_t *table, size_t index )
 	return ret;
 }
 
+/* Caller needs to lock the table first */
 void *data_table_item_get( data_table_t *table, size_t index )
 {
 	void *ret = NULL;
 
 	if( ! table ) return ret;
 
-	data_table_lock( table );
-
-	if( ! table->items ) goto data_table_item_get_end;
-	if( table->count == 0 ) goto data_table_item_get_end;
-	if( index > table->count ) goto data_table_item_get_end;
-	if( ! table->items[ index ] ) goto data_table_item_get_end;
+	if( ! table->items ) return NULL;
+	if( table->count == 0 ) return NULL;
+	if( index > table->count ) return NULL;
+	if( ! table->items[ index ] ) return NULL;
 
 	ret  = table->items[index]->data;
-
-data_table_item_get_end:
-	data_table_unlock( table );
 
 	return ret;
 }

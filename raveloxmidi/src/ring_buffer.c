@@ -75,7 +75,16 @@ void ring_buffer_reset( ring_buffer_t *ring , size_t size)
 	ring->start = 0;
 	ring->end = 0;
 	ring->used = 0;
-	memset( ring->data, 0, size );
+
+	if( ring->data )
+	{
+		free( ring->data );
+		ring->data = ( char * ) malloc( size );
+		if( ring->data )
+		{
+			memset( ring->data, 0, size );
+		}
+	}
 	
 	ring_buffer_unlock( ring );
 }
@@ -399,3 +408,16 @@ void ring_buffer_advance( ring_buffer_t *ring, size_t steps )
 	data = ring_buffer_read( ring, real_steps, RING_YES );
 	free(data);
 }
+
+size_t ring_buffer_get_size( ring_buffer_t *ring )
+{
+	size_t ring_buffer_size = 0;
+
+	if( ! ring ) return 0;
+
+	ring_buffer_lock( ring );
+	ring_buffer_size = ring->size;
+	ring_buffer_unlock( ring );
+	return ring_buffer_size;
+}
+

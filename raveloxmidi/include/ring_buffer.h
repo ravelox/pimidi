@@ -34,6 +34,9 @@ typedef struct ring_buffer_t
 
 ring_buffer_t *ring_buffer_create( size_t size );
 void ring_buffer_destroy( ring_buffer_t **ring );
+void ring_buffer_reset( ring_buffer_t *ring , size_t ring_buffer_size);
+
+size_t ring_buffer_get_size( ring_buffer_t *ring );
 
 size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len );
 char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance);

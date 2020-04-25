@@ -41,7 +41,6 @@ static void config_set_defaults( void )
 	config_add_item("network.data.port", "5005");
 	config_add_item("network.local.port", "5006");
 	config_add_item("network.socket_timeout" , "30" );
-	config_add_item("network.max_connections", "8");
 	config_add_item("service.name", "raveloxmidi");
 	config_add_item("service.ipv4", "yes");
 	config_add_item("service.ipv6", "no");

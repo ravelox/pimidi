@@ -24,8 +24,8 @@
 #include <pthread.h>
 
 typedef struct data_item_t {
-	void *data;
 	int used;
+	void *data;
 } data_item_t;
 
 typedef void (*data_item_destructor_t)(void ** );
