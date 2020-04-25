@@ -8,7 +8,7 @@ splint:
 	splint  -I../include -I .. -I /usr/include/alsa -warnposix -mustfreefresh *c 2>&1
 
 ThreadSanitizer:
-	CFLAGS="-fsanitize=thread -fno-omite-frame-pointer -fPIE -O0 -g" ./configure
+	CFLAGS="-fsanitize=thread -fno-omit-frame-pointer -fPIE -O0 -g" ./configure
 
 AddressSanitizer:
 	CFLAGS="-fsanitize=address -O0 -g" ./configure
