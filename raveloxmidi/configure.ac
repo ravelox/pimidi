@@ -23,7 +23,7 @@ PKG_CHECK_MODULES(AVAHI, avahi-client)
 
 ACX_PTHREAD([],[])
 
-AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes")
+AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes",AC_MSG_WARN([ALSA library not found. Check raveloxmidi/required for the list of packages to install.]))
 if test "$have_alsa" == "yes"
 then
    ALSA_LIBS="`pkg-config --libs alsa`"
