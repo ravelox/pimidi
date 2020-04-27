@@ -46,11 +46,21 @@ static data_table_t *inputs = NULL;
 /* Table of input file descriptors for polling */
 static int num_poll_descriptors = 0;
 static struct pollfd *poll_descriptors = NULL;
-static pthread_mutex_t poll_table_lock;
+static pthread_mutex_t poll_descriptors_table_lock;
 
 static pthread_t alsa_listener_thread;
 
 extern int errno;
+
+static void poll_descriptors_lock( void )
+{
+	pthread_mutex_lock( &poll_descriptors_table_lock );
+}
+
+static void poll_descriptors_unlock( void )
+{
+	pthread_mutex_unlock( &poll_descriptors_table_lock );
+}
 
 /* Open an output handle for the specified ALSA device and add it to the list */
 static void raveloxmidi_alsa_add_output( const char *device_name )
@@ -132,7 +142,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		return;
 	}
 
-	pthread_mutex_init( &poll_table_lock , NULL);
+	pthread_mutex_init( &poll_descriptors_table_lock , NULL);
 
 	if( input_name )
 	{
@@ -227,11 +237,11 @@ void raveloxmidi_alsa_teardown( void )
 	data_table_destroy( &inputs );
 	data_table_destroy( &outputs );
 
-	pthread_mutex_lock( &poll_table_lock );
+	poll_descriptors_lock();
 	FREENULL( "raveloxmidi_alsa_teardown:poll_descriptors", (void **)&poll_descriptors );
-	pthread_mutex_unlock( &poll_table_lock );
+	poll_descriptors_unlock();
 
-	pthread_mutex_destroy( &poll_table_lock );
+	pthread_mutex_destroy( &poll_descriptors_table_lock );
 
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: end\n");
 }
@@ -374,7 +384,7 @@ int raveloxmidi_alsa_poll( int timeout )
 
 	if( err > 0 )
 	{
-		pthread_mutex_lock( &poll_table_lock );
+		poll_descriptors_lock();
 		for( i = 0 ; i < num_poll_descriptors; i++ )
 		{
 			if( poll_descriptors[i].fd == shutdown_fd )
@@ -392,7 +402,7 @@ int raveloxmidi_alsa_poll( int timeout )
 				}
 			}
 		}
-		pthread_mutex_unlock( &poll_table_lock );
+		poll_descriptors_unlock();
 	}
 
 	return ret;
@@ -405,22 +415,21 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 
 	if( fd < 0 ) return;
 	
+	poll_descriptors_lock();
+
 	new_fds = (struct pollfd * )realloc( poll_descriptors, ( num_poll_descriptors + 1 ) * sizeof( struct pollfd ) );
 	if( ! new_fds )
 	{
 		logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_add_poll_fd: Insufficient memory to extend poll fd table\n");
-		return;
+		goto add_poll_end;
 	}
 
-	pthread_mutex_lock( &poll_table_lock );
 
 	poll_descriptors = new_fds;
 	poll_descriptors[ num_poll_descriptors ].fd = fd;
 	poll_descriptors[ num_poll_descriptors ].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
 	poll_descriptors[ num_poll_descriptors ].revents = 0;
 	num_poll_descriptors++;
-
-	pthread_mutex_unlock( &poll_table_lock );
 
 	/* Add the file descriptor to the socket list */
 	socket = net_socket_add( fd );
@@ -429,7 +438,8 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 		socket->type = RAVELOXMIDI_SOCKET_ALSA_TYPE;
 		socket->handle = handle;
 	}
-
+add_poll_end:
+	poll_descriptors_unlock();
 }
 
 void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
@@ -493,7 +503,7 @@ static void * raveloxmidi_alsa_listener( void *data )
 
 		if( poll_result == 1 )
 		{
-			pthread_mutex_lock( &poll_table_lock );
+			poll_descriptors_lock();
 			for( i = 0; i < num_poll_descriptors; i++ )
 			{
 				if( poll_descriptors[i].revents & POLLIN )
@@ -501,7 +511,7 @@ static void * raveloxmidi_alsa_listener( void *data )
 					net_socket_read( poll_descriptors[i].fd );
 				}
 			}
-			pthread_mutex_unlock( &poll_table_lock );
+			poll_descriptors_unlock();
 		}
 
 		if( poll_result == 2 )
@@ -510,7 +520,7 @@ static void * raveloxmidi_alsa_listener( void *data )
 		}
 	} while ( net_socket_get_shutdown_status() == OK );
 
-	raveloxmidi_alsa_teardown();
+	// raveloxmidi_alsa_teardown();
 
 	logging_printf(LOGGING_DEBUG, "raveloxmidi_alsa_listener: Thread stopped\n");
 

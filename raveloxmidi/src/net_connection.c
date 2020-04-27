@@ -153,8 +153,14 @@ net_ctx_t * net_ctx_find_unused( void )
 	size_t i = 0;
 	size_t num_connections = 0;
 
+	num_connections = data_table_item_count( connections );
+
 	/* If there are no connections at all, there can't be any unused ones */
-	if( data_table_item_count( connections ) == 0 )  return NULL;
+	if( num_connections == 0 )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_unused: zero items in connections list\n");
+		return NULL;
+	}
 
 	net_connections_lock();
 
@@ -162,8 +168,10 @@ net_ctx_t * net_ctx_find_unused( void )
 	for( i = 0 ; i < num_connections; i++ )
 	{
 		current_ctx = (net_ctx_t *) data_table_item_get( connections, i );
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_unused: index=%zu, ctx=%p\n", i, current_ctx );
 		if( current_ctx )
 		{
+			logging_printf( LOGGING_DEBUG, "net_ctx_find_unused: index=%zu,status=[%s]\n", i, net_ctx_status_to_string( current_ctx->status ) );
 			if( current_ctx->status == NET_CTX_STATUS_UNUSED )
 			{
 				break;
@@ -251,7 +259,11 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 
 	num_connections = data_table_item_count( connections );
 
-	if( num_connections == 0 ) return NULL;
+	if( num_connections == 0 )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: zero items in connections list\n");
+		return NULL;
+	}
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_ssrc: ssrc=0x%08x\n", ssrc );
 
@@ -267,6 +279,7 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc)
 				break;
 			}
 		}
+		current_ctx = NULL;
 	}
 	if( ! current_ctx )
 	{
@@ -286,7 +299,11 @@ net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator)
 
 	num_connections = data_table_item_count( connections );
 
-	if( num_connections == 0 ) return NULL;
+	if( num_connections == 0 )
+	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: zero items in connections list\n");
+	  	return NULL;
+	}
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_initiator: initiator=0x%08x\n", initiator );
 
@@ -302,6 +319,7 @@ net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator)
 				break;
 			}
 		}
+		current_ctx = NULL;
 	}
 	if( ! current_ctx )
 	{
@@ -319,10 +337,15 @@ net_ctx_t * net_ctx_find_by_name( char *name )
 	size_t num_connections = 0;
 	net_ctx_t *current_ctx = NULL;
 
+	if( ! name ) return NULL;
+
 	num_connections = data_table_item_count( connections );
 
-	if( num_connections == 0 ) return NULL;
-	if( ! name ) return NULL;
+	if( num_connections == 0 )
+	{
+		logging_printf( LOGGING_DEBUG, "net_find_by_name: zero items in connections list\n");
+		return NULL;
+	}
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_find_by_name: name=%s\n", name );
 
@@ -338,6 +361,7 @@ net_ctx_t * net_ctx_find_by_name( char *name )
 				break;
 			}
 		}
+		current_ctx = NULL;
 	}
 
 	if( ! current_ctx )
@@ -372,6 +396,8 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 
 	if( ! new_ctx )
 	{
+		logging_printf( LOGGING_DEBUG, "net_ctx_register: Finding unused connection slot\n");
+
 		/* Find an unused connection before trying to create a new one */
 		new_ctx = net_ctx_find_unused();
 

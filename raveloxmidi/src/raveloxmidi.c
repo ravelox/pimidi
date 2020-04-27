@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
 
 	net_ctx_init();
 
-
 	ret = dns_service_publisher_start( &service_desc );
 	
 	if( ret != 0 )
@@ -135,7 +134,6 @@ daemon_stop:
 	{
 		daemon_teardown();
 	}
-
 
 	config_teardown();
 

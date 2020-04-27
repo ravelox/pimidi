@@ -76,9 +76,20 @@ static int max_fd = 0;
 
 static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t send_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t poll_fds_lock = PTHREAD_MUTEX_INITIALIZER;
 int socket_timeout = 0;
 
 static void net_socket_set_shutdown_lock( int i );
+
+void net_socket_poll_fds_lock( void )
+{
+	pthread_mutex_lock( &poll_fds_lock );
+}
+
+void net_socket_poll_fds_unlock( void )
+{
+	pthread_mutex_unlock( &poll_fds_lock );
+}
 
 void net_socket_send_lock( void )
 {
@@ -647,6 +658,7 @@ void net_socket_loop_init()
 	net_socket_set_shutdown_lock(0);
 	socket_timeout = config_long_get("network.socket_timeout");
 
+
 // Set up a pipe as a shutdown signal
 	err=pipe( shutdown_fd );
 	if( err < 0 )
@@ -654,7 +666,10 @@ void net_socket_loop_init()
 		logging_printf( LOGGING_ERROR, "net_socket_loop_init: pipe error: %s\n", strerror(errno));
 	} else {
 		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", shutdown_fd[0], shutdown_fd[1]);
+
+		net_socket_poll_fds_lock();
 		FD_SET( shutdown_fd[1], &read_fds );
+		net_socket_poll_fds_unlock();
 	}
 	fcntl(shutdown_fd[0], F_SETFL, O_NONBLOCK);
 	fcntl(shutdown_fd[1], F_SETFL, O_NONBLOCK);
@@ -662,7 +677,9 @@ void net_socket_loop_init()
 
 void net_socket_loop_teardown()
 {
+	pthread_mutex_destroy( &poll_fds_lock );
 	pthread_mutex_destroy( &shutdown_lock );
+	pthread_mutex_destroy( &send_lock );
 }
 
 int net_socket_fd_loop()
@@ -676,15 +693,25 @@ int net_socket_fd_loop()
 		net_socket_send_lock();
 		net_socket_set_fds();
 		net_socket_send_unlock();
+
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = socket_timeout; 
+
+		net_socket_poll_fds_lock();
                 ret = select( max_fd + 1 , &read_fds, NULL , NULL , &tv );
+		net_socket_poll_fds_unlock();
 
 		if( ret > 0 )
 		{
 			for( fd = 0; fd <= max_fd; fd++ )
 			{
-				if( FD_ISSET( fd, &read_fds ) )
+				int read_fd = 0;
+
+				net_socket_poll_fds_lock();
+				read_fd = FD_ISSET( fd, &read_fds );
+				net_socket_poll_fds_unlock();
+
+				if( read_fd )
 				{
 					net_socket_read(fd);
 				}
@@ -716,8 +743,12 @@ int net_socket_init( void )
 
 	pthread_mutex_init( &send_lock, NULL );
 
+	pthread_mutex_init( &poll_fds_lock, NULL);
+	
+	net_socket_poll_fds_lock();
 	max_fd = 0;
 	FD_ZERO( &read_fds );
+	net_socket_poll_fds_unlock();
 
 	sockets = data_table_create("sockets", net_socket_destroy, net_socket_dump );
 
@@ -787,7 +818,10 @@ void net_socket_set_fds(void)
 
 	if( num_sockets == 0 ) return;
 
+	net_socket_poll_fds_lock();
 	FD_ZERO( &read_fds );
+	net_socket_poll_fds_unlock();
+
 	for( i = 0; i < num_sockets; i++ )
 	{
 		raveloxmidi_socket_t *socket = NULL;
@@ -799,7 +833,9 @@ void net_socket_set_fds(void)
 		if( ! socket ) continue;
 		if( socket->fd > 0 )
 		{
+			net_socket_poll_fds_lock();
 			FD_SET( socket->fd, &read_fds );
+			net_socket_poll_fds_unlock();
 			max_fd = MAX( max_fd, socket->fd );
 		}
 	}
