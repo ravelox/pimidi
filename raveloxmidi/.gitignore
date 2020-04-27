@@ -111,3 +111,5 @@ src/raveloxmidi
 raveloxmidi.spec
 
 build/
+
+include/build_info.h

@@ -47,6 +47,8 @@
 
 #include "utils.h"
 
+#include "build_info.h"
+
 int main(int argc, char *argv[])
 {
 	dns_service_desc_t service_desc;
@@ -64,7 +66,7 @@ int main(int argc, char *argv[])
 	}
 
 	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
+	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
 
 	service_desc.name = config_string_get("service.name");
 	service_desc.service = "_apple-midi._udp";
