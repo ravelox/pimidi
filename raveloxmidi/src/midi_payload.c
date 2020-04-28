@@ -320,7 +320,7 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 {
 	unsigned char *p;
 	size_t current_len;
-	uint64_t current_delta;
+	uint64_t current_delta = 0;
 	unsigned char data_byte;
 	char *command_description;
 	enum midi_message_type_t message_type;
@@ -328,12 +328,14 @@ void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data
 	unsigned char *sysex_start_byte = NULL;
 	midi_command_t *command = NULL;
 
-	*table = data_table_create("midi_commands", midi_command_destroy, midi_command_dump);
 
 	if( ! payload ) return;
 
 	if( ! payload->header ) return;
 	if( ! payload->buffer ) return;
+
+	*table = data_table_create("midi_commands", midi_command_destroy, midi_command_dump);
+	if( ! *table ) return;
 
 	p = payload->buffer;
 	current_len = payload->header->len;

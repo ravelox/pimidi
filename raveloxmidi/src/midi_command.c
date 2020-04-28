@@ -144,6 +144,24 @@ unsigned char midi_command_bytes_needed( unsigned char command )
 	return 0;
 }
 
+void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, uint8_t *data, size_t data_len )
+{
+	if( ! command ) return;
+
+	command->delta = delta;
+	command->status = status;
+	
+	command->data = ( char * ) malloc( data_len );
+	if( ! command->data )
+	{
+		logging_printf( LOGGING_ERROR, "midi_command_set: Insufficient memory to create command data buffer\n");
+		return;
+	}
+
+	memset( command->data, 0, data_len );
+	memcpy( command->data, data, data_len );
+}
+
 void midi_command_dump( void *data )
 {
 	char *description = NULL;

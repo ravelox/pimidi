@@ -82,4 +82,6 @@ unsigned char midi_command_bytes_needed( unsigned char command );
 void midi_command_dump( void *data );
 int midi_note_from_command( midi_command_t *command , midi_note_t **midi_note );
 
+void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, uint8_t *data, size_t data_len );
+
 #endif

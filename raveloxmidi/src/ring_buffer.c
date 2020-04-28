@@ -287,6 +287,36 @@ ring_buffer_read_end:
 	return dest;
 }
 
+char ring_buffer_read_byte( ring_buffer_t *ring, uint8_t *return_byte, int advance )
+{
+	char return_status = -1;
+
+	if(! return_byte ) goto ring_buffer_read_byte_end;
+
+	*return_byte = 0;
+	if(! ring ) goto ring_buffer_read_byte_end;
+
+	ring_buffer_lock( ring );
+
+	logging_printf( LOGGING_DEBUG, "ring_buffer_read_byte: ring=%p\tused=%zu\tstart=%zu\tend=%zu\n", ring, ring->used, ring->start, ring->end);
+
+	// No data available
+	if( ring->used == 0 ) goto ring_buffer_read_byte_end;
+	
+	*return_byte = ring->data[ring->start];
+
+	if( advance == RING_YES )
+	{
+		ring->start += 1;
+		ring->used -= 1;
+		if( ring->start >= ring->size ) ring->start = 0;
+	}
+
+ring_buffer_read_byte_end:
+	ring_buffer_unlock( ring );
+	return return_status;
+}
+
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 {
 	int return_status = 0;

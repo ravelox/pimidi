@@ -534,6 +534,7 @@ int net_socket_read( int fd )
 		size_t num_midi_commands=0;
 		net_response_t *response = NULL;
 		size_t midi_command_index = 0;
+		net_ctx_t *current_ctx = NULL;
 
 		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 
@@ -549,6 +550,15 @@ int net_socket_read( int fd )
 		}
 
 		midi_payload_unpack( &midi_payload, rtp_packet->payload, read_buffer_size );
+
+		// Find the midi state for the RTP context
+		current_ctx = net_ctx_find_by_ssrc( rtp_packet->header.ssrc );
+
+		if( ! current_ctx )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: RTP packet received from unknown SSRC (0x%08x)\n", rtp_packet->header.ssrc );
+			goto net_socket_read_midi_clean;
+		}
 
 		// Read all the commands in the packet into an array
 		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands);
@@ -618,6 +628,7 @@ int net_socket_read( int fd )
 		}
 
 		// Clean up
+net_socket_read_midi_clean:
 		midi_payload_destroy( &midi_payload );
 		data_table_destroy( &midi_commands );
 

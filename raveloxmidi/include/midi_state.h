@@ -21,14 +21,17 @@
 #ifndef MIDI_STATE_H
 #define MIDI_STATE_H
 
+#include <stdint.h>
 #include <pthread.h>
 
+#include "data_table.h"
 #include "ring_buffer.h"
 #include "dbuffer.h"
 
 typedef enum midi_state_status_t {
 	MIDI_STATE_INIT,
-	MIDI_STATE_STATUS_RECEIVED,
+	MIDI_STATE_WAIT_DELTA,
+	MIDI_STATE_WAIT_COMMAND,
 	MIDI_STATE_WAIT_BYTE_1,
 	MIDI_STATE_WAIT_BYTE_2,
 	MIDI_STATE_WAIT_END_SYSEX,
@@ -37,10 +40,11 @@ typedef enum midi_state_status_t {
 
 typedef struct midi_state_t {
 	midi_state_status_t status;
-	int running_status;
+	unsigned char running_status;
 	ring_buffer_t *ring;
 	dbuffer_t *hold;
 	pthread_mutex_t lock;
+	uint64_t	current_delta;
 } midi_state_t;
 
 midi_state_t *midi_state_create( size_t size );
@@ -56,4 +60,7 @@ void midi_state_advance( midi_state_t *state, size_t steps );
 void midi_state_reset( midi_state_t *state );
 
 void midi_state_dump( midi_state_t *state );
+
+void midi_state_to_commands( midi_state_t *state, data_table_t **table, char get_delta );
+
 #endif
