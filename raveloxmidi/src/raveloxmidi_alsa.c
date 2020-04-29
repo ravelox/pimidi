@@ -243,6 +243,8 @@ void raveloxmidi_alsa_teardown( void )
 
 	pthread_mutex_destroy( &poll_descriptors_table_lock );
 
+	snd_config_update_free_global();
+
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: end\n");
 }
 
@@ -499,7 +501,10 @@ static void * raveloxmidi_alsa_listener( void *data )
 	do {
 		poll_result = raveloxmidi_alsa_poll( socket_timeout );
 
-		logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_listener: poll_result = %d\n", poll_result );
+		if( poll_result > 0 )
+		{
+			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_listener: poll_result = %d\n", poll_result );
+		}
 
 		if( poll_result == 1 )
 		{
@@ -519,8 +524,6 @@ static void * raveloxmidi_alsa_listener( void *data )
 			logging_printf(LOGGING_DEBUG, "raveloxmidi_alsa_listener: Data received on shutdown pipe\n");
 		}
 	} while ( net_socket_get_shutdown_status() == OK );
-
-	// raveloxmidi_alsa_teardown();
 
 	logging_printf(LOGGING_DEBUG, "raveloxmidi_alsa_listener: Thread stopped\n");
 

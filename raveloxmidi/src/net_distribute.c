@@ -55,9 +55,14 @@ extern int errno;
 #include "logging.h"
 
 #include "raveloxmidi_alsa.h"
+#include "net_distribute.h"
+
+
+// File handle for storing inbound MIDI commands
+extern int inbound_midi_fd;
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( unsigned char *packet, size_t recv_len)
+void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc )
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
@@ -66,7 +71,6 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	midi_note_t *midi_note = NULL;
 	midi_control_t *midi_control = NULL;
 	midi_program_t *midi_program = NULL;
-	midi_payload_t *initial_midi_payload = NULL;
 
 	unsigned char *packed_rtp_payload = NULL;
 
@@ -78,21 +82,20 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 	size_t packed_journal_len = 0;
 	char *description = NULL;
 	enum midi_message_type_t message_type = 0;
-	size_t midi_payload_len = 0;
 
 	int i = 0;
 	int total_connections = 0;
 
-	if( ! packet ) return;
+	unsigned char *raw_buffer = NULL;
 
-	logging_printf( LOGGING_DEBUG, "net_distribute_midi: packet=%p, recv_len=%u\n", packet, recv_len );
+
+	if( ! state ) return;
+
+	logging_printf( LOGGING_DEBUG, "net_distribute_midi: state=%p\n", state );
+	midi_state_dump( state );
 
 	// Convert the buffer into a set of commands
-	midi_payload_len = recv_len;
-	initial_midi_payload = midi_payload_create();
-	midi_payload_set_buffer( initial_midi_payload, packet, &midi_payload_len );
-	midi_payload_to_commands( initial_midi_payload, MIDI_PAYLOAD_STREAM, &midi_commands);
-	midi_payload_destroy( &initial_midi_payload );
+	midi_state_to_commands( state, &midi_commands, 0);
 
 	num_midi_commands = data_table_item_count( midi_commands );
 	for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
@@ -136,8 +139,11 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 		{
 			net_ctx_t *current_ctx = net_ctx_find_by_index( i );
 
-			logging_printf( LOGGING_DEBUG, "net_distribute: net_ctx_iter_current()=%p\n", current_ctx );
+			logging_printf( LOGGING_DEBUG, "net_distribute: current_ctx=%p\n", current_ctx );
 			if(! current_ctx ) continue;
+
+			// If the current ctx is the originator, we don't need to send anything
+			if( current_ctx->ssrc == originator_ssrc ) continue;
 
 			// Get a journal if there is one
 			net_ctx_journal_pack( current_ctx , &packed_journal, &packed_journal_len);
@@ -219,6 +225,38 @@ void net_distribute_midi( unsigned char *packet, size_t recv_len)
 			default:
 				break;
 		}
+
+                // Determine if the MIDI commands need to be written out to ALSA or the local MIDI file descriptor
+		raw_buffer = (unsigned char *)malloc( 2 + command->data_len );
+
+		if( raw_buffer )
+		{       
+			size_t bytes_written = 0;
+
+			memset( raw_buffer, 0, 2 + command->data_len );
+
+			raw_buffer[0]=command->status;
+
+			if( command->data_len > 0 )
+			{       
+				memcpy( raw_buffer + 1, command->data, command->data_len );
+			}       
+
+			if( inbound_midi_fd >= 0 )
+			{       
+				net_socket_send_lock();
+				bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
+				net_socket_send_unlock();
+				logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
+			}       
+
+#ifdef HAVE_ALSA
+			net_socket_send_lock();
+			raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len );
+			net_socket_send_unlock();
+#endif
+			free( raw_buffer );
+		}       
 	}
 
 	data_table_destroy( &midi_commands );

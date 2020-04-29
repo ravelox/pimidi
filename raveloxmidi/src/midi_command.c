@@ -127,11 +127,15 @@ unsigned char midi_command_bytes_needed( unsigned char command )
 {
 	uint32_t i;
 
+	logging_printf( LOGGING_DEBUG, "midi_command_bytes_needed: command=0x%02x\t need_to_normalize=%u\n", command , command < 0xF0 );
+
 	// Normalize the provided command
-	if( ! ( command & 0xF0 ) )
+	if( command < 0xF0 )
 	{
-		command = ( command &0xF0 ) >> 4;
+		command = ( command & 0xF0 ) >> 4;
 	}
+
+	logging_printf( LOGGING_DEBUG, "midi_command_bytes_needed: normalized command=0x%02x\n", command );
 
 	for( i = 0; midi_message_map[i].message != 0x00; i++ )
 	{
@@ -160,6 +164,7 @@ void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, 
 
 	memset( command->data, 0, data_len );
 	memcpy( command->data, data, data_len );
+	command->data_len = data_len;
 }
 
 void midi_command_dump( void *data )

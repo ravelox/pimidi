@@ -312,6 +312,8 @@ char ring_buffer_read_byte( ring_buffer_t *ring, uint8_t *return_byte, int advan
 		if( ring->start >= ring->size ) ring->start = 0;
 	}
 
+	return_status = 0;
+
 ring_buffer_read_byte_end:
 	ring_buffer_unlock( ring );
 	return return_status;

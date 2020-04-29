@@ -69,7 +69,7 @@ static data_table_t *sockets = NULL;
 static int net_socket_shutdown = 0;
 static int shutdown_fd[2] = {0,0};
 
-static int inbound_midi_fd = -1;
+int inbound_midi_fd = -1;
 
 static fd_set read_fds;
 static int max_fd = 0;
@@ -413,7 +413,9 @@ int net_socket_read( int fd )
 
 	}
 
-	// Apple MIDI command
+/*
+	Apple MIDI command
+*/
 	if( ( ( fd == control_fd ) || ( fd == data_fd ) ) && ( ( midi_state_char_compare( found_socket->state, 0xff, 0 ) == 1 )  && ( midi_state_char_compare( found_socket->state, 0xff, 1 ) == 1 ) ) )
 	{
 		net_response_t *response = NULL;
@@ -460,7 +462,9 @@ int net_socket_read( int fd )
 		}
 
 		net_applemidi_cmd_destroy( &command );
-	// Heartbeat request
+/*
+	Heartbeat request
+*/
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
 	{
 		const char *buffer="OK";
@@ -472,7 +476,9 @@ int net_socket_read( int fd )
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		midi_state_advance( found_socket->state, 4);
-	// Shutdown request
+/*
+	Shutdown request
+*/
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	{
 		int ret = 0;
@@ -492,7 +498,9 @@ int net_socket_read( int fd )
 		ret = write( shutdown_fd[1] , "X", 1 );
 
 		midi_state_advance( found_socket->state, 4);
-	// Connection list request
+/*
+	Connection list request
+*/
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
 	{
 		int ret = 0;
@@ -520,27 +528,41 @@ int net_socket_read( int fd )
 #else
 	} else if( fd == local_fd )
 #endif
-	// MIDI data on internal socket or ALSA rawmidi device
+/*
+	MIDI data on internal socket or ALSA rawmidi device
+*/
 	{
 		midi_state_dump( found_socket->state );
-
-		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
-		net_distribute_midi( read_buffer, read_buffer_size );
+		net_distribute_midi( found_socket->state , 0);
 	} else {
-	// RTP MIDI inbound from remote socket
+/*
+	RTP MIDI inbound from remote socket
+*/
 		rtp_packet_t *rtp_packet = NULL;
 		midi_payload_t *midi_payload=NULL;
-		data_table_t *midi_commands=NULL;
-		size_t num_midi_commands=0;
 		net_response_t *response = NULL;
-		size_t midi_command_index = 0;
 		net_ctx_t *current_ctx = NULL;
+
+		logging_printf(LOGGING_DEBUG, "net_socket_read: inbound MIDI received\n");
 
 		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 
+/*
+*---------------------
+*	By design, there is a midi state structure for a socket AND one for a connection context.
+*	This is because there can be multiple connection contexts for a single socket and we need
+*	to keep the running MIDI status for each connection context.
+*
+*	In order to get that information, we need to unpack the RTP packet first to get the SSRC
+*	of the connection context so we can locate the corresponding midi state structure.
+*
+*	While we're there, we can also get RTP version of the packet to ensure it's what we expected
+*	and also we need to unpack the delta times if they are supplied. This is indicated in the Z flag
+*	in the RTP payload header.
+*---------------------
+*/
 		rtp_packet = rtp_packet_create();
 		rtp_packet_unpack( read_buffer, read_buffer_size, rtp_packet );
-		logging_printf(LOGGING_DEBUG, "net_socket_read: inbound MIDI received\n");
 		rtp_packet_dump( rtp_packet );
 
 		if( rtp_packet->header.v != RTP_VERSION )
@@ -549,7 +571,7 @@ int net_socket_read( int fd )
 			goto net_socket_read_rtp_clean;
 		}
 
-		midi_payload_unpack( &midi_payload, rtp_packet->payload, read_buffer_size );
+		midi_payload_unpack( &midi_payload, rtp_packet->payload, rtp_packet->payload_len );
 
 		// Find the midi state for the RTP context
 		current_ctx = net_ctx_find_by_ssrc( rtp_packet->header.ssrc );
@@ -560,12 +582,8 @@ int net_socket_read( int fd )
 			goto net_socket_read_midi_clean;
 		}
 
-		// Read all the commands in the packet into an array
-		midi_payload_to_commands( midi_payload, MIDI_PAYLOAD_RTP, &midi_commands);
-		if( midi_commands )
-		{
-			num_midi_commands = data_table_item_count( midi_commands );
-		}
+		// Transfer the MIDI payload into the MIDI state for the connection context
+		midi_state_write( current_ctx->midi_state, midi_payload->buffer, midi_payload->header->len );
 
 		// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
 		response = applemidi_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
@@ -579,58 +597,11 @@ int net_socket_read( int fd )
 			net_response_destroy( &response );
 		}
 
-		// Determine if the MIDI commands need to be written out
-		output_enabled = ( inbound_midi_fd >= 0 );
-#ifdef HAVE_ALSA
-		output_enabled |= raveloxmidi_alsa_out_available();
-#endif
-		if( output_enabled )
-		{
-			logging_printf(LOGGING_DEBUG, "net_socket_read: output_enabled\n");
-			for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
-			{
-				midi_command_t *command = NULL;
-				unsigned char *raw_buffer = NULL;
-
-				data_table_lock( midi_commands );
-				command = data_table_item_get( midi_commands, midi_command_index );
-				data_table_unlock( midi_commands );
-
-				if( ! command ) continue;
-
-				raw_buffer = (unsigned char *)malloc( 2 + command->data_len );
-
-				if( raw_buffer )
-				{
-					size_t bytes_written = 0;
-					raw_buffer[0]=command->status;
-					if( command->data_len > 0 )
-					{
-						memcpy( raw_buffer + 1, command->data, command->data_len );
-					}
-
-					if( inbound_midi_fd >= 0 )
-					{
-						net_socket_send_lock();
-						bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
-						net_socket_send_unlock();
-						logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
-					}
-
-#ifdef HAVE_ALSA
-					net_socket_send_lock();
-					raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len );
-					net_socket_send_unlock();
-#endif
-					free( raw_buffer );
-				}
-			}
-		}
+		net_distribute_midi( current_ctx->midi_state, current_ctx->ssrc );
 
 		// Clean up
 net_socket_read_midi_clean:
 		midi_payload_destroy( &midi_payload );
-		data_table_destroy( &midi_commands );
 
 net_socket_read_rtp_clean:
 		rtp_packet_destroy( &rtp_packet );
@@ -656,7 +627,6 @@ int net_socket_get_shutdown_status( void )
 
 	pthread_mutex_lock( &shutdown_lock );
 	i = net_socket_shutdown;
-	logging_printf(LOGGING_DEBUG, "net_socket_get_shutdown_status: %d\n", i);
 	pthread_mutex_unlock( &shutdown_lock );
 	return i;
 }

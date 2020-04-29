@@ -21,6 +21,8 @@
 #ifndef _NET_DISTRIBUTE_H
 #define _NET_DISTRIBUTE_H
 
-void net_distribute_midi( unsigned char *packet, size_t recv_len );
+#include "midi_state.h"
+
+void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc );
 
 #endif

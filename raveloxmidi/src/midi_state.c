@@ -82,7 +82,7 @@ void midi_state_reset( midi_state_t *state )
 
 	midi_state_lock( state );
 
-	state->status = MIDI_STATE_WAIT_COMMAND;
+	state->status = MIDI_STATE_INIT;
 	state->running_status = 0;
 
 	if( state->hold )
@@ -250,6 +250,7 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 	char *buffer_value = NULL;
 	size_t buffer_len = 0;
 	midi_command_t *new_command = NULL;
+	char read_status = 0;
 
 	if( ! state ) return;
 
@@ -257,8 +258,16 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 
 	while( 1 )
 	{
-		// If no bytes available...return
-		if( midi_state_read_byte( state, &byte ) == -1 ) return;
+		read_status = midi_state_read_byte( state, &byte );
+
+		// If no bytes are available...return
+		if( read_status != 0 )
+		{
+			logging_printf( LOGGING_DEBUG, "midi_state_to_commands: read_byte status=%d\n", read_status );
+			return;
+		}
+
+		logging_printf( LOGGING_DEBUG, "midi_state_to_commands: STATE_IN read_byte byte=0x%02x, running_status=0x%02x, status=%s\n", byte , state->running_status, midi_status_to_string( state->status) );
 
 		// If the delta has been provided, we need to get it first
 		if( state->status == MIDI_STATE_INIT)
@@ -283,6 +292,7 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 				
 				// Using the running status, determine how many bytes we need
 				bytes_needed = midi_command_bytes_needed( state->running_status );
+				logging_printf( LOGGING_DEBUG, "midi_state_to_commands: data byte received: need=%d\n", bytes_needed );
 				
 				// Copy the running status into the hold buffer
 				dbuffer_write( state->hold, &(state->running_status), 1);
@@ -308,27 +318,27 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 				if( byte == 0xF0 )
 				{
 					state->status = MIDI_STATE_WAIT_END_SYSEX;
-					break;
+				} else {
+					bytes_needed = midi_command_bytes_needed( byte & 0xF0 );
+					logging_printf( LOGGING_DEBUG, "midi_state_to_commands: command byte received: need=%d\n", bytes_needed );
+
+					switch( bytes_needed )
+					{
+						case 1:
+							state->status = MIDI_STATE_WAIT_BYTE_1;
+							break;
+						case 2:
+							state->status = MIDI_STATE_WAIT_BYTE_2;
+							break;
+						case 0:
+						default:
+							state->status = MIDI_STATE_COMMAND_RECEIVED;
+							break;
+					}
+
+					// Set the running status
+					state->running_status = byte;
 				}
-
-				bytes_needed = midi_command_bytes_needed( byte & 0xF0 );
-
-				switch( bytes_needed )
-				{
-					case 1:
-						state->status = MIDI_STATE_WAIT_BYTE_1;
-						break;
-					case 2:
-						state->status = MIDI_STATE_WAIT_BYTE_2;
-						break;
-					case 0:
-					default:
-						state->status = MIDI_STATE_COMMAND_RECEIVED;
-						break;
-				}
-
-				// Set the running status
-				state->running_status = byte;
 			}
 
 		}
@@ -355,20 +365,22 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			// Copy byte to hold buffer
 			dbuffer_write( state->hold, &byte, 1 );
 
-			if( byte != 0xF7 )
+			if( byte == 0xF7 )
 			{
-				continue;
-			} else {
 				state->status = MIDI_STATE_COMMAND_RECEIVED;
 			}
 		}
 
+
+		logging_printf( LOGGING_DEBUG, "midi_state_to_commands: STATE_OUT read_byte byte=0x%02x, running_status=0x%02x, status=%s\n", byte , state->running_status, midi_status_to_string( state->status) );
 
 		// If we're waiting for more data, loop around
 		if( state->status != MIDI_STATE_COMMAND_RECEIVED) continue;
 
 		// Take the full command from the hold buffer
 		buffer_len = dbuffer_read( state->hold, &buffer_value );
+		logging_printf( LOGGING_DEBUG, "midi_state_to_commands: hold buffer len=%ld\n", buffer_len );
+
 		dbuffer_reset( state->hold );
 
 		// Create a new midi command structure

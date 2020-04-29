@@ -39,7 +39,9 @@ rtp_packet_t * rtp_packet_create( void )
 	if( new )
 	{
 		memset( new, 0 , sizeof( rtp_packet_t ) );
+
 		new->payload = NULL;
+		new->payload_len = 0;
 
 		// Initialise the standard fields
 
