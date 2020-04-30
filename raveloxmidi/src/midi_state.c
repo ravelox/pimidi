@@ -340,7 +340,7 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 					state->running_status = byte;
 				}
 			}
-
+			goto midi_state_to_commands_end;
 		}
 		
 		if( state->status == MIDI_STATE_WAIT_BYTE_2)
@@ -349,7 +349,7 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			dbuffer_write( state->hold, &byte, 1 );
 
 			state->status = MIDI_STATE_WAIT_BYTE_1;
-			continue;
+			goto midi_state_to_commands_end;
 		}
 
 		if( state->status == MIDI_STATE_WAIT_BYTE_1 )
@@ -358,6 +358,7 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			dbuffer_write( state->hold, &byte, 1 );
 
 			state->status = MIDI_STATE_COMMAND_RECEIVED;
+			goto midi_state_to_commands_end;
 		}
 
 		if( state->status == MIDI_STATE_WAIT_END_SYSEX )
@@ -369,9 +370,10 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			{
 				state->status = MIDI_STATE_COMMAND_RECEIVED;
 			}
+			goto midi_state_to_commands_end;
 		}
 
-
+midi_state_to_commands_end:
 		logging_printf( LOGGING_DEBUG, "midi_state_to_commands: STATE_OUT read_byte byte=0x%02x, running_status=0x%02x, status=%s\n", byte , state->running_status, midi_status_to_string( state->status) );
 
 		// If we're waiting for more data, loop around
