@@ -115,7 +115,7 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        logging_printf(LOGGING_INFO, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
+        logging_printf(LOGGING_DEBUG, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());

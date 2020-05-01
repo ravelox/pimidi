@@ -362,17 +362,17 @@ int net_socket_read( int fd )
 
 	if( fd == data_fd )
 	{
-		logging_printf(LOGGING_INFO, "net_socket_read: data_fd\n");
+		logging_printf(LOGGING_DEBUG, "net_socket_read: data_fd\n");
 	} else if (fd == control_fd ) {
-		logging_printf(LOGGING_INFO, "net_socket_read: control_fd\n");
+		logging_printf(LOGGING_DEBUG, "net_socket_read: control_fd\n");
 	} else if (fd == local_fd ) {
-		logging_printf(LOGGING_INFO, "net_socket_read: local_fd\n");
+		logging_printf(LOGGING_DEBUG, "net_socket_read: local_fd\n");
 	}
 
 #ifdef HAVE_ALSA
 	if( found_socket->type == RAVELOXMIDI_SOCKET_ALSA_TYPE )
 	{
-		logging_printf(LOGGING_INFO, "net_socket_read: alsa handle\n");
+		logging_printf(LOGGING_DEBUG, "net_socket_read: alsa handle\n");
 	} 
 #endif
 
@@ -707,7 +707,7 @@ int net_socket_fd_loop()
 void net_socket_loop_shutdown(int signal)
 {
 	int ret = 0;
-	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: signal=%d action=shutdown\n", signal);
+	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: shutdown signal received(%u)\n", signal);
 	net_socket_set_shutdown_lock( 1 );
 	ret = write( shutdown_fd[0] , "X", 1 );
 	ret = write( shutdown_fd[1] , "X", 1 );

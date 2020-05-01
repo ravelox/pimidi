@@ -56,7 +56,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "applemidi_inv_responder: Registering new connection\n");
+		logging_printf( LOGGING_INFO, "applemidi_inv_responder: Registering new connection from [%s]:[%u] [%s]\n", ip_address, port, ( inv->name ? inv->name : "") );
 		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name );
 
 		if( ! ctx ) 
