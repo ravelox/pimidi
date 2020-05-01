@@ -200,6 +200,11 @@ This is a multi-value configuration option. See the \fBNOTES\fP section above fo
 Size of the buffer to use for reading data from the input device.
 .br
 Default is 4096. Maximum is 65535.
+.TP 
+.B alsa.writeback
+If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
+.br
+This is a yes/no option. Default is no.
 .fi
 .SH AUTHOR
 .B raveloxmidi

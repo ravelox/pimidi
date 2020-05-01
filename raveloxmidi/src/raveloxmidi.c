@@ -57,7 +57,17 @@ int main(int argc, char *argv[])
 
 	utils_init();
 
-	config_init( argc, argv);
+	ret = config_init( argc, argv);
+
+	logging_init();
+	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
+
+	/* If config should be displayed, do it and then exit */
+	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
+	{
+		config_dump();
+		if( ret == CONFIG_DUMP_EXIT ) goto daemon_stop;
+	}
 
 	if( ! config_is_set("network.bind_address") )
 	{
@@ -65,8 +75,6 @@ int main(int argc, char *argv[])
 		goto daemon_stop;
 	}
 
-	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
 
 	service_desc.name = config_string_get("service.name");
 	service_desc.service = "_apple-midi._udp";

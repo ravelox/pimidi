@@ -248,6 +248,23 @@ void raveloxmidi_alsa_teardown( void )
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: end\n");
 }
 
+int raveloxmidi_alsa_card_number( snd_rawmidi_t *rawmidi )
+{
+	int card_number = -1;
+
+	if( rawmidi )
+	{
+		snd_rawmidi_info_t *info = NULL;
+
+		snd_rawmidi_info_malloc( &info );
+		snd_rawmidi_info( rawmidi, info );
+		card_number = snd_rawmidi_info_get_card( info );
+		snd_rawmidi_info_free( info );
+	}
+
+	return card_number;
+}
+
 void raveloxmidi_alsa_dump_rawmidi( void *data )
 {
 	snd_rawmidi_t *rawmidi = NULL;
@@ -313,7 +330,7 @@ int raveloxmidi_alsa_in_available( void )
 	return ( count > unused );
 }
 
-int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
+int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int originator_card )
 {
 	int i = 0;
 	size_t num_outputs = 0;
@@ -322,15 +339,28 @@ int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size )
 	num_outputs = data_table_item_count( outputs );
 	for( i = 0; i < num_outputs; i++ )
 	{
-		
 		if( data_table_item_is_unused( outputs, i ) == 0 )
 		{
 			snd_rawmidi_t *handle = NULL;
 			handle = (snd_rawmidi_t *)data_table_item_get( outputs, i );
 			if( handle )
 			{
-				bytes_written = snd_rawmidi_write( handle, buffer, buffer_size );
-				logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d bytes_written=%u\n", i, bytes_written );
+				int card_number = 0;
+				int writeback = 0;
+
+				card_number = raveloxmidi_alsa_card_number( handle );
+
+				// Only write out if this is not the same card that provided the data
+				writeback = is_yes( config_string_get("alsa.writeback") );
+
+				if( ( originator_card != card_number ) || ( writeback == 1 ) )
+				{
+					bytes_written = snd_rawmidi_write( handle, buffer, buffer_size );
+					logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d originator=%u card=%u bytes_written=%u\n",
+						i, originator_card, card_number, bytes_written );
+				} else {
+					logging_printf( LOGGING_DEBUG,"raveloxmidi_alsa_write: not writing to the same card\n");
+				}
 			}
 		}
 	}
@@ -439,6 +469,7 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 	{
 		socket->type = RAVELOXMIDI_SOCKET_ALSA_TYPE;
 		socket->handle = handle;
+		socket->card_number = raveloxmidi_alsa_card_number( handle );
 	}
 add_poll_end:
 	poll_descriptors_unlock();

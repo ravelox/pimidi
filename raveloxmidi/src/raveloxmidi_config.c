@@ -58,6 +58,7 @@ static void config_set_defaults( void )
 	config_add_item("network.read.blocksize","2048");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
+	config_add_item("alsa.writeback", "no");
 #endif
 
 }
@@ -126,7 +127,7 @@ static void config_load_file( char *filename )
 	if( config_file) fclose( config_file );
 }
 
-void config_init( int argc, char *argv[] )
+int config_init( int argc, char *argv[] )
 {
 	int dump_config = 0;
 	static struct option long_options[] = {
@@ -141,11 +142,7 @@ void config_init( int argc, char *argv[] )
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
-#ifdef HAVE_ALSA
 	const char *short_options = "c:dIhNP:RCv";
-#else
-	const char *short_options = "c:dIhNP:RCv";
-#endif
 	int c;
 
 	config_items = kv_table_create("config_items");
@@ -177,7 +174,7 @@ void config_init( int argc, char *argv[] )
 			case 'd':
 				config_add_item("logging.enabled", "yes");
 				config_add_item("logging.log_level", "debug");
-				dump_config = 1;
+				dump_config = CONFIG_DUMP;
 				break;
 			/* This option exits */
 			case 'h':
@@ -197,33 +194,23 @@ void config_init( int argc, char *argv[] )
 				config_add_item("readonly", "yes");
 				break;
 			case 'C':
-				dump_config = 1;
+				dump_config = CONFIG_DUMP_EXIT;
 				break;
 		}
 	} 
 
 	config_load_file( config_string_get("config.file") );
 
-	if( dump_config == 1 )
-	{
-		config_dump();
-	}
+	return dump_config;
 }
 
 void config_teardown( void )
 {
-	if( ! config_items )
-	{
-		fprintf( stderr, "NO CONFIG ITEMS\n");
-		return;
-	}
+	if( ! config_items ) return;
 
 	logging_printf( LOGGING_DEBUG, "config_teardown config_items=%p count=%lu\n", config_items, config_items->count );
 
-	kv_table_reset( config_items );
-
-	free( config_items );
-	config_items = NULL;
+	kv_table_destroy( &config_items );
 }
 
 /* Public version */
@@ -370,9 +357,6 @@ void config_add_item(char *key, char *value )
 
 void config_dump( void )
 {
-	if( ! config_items ) return;
-	if( config_items->count <= 0 ) return;
-
 	kv_table_dump( config_items );
 }
 

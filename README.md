@@ -221,4 +221,7 @@ alsa.input_device
 alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device.
 	Default is 4096. Maximum is 65535.
+alsa.writeback
+	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
+	This is a yes/no option. Default is no.
 ```

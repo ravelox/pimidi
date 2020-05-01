@@ -62,7 +62,7 @@ extern int errno;
 extern int inbound_midi_fd;
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc )
+void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc , int alsa_originator_card )
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
@@ -87,13 +87,17 @@ void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc )
 	int total_connections = 0;
 
 	unsigned char *raw_buffer = NULL;
-
+	char output_available = 0;
 
 	if( ! state ) return;
 
 	logging_printf( LOGGING_DEBUG, "net_distribute_midi: state=%p\n", state );
 	midi_state_dump( state );
 
+	output_available = ( inbound_midi_fd >= 0 );
+#ifdef HAVE_ALSA
+	output_available |= raveloxmidi_alsa_out_available();
+#endif
 	// Convert the buffer into a set of commands
 	midi_state_to_commands( state, &midi_commands, 0);
 
@@ -227,8 +231,9 @@ void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc )
 		}
 
                 // Determine if the MIDI commands need to be written out to ALSA or the local MIDI file descriptor
-		raw_buffer = (unsigned char *)malloc( 2 + command->data_len );
+		if( !output_available ) continue;
 
+		raw_buffer = (unsigned char *)malloc( 2 + command->data_len );
 		if( raw_buffer )
 		{       
 			size_t bytes_written = 0;
@@ -252,7 +257,7 @@ void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc )
 
 #ifdef HAVE_ALSA
 			net_socket_send_lock();
-			raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len );
+			raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len , alsa_originator_card );
 			net_socket_send_unlock();
 #endif
 			free( raw_buffer );

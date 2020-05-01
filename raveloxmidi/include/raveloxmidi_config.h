@@ -23,7 +23,7 @@
 
 #include "kv_table.h"
 
-void config_init( int argc, char *argv[] );
+int config_init( int argc, char *argv[] );
 void config_teardown( void );
 
 char *config_string_get( char *key );
@@ -54,4 +54,6 @@ int config_iter_is_set( raveloxmidi_config_iter_t *iter );
 
 #define MAX_ITER_INDEX	10000
 
+#define CONFIG_DUMP		1
+#define CONFIG_DUMP_EXIT	2
 #endif

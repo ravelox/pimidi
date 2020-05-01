@@ -30,12 +30,13 @@ void raveloxmidi_alsa_init( char *input_name, char *output_name , size_t buffer_
 void raveloxmidi_alsa_handle_destroy( void **rawmidi );
 void raveloxmidi_alsa_teardown( void );
 
+int raveloxmidi_alsa_card_number( snd_rawmidi_t *rawmidi );
 void raveloxmidi_alsa_dump_rawmidi( void *data );
 
 int raveloxmidi_alsa_out_available( void );
 int raveloxmidi_alsa_in_available( void );
 
-int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size );
+int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int originator_card);
 int raveloxmidi_alsa_read( snd_rawmidi_t *handle, unsigned char *buffer, size_t read_size); 
 int raveloxmidi_alsa_poll( int timeout );
 void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle );

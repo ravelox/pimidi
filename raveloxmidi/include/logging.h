@@ -48,5 +48,6 @@ void logging_init(void);
 void logging_teardown(void);
 void logging_prefix_enable(void);
 void logging_prefix_disable(void);
+int logging_get_threshold(void);
 
 #endif
