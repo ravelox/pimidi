@@ -45,6 +45,7 @@ typedef struct midi_state_t {
 	dbuffer_t *hold;
 	pthread_mutex_t lock;
 	uint64_t	current_delta;
+	uint8_t	partial_sysex;
 } midi_state_t;
 
 midi_state_t *midi_state_create( size_t size );

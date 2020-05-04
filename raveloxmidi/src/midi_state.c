@@ -1,5 +1,5 @@
 /*
-   This file is part of raveloxmidi.
+   This file is part of raveloxmidi
 
    Copyright (C) 2020 Dave Kelly
 
@@ -71,6 +71,7 @@ midi_state_t *midi_state_create( size_t buffer_size )
 	new_midi_state->hold = dbuffer_create( DBUFFER_DEFAULT_BLOCK_SIZE );
 	new_midi_state->ring = ring_buffer_create( buffer_size );
 	new_midi_state->running_status = 0;
+	new_midi_state->partial_sysex = 0;
 	pthread_mutex_init( &(new_midi_state->lock) , NULL);
 
 	return new_midi_state;
@@ -281,6 +282,23 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			state->current_delta <<= 8;
 			state->current_delta += ( byte & 0x7f );
 			if( byte & 0x80 ) state->status = MIDI_STATE_WAIT_COMMAND;
+			logging_printf( LOGGING_DEBUG, "midi_state_to_commands: delta=%lu\n", state->current_delta);
+			continue;
+		// Check for real-time MIDI messages that should go through at any time
+		} else {
+			if( byte >= MIDI_TIMING_CLOCK )
+			{
+				logging_printf( LOGGING_DEBUG, "midi_state_to_commands: real-time message: message=0x%02x\n", byte);
+				new_command = midi_command_create();
+				if( ! new_command )
+				{
+					logging_printf( LOGGING_DEBUG, "midi_state_to_commands: real-time: Insufficient memory to create command structure\n");
+					continue;
+				}
+				midi_command_set( new_command, state->current_delta, byte, NULL, 0);
+				data_table_add_item( *command_table, new_command );
+				continue;
+			}
 		}
 
 		if( state->status == MIDI_STATE_WAIT_COMMAND )
@@ -315,9 +333,18 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 				dbuffer_write( state->hold, &byte, 1);
 
 				// Special cases for SysEx
-				if( byte == 0xF0 )
+				if( (byte == 0xF0) || ( state->partial_sysex && (byte==0xF7) ) )
 				{
+					if( (byte == 0xF0) && (state->partial_sysex == 1) )
+					{
+						logging_printf( LOGGING_DEBUG, "midi_state_to_commands: SYSEX 0xF0 read: Expected 0xF7\n");
+					}
 					state->status = MIDI_STATE_WAIT_END_SYSEX;
+					state->running_status = 0;
+				// RFC6295 - p 19 - Unpaired 0xF7 cancels running status
+				} else if( byte == MIDI_END_SYSEX ) {
+					state->status = MIDI_STATE_COMMAND_RECEIVED;
+					state->running_status = 0;
 				} else {
 					bytes_needed = midi_command_bytes_needed( byte & 0xF0 );
 					logging_printf( LOGGING_DEBUG, "midi_state_to_commands: command byte received: need=%d\n", bytes_needed );
@@ -366,10 +393,21 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 			// Copy byte to hold buffer
 			dbuffer_write( state->hold, &byte, 1 );
 
-			if( byte == 0xF7 )
+			if( (byte==0xF7) || ((state->partial_sysex==1) && (byte==0xF4)) )
 			{
 				state->status = MIDI_STATE_COMMAND_RECEIVED;
+				state->partial_sysex = 0;
 			}
+
+			if( byte == 0xF0 )
+			{
+				state->status = MIDI_STATE_COMMAND_RECEIVED;
+				state->partial_sysex = 1;
+			}
+
+			// Clear the running status
+			state->running_status = 0;
+
 			goto midi_state_to_commands_end;
 		}
 

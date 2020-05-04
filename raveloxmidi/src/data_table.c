@@ -92,11 +92,10 @@ void data_table_destroy( data_table_t **table )
 {
 	if( ! *table ) return;
 
-	logging_printf(LOGGING_DEBUG,"data_table_destroy\n");
-
-	data_table_dump( *table );
 
 	data_table_lock( *table );
+
+	logging_printf(LOGGING_DEBUG,"data_table_destroy: table=%p, name=[%s]\n", *table, ( (*table)->name ? (*table)->name : "" ) );
 
 	if( (*table)->items )
 	{
