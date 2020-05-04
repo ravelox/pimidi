@@ -339,6 +339,10 @@ void midi_state_to_commands( midi_state_t *state , data_table_t **command_table,
 					{
 						logging_printf( LOGGING_DEBUG, "midi_state_to_commands: SYSEX 0xF0 read: Expected 0xF7\n");
 					}
+					if( state->partial_sysex == 1 )
+					{
+						logging_printf( LOGGING_DEBUG, "midi_state_to_commands: partial SysEx\n");
+					}
 					state->status = MIDI_STATE_WAIT_END_SYSEX;
 					state->running_status = 0;
 				// RFC6295 - p 19 - Unpaired 0xF7 cancels running status
