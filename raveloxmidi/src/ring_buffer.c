@@ -147,7 +147,6 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 {
 	size_t return_val = 0;
-	size_t remain = 0;
 
 	if( !ring ) return 0;
 	if( !data ) return 0;
@@ -321,7 +320,6 @@ ring_buffer_read_byte_end:
 
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 {
-	int return_status = 0;
 	char *new_data = NULL;
 	char *old_data = NULL;
 	size_t bytes_used = 0;

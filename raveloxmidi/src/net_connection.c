@@ -106,7 +106,6 @@ void net_ctx_dump( void *data )
 
 void net_ctx_dump_all( void )
 {
-	int i = 0;
 	DEBUG_ONLY;
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: start\n");
 

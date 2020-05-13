@@ -253,7 +253,6 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 
 raveloxmidi_socket_t *net_socket_add( int new_socket_fd )
 {
-	raveloxmidi_socket_t **new_socket_list = NULL;
 	raveloxmidi_socket_t *new_socket_item = NULL;
 
 	if( new_socket_fd < 0 ) return NULL;
@@ -324,7 +323,6 @@ int net_socket_read( int fd )
 	ssize_t recv_len = 0;
 	unsigned from_len = 0;
 	struct sockaddr_storage from_addr;
-	int output_enabled = 0;
 	char ip_address[ INET6_ADDRSTRLEN ];
 	uint16_t from_port = 0;
 	net_applemidi_command *command;
@@ -491,12 +489,20 @@ int net_socket_read( int fd )
 		net_socket_send_unlock();
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
-		logging_printf(LOGGING_NORMAL, "Shutdown request received on local socket\n");
+		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on local socket\n");
 
 		net_socket_set_shutdown_lock(1);
 
 		ret = write( shutdown_fd[0] , "X", 1 );
+		if( ret != 0 )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to write to internal shutdown socket 0\n");
+		}
 		ret = write( shutdown_fd[1] , "X", 1 );
+		if( ret != 0 )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to write to internal shutdown socket 1\n");
+		}
 
 		midi_state_advance( found_socket->state, 4);
 /*
@@ -504,7 +510,6 @@ int net_socket_read( int fd )
 */
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
 	{
-		int ret = 0;
 		char *buffer = NULL;
 		size_t bytes_written = 0;
 
@@ -711,7 +716,15 @@ void net_socket_loop_shutdown(int signal)
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: shutdown signal received(%u)\n", signal);
 	net_socket_set_shutdown_lock( 1 );
 	ret = write( shutdown_fd[0] , "X", 1 );
+	if( ret != 0 )
+	{
+		logging_printf( LOGGING_WARN, "net_socket_loop_shutdown: Unable to write to internal shutdown socket 0\n");
+	}
 	ret = write( shutdown_fd[1] , "X", 1 );
+	if( ret != 0 )
+	{
+		logging_printf( LOGGING_WARN, "net_socket_loop_shutdown: Unable to write to internal shutdown socket 1\n");
+	}
 	close( shutdown_fd[0] );
 	close( shutdown_fd[1] );
 }

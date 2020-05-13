@@ -126,8 +126,6 @@ static void raveloxmidi_alsa_add_input( const char *device_name , size_t buffer_
 
 void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer_size)
 {
-	int ret = 0;
-
 	outputs = data_table_create( "ALSA outputs", raveloxmidi_alsa_handle_destroy , raveloxmidi_alsa_dump_rawmidi);
 	if(! outputs )
 	{
@@ -230,8 +228,6 @@ void raveloxmidi_alsa_handle_destroy( void **data )
 
 void raveloxmidi_alsa_teardown( void )
 {
-	int i = 0;
-
 	logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_teardown: start\n");
 
 	data_table_destroy( &inputs );
@@ -310,7 +306,6 @@ int raveloxmidi_alsa_out_available( void )
 {
 	size_t unused = 0;
 	size_t count = 0;
-	int ret = 0;
 
 	unused = data_table_unused_count( outputs );
 	count = data_table_item_count( outputs );
@@ -322,7 +317,6 @@ int raveloxmidi_alsa_in_available( void )
 {
 	size_t unused = 0;
 	size_t count = 0;
-	int ret = 0;
 
 	unused = data_table_unused_count( inputs );
 	count = data_table_item_count( inputs );
@@ -398,7 +392,6 @@ int raveloxmidi_alsa_poll( int timeout )
 {
 	int err = 0;
 	int ret = 0;
-	unsigned short int revents = 0;
 	int i = 0;
 	int shutdown_fd = 0;
 

@@ -33,14 +33,6 @@
 
 #include "logging.h"
 
-// Sec 3.2 of RFC6295
-// As we note above, the first channel command in the MIDI list MUST
-// include a status octet.  However, the corresponding command in the
-//original MIDI source data stream might not have a status octet (in
-// this case, the source would be coding the command using running
-// status)
-static unsigned char running_status = 0;
-
 void midi_state_lock( midi_state_t *state )
 {
 	if( ! state ) return;
