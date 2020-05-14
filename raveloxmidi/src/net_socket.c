@@ -219,7 +219,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 	new_socket->fd = 0;
 	new_socket->packet = NULL;
 	new_socket->type = RAVELOXMIDI_SOCKET_FD_TYPE;
-	new_socket->card_number = 0;
+	new_socket->card_number = -1;
 
 #ifdef HAVE_ALSA
 	alsa_buffer_size = config_int_get("alsa.input_buffer_size");

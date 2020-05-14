@@ -266,7 +266,7 @@ void raveloxmidi_alsa_dump_rawmidi( void *data )
 	snd_rawmidi_t *rawmidi = NULL;
 	snd_rawmidi_info_t *info = NULL;
 	snd_rawmidi_params_t *params = NULL;
-	int card_number = 0;
+	int card_number = -1;
 	unsigned int device_number = 0, rawmidi_flags = 0;
 	const char *name = NULL, *hw_id = NULL, *hw_driver_name = NULL, *handle_id = NULL, *sub_name = NULL;
 	size_t available_min = 0, buffer_size = 0;
@@ -339,7 +339,7 @@ int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int origi
 			handle = (snd_rawmidi_t *)data_table_item_get( outputs, i );
 			if( handle )
 			{
-				int card_number = 0;
+				int card_number = -1;
 				int writeback = 0;
 
 				card_number = raveloxmidi_alsa_card_number( handle );
