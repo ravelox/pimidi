@@ -480,7 +480,6 @@ int net_socket_read( int fd )
 */
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	{
-		int ret = 0;
 		const char *buffer="QT";
 		size_t bytes_written = 0;
 
@@ -493,16 +492,8 @@ int net_socket_read( int fd )
 
 		net_socket_set_shutdown_lock(1);
 
-		ret = write( shutdown_fd[0] , "X", 1 );
-		if( ret != 0 )
-		{
-			logging_printf( LOGGING_WARN, "net_socket_read: Unable to write to internal shutdown socket 0\n");
-		}
-		ret = write( shutdown_fd[1] , "X", 1 );
-		if( ret != 0 )
-		{
-			logging_printf( LOGGING_WARN, "net_socket_read: Unable to write to internal shutdown socket 1\n");
-		}
+		write( shutdown_fd[0] , "X", 1 );
+		write( shutdown_fd[1] , "X", 1 );
 
 		midi_state_advance( found_socket->state, 4);
 /*
@@ -712,19 +703,13 @@ int net_socket_fd_loop()
 
 void net_socket_loop_shutdown(int signal)
 {
-	int ret = 0;
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: shutdown signal received(%u)\n", signal);
+
 	net_socket_set_shutdown_lock( 1 );
-	ret = write( shutdown_fd[0] , "X", 1 );
-	if( ret != 0 )
-	{
-		logging_printf( LOGGING_WARN, "net_socket_loop_shutdown: Unable to write to internal shutdown socket 0\n");
-	}
-	ret = write( shutdown_fd[1] , "X", 1 );
-	if( ret != 0 )
-	{
-		logging_printf( LOGGING_WARN, "net_socket_loop_shutdown: Unable to write to internal shutdown socket 1\n");
-	}
+
+	write( shutdown_fd[0] , "X", 1 );
+	write( shutdown_fd[1] , "X", 1 );
+
 	close( shutdown_fd[0] );
 	close( shutdown_fd[1] );
 }

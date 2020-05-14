@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <pthread.h>
 
 #include "config.h"
@@ -150,7 +151,12 @@ void logging_printf(int level, const char *format, ...)
 
 	if( ! prefix_disabled )
 	{
-		fprintf( logging_fp , "[%lu]\t[tid=%lu]\t%s: ", time( NULL ) , pthread_self(), logging_value_to_name( loglevel_map, level ) );
+		struct timeval tv;
+		struct timezone tz;
+
+		gettimeofday( &tv, &tz);
+
+		fprintf( logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
 	va_start(ap, format);
