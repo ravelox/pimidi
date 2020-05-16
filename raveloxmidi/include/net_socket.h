@@ -43,7 +43,7 @@ typedef struct raveloxmidi_socket_t {
 	size_t packet_size;
 	midi_state_t *state;
 	pthread_mutex_t	lock;
-	int card_number;
+	int device_hash;
 #ifdef HAVE_ALSA
 	snd_rawmidi_t	*handle;
 #endif

@@ -59,6 +59,7 @@ static void config_set_defaults( void )
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 	config_add_item("alsa.writeback", "no");
+	config_add_item("alsa.writeback.level", "card");
 #endif
 
 }

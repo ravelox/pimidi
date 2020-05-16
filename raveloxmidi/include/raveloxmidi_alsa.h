@@ -31,6 +31,7 @@ void raveloxmidi_alsa_handle_destroy( void **rawmidi );
 void raveloxmidi_alsa_teardown( void );
 
 int raveloxmidi_alsa_card_number( snd_rawmidi_t *rawmidi );
+int raveloxmidi_alsa_device_number( snd_rawmidi_t *rawmidi );
 void raveloxmidi_alsa_dump_rawmidi( void *data );
 
 int raveloxmidi_alsa_out_available( void );
@@ -43,6 +44,8 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle );
 
 int raveloxmidi_alsa_loop( void );
 void raveloxmidi_wait_for_alsa( void );
+
+int raveloxmidi_alsa_device_hash( snd_rawmidi_t *rawmidi );
 
 #define RAVELOXMIDI_ALSA_INPUT	-2
 #define RAVELOXMIDI_ALSA_DEFAULT_BUFFER	4096

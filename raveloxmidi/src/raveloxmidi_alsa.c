@@ -261,6 +261,23 @@ int raveloxmidi_alsa_card_number( snd_rawmidi_t *rawmidi )
 	return card_number;
 }
 
+int raveloxmidi_alsa_device_number( snd_rawmidi_t *rawmidi )
+{
+	int device_number = -1;
+
+	if( rawmidi )
+	{
+		snd_rawmidi_info_t *info = NULL;
+
+		snd_rawmidi_info_malloc( &info );
+		snd_rawmidi_info( rawmidi, info );
+		device_number = snd_rawmidi_info_get_device( info );
+		snd_rawmidi_info_free( info );
+	}
+
+	return device_number;
+}
+
 void raveloxmidi_alsa_dump_rawmidi( void *data )
 {
 	snd_rawmidi_t *rawmidi = NULL;
@@ -324,7 +341,7 @@ int raveloxmidi_alsa_in_available( void )
 	return ( count > unused );
 }
 
-int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int originator_card )
+int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int originator_device_hash )
 {
 	int i = 0;
 	size_t num_outputs = 0;
@@ -339,21 +356,21 @@ int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int origi
 			handle = (snd_rawmidi_t *)data_table_item_get( outputs, i );
 			if( handle )
 			{
-				int card_number = -1;
+				int device_hash = -1;
 				int writeback = 0;
 
-				card_number = raveloxmidi_alsa_card_number( handle );
+				device_hash = raveloxmidi_alsa_device_hash( handle );
 
 				// Only write out if this is not the same card that provided the data
 				writeback = is_yes( config_string_get("alsa.writeback") );
 
-				if( ( originator_card != card_number ) || ( writeback == 1 ) )
+				if( ( originator_device_hash != device_hash ) || ( writeback == 1 ) || ( device_hash < 0 ) )
 				{
 					bytes_written = snd_rawmidi_write( handle, buffer, buffer_size );
-					logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d originator=%u card=%u bytes_written=%u\n",
-						i, originator_card, card_number, bytes_written );
+					logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_write: handle index=%d originator_device_hash=%d device_hash=%d bytes_written=%u\n",
+						i, originator_device_hash, device_hash, bytes_written );
 				} else {
-					logging_printf( LOGGING_DEBUG,"raveloxmidi_alsa_write: not writing to the same card\n");
+					logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_write: Not writing to device_hash=%d\n", device_hash);
 				}
 			}
 		}
@@ -462,7 +479,7 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 	{
 		socket->type = RAVELOXMIDI_SOCKET_ALSA_TYPE;
 		socket->handle = handle;
-		socket->card_number = raveloxmidi_alsa_card_number( handle );
+		socket->device_hash = ( socket->handle ? raveloxmidi_alsa_device_hash( handle ) : -1 );
 	}
 add_poll_end:
 	poll_descriptors_unlock();
@@ -572,4 +589,54 @@ void raveloxmidi_wait_for_alsa(void)
 		logging_printf( LOGGING_DEBUG, "raveloxmidi_wait_for_alsa: %s\n", strerror(errno) );
 	}
 }
+
+/* Pseudo hash for ALSA device - used to prevent writeback */
+int raveloxmidi_alsa_device_hash( snd_rawmidi_t *handle )
+{
+	const char *wb_level_string = NULL;
+	int card_multiplier = 0;
+	int device_multiplier = 0;
+	int return_hash = -1;
+
+	int card_number = -1;
+	int device_number = -1;
+
+	if( !handle ) return return_hash;
+
+	card_number = raveloxmidi_alsa_card_number( handle );
+	device_number = raveloxmidi_alsa_device_number( handle );
+
+	if( ( card_number < 0 ) || ( device_number < 0 ) )
+	{
+		logging_printf( LOGGING_WARN, "raveloxmidi_alsa_device_hash: card_number=%d,device_number=%d\n", card_number, device_number );
+		return return_hash;
+	}
+
+	wb_level_string = config_string_get("alsa.writeback.level");
+
+	if( ! wb_level_string )
+	{
+		card_multiplier = 4096;
+		device_multiplier = 1;
+	} else {
+		if( strncasecmp( wb_level_string, "card", 4 ) == 0 )
+		{
+			card_multiplier = 1;
+			device_multiplier = 0;
+		}
+
+		if( strncasecmp( wb_level_string, "device", 6 ) == 0 )
+		{
+			card_multiplier = 4096;
+			device_multiplier = 1;
+		}
+	}
+
+	return_hash = ( card_number * card_multiplier ) + ( device_number * device_multiplier );
+
+	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_device_hash: card_number=%d,device_number=%d,hash=%d\n", card_number, device_number , return_hash);
+
+	return return_hash;
+}
+
 #endif

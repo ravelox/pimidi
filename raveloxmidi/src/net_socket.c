@@ -219,7 +219,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 	new_socket->fd = 0;
 	new_socket->packet = NULL;
 	new_socket->type = RAVELOXMIDI_SOCKET_FD_TYPE;
-	new_socket->card_number = -1;
+	new_socket->device_hash = -1;
 
 #ifdef HAVE_ALSA
 	alsa_buffer_size = config_int_get("alsa.input_buffer_size");
@@ -530,7 +530,7 @@ int net_socket_read( int fd )
 */
 	{
 		midi_state_dump( found_socket->state );
-		net_distribute_midi( found_socket->state , 0, found_socket->card_number );
+		net_distribute_midi( found_socket->state , 0, found_socket->device_hash );
 	} else {
 /*
 	RTP MIDI inbound from remote socket

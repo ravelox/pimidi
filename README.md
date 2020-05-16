@@ -224,4 +224,12 @@ alsa.input_buffer_size
 alsa.writeback
 	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
 	This is a yes/no option. Default is no.
+alsa.writeback
+	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same level number.
+	See also **alsa.writeback.level**.
+	This is a yes/no option. Default is no.
+alsa.writeback.level
+	Indicates how granular to make the alsa.writeback check.
+	Possible values are **card** (hw:X,*,*) or **device** (hw:X,Y,*)
+	Default is card.
 ```
