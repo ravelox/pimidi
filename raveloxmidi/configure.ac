@@ -1,4 +1,4 @@
-m4_define([VERSION_NUMBER],[0.8.5])
+m4_define([VERSION_NUMBER],[0.9.0])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
 AC_INIT([raveloxmidi],[FULL_VERSION])
@@ -23,7 +23,7 @@ PKG_CHECK_MODULES(AVAHI, avahi-client)
 
 ACX_PTHREAD([],[])
 
-AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes")
+AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes",AC_MSG_WARN([ALSA library not found. Check raveloxmidi/required for the list of packages to install.]))
 if test "$have_alsa" == "yes"
 then
    ALSA_LIBS="`pkg-config --libs alsa`"
@@ -46,4 +46,7 @@ fi
 COPYRIGHT_YEAR="`date +'%Y'`"
 AC_SUBST(COPYRIGHT_YEAR)
 
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec)
+GIT_BRANCH_NAME="`pkgscripts/branch_name`"
+AC_SUBST(GIT_BRANCH_NAME)
+
+AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec include/build_info.h)

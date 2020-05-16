@@ -21,6 +21,8 @@
 #ifndef MIDI_PAYLOAD_H
 #define MIDI_PAYLOAD_H
 
+#include "data_table.h"
+
 typedef struct midi_payload_header_t {
 	unsigned char	B;
 	unsigned char	J;
@@ -62,6 +64,5 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 void midi_payload_header_dump( midi_payload_header_t *header );
 void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
 void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_size);
-void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands );
 void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload );
 #endif

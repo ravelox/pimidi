@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "config.h"
 
@@ -141,7 +140,7 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 	*size = PACKED_CHAPTER_C_HEADER_SIZE + ( (chapter_c->len) * PACKED_CONTROLLER_LOG_SIZE );
 	*packed = (unsigned char *)malloc( *size );
 	
-	if(! packed )
+	if(! *packed )
 	{
 		*size = 0;
 		logging_printf(LOGGING_ERROR,"chapter_c_pack: Unable to allocate memory for packed chapter_c\n");

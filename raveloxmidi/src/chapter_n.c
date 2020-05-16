@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "config.h"
 
@@ -43,7 +42,7 @@ void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed 
 	chapter_n_header_dump( header );
 	*packed = ( unsigned char *)malloc( CHAPTER_N_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 	memset( *packed, 0 , CHAPTER_N_HEADER_PACKED_SIZE );
 
 	p = *packed;
@@ -137,6 +136,11 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	if( offbits_size > 0 )
 	{
 		offbits_buffer = ( unsigned char * )malloc( offbits_size );
+		if (!offbits_buffer)
+		{
+			logging_printf(LOGGING_ERROR, "chapter_n_pack: Insufficient memory to create offbits buffer\n");
+			goto chapter_n_pack_cleanup;
+		}
 		p = chapter_n->offbits + chapter_n->header->low;
 		memcpy( offbits_buffer, p, offbits_size );
 		*size += offbits_size;
@@ -145,12 +149,15 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	// Now pack it all together
 	*packed = ( unsigned char * ) malloc( *size );
 
-	if( ! packed ) goto chapter_n_pack_cleanup;
+	if( ! *packed ) goto chapter_n_pack_cleanup;
 
 	p = *packed;
 
-	memcpy( p , packed_header, header_size );
-	p += header_size;
+	if (packed_header)
+	{
+		memcpy( p , packed_header, header_size );
+		p += header_size;
+	}
 
 	if( note_buffer )
 	{

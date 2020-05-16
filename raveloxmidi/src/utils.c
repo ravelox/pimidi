@@ -20,21 +20,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
+#include <stdint.h>
 #include <ctype.h>
-
-#include <arpa/inet.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <time.h>
-
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-
 #include <pthread.h>
+#include <sys/time.h>
 
 #include <errno.h>
 extern int errno;
@@ -208,8 +203,11 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
-	if( ! buffer ) return;
-	if( len <= 0 ) return;
+	if( !buffer || len <= 0)
+	{
+		utils_unlock();
+		return;
+	}
 
 	for( i = 0 ; i < len ; i++ )
 	{
@@ -302,8 +300,10 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 {
         struct addrinfo hints;
         struct addrinfo *result;
+	struct addrinfo *addr;
         int val;
         char portaddr[32];
+	char ip_string[100];
 
         if( ! ip_address ) return 1;
 
@@ -312,13 +312,35 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
         sprintf( portaddr, "%d", port ); 
         hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE | AI_NUMERICSERV | AI_NUMERICHOST | AI_CANONNAME;
 
         val = getaddrinfo(ip_address, portaddr, &hints, &result );
 	if( val )
 	{
-		logging_printf(LOGGING_WARN, "get_sock_addr: Invalid address: [%s]:%d\n", ip_address, port );
+		logging_printf(LOGGING_WARN, "get_sock_info: Invalid address: [%s]:%d\n", ip_address, port );
 		freeaddrinfo( result );
 		return 1;
+	}
+
+	/* Display all the results */
+	addr = result;
+	while(addr)
+	{
+		logging_printf(LOGGING_DEBUG, "get_sock_info: result: ai_flags=%d, ai_family=%d, ai_sock_type=%d, ai_protocol=%d, ai_addrlen=%u, ai_canonname=[%s]\n",
+			addr->ai_flags, addr->ai_family, addr->ai_socktype, addr->ai_protocol, addr->ai_addrlen, addr->ai_canonname );
+
+		if( addr->ai_addr )
+		{
+			struct sockaddr_in *sock_in;
+
+			sock_in = ( struct sockaddr_in *)addr->ai_addr;
+
+			memset( ip_string, 0, 100 );
+			get_ip_string( addr->ai_addr, ip_string, 100 );
+			logging_printf(LOGGING_DEBUG, "\t\tai_addr=[ sin_family=%d, sin_port=%d, sin_addr=%s]\n",
+				sock_in->sin_family, ntohs(sock_in->sin_port), ip_string );
+		}
+		addr = addr->ai_next;
 	}
 
 	if( socket )

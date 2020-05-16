@@ -21,10 +21,13 @@
 #ifndef NET_CONNECTION_H
 #define NET_CONNECTION_H
 
+#include <pthread.h>
+
 #include "midi_note.h"
 #include "midi_control.h"
 #include "rtp_packet.h"
 #include "midi_journal.h"
+#include "midi_state.h"
 
 // Maximum number of connection entries in the connection table
 #define MAX_CTX 8
@@ -37,6 +40,7 @@ typedef enum net_ctx_status_t {
 	NET_CTX_STATUS_FIRST_INV,
 	NET_CTX_STATUS_SECOND_INV,
 	NET_CTX_STATUS_REMOTE_CONNECTION,
+	NET_CTX_STATUS_UNUSED,
 } net_ctx_status_t;
 
 typedef struct net_ctx_t {
@@ -51,16 +55,19 @@ typedef struct net_ctx_t {
 	char * 		ip_address;
 	char *		name;
 	journal_t	*journal;
-	struct net_ctx_t	*next;
-	struct net_ctx_t	*prev;
+	midi_state_t	*midi_state;
+	pthread_mutex_t	lock;
 } net_ctx_t;
 
 net_ctx_t *net_ctx_create( void );
-void net_ctx_destroy( net_ctx_t **ctx );
-void net_ctx_dump( net_ctx_t *ctx );
+void net_ctx_reset( net_ctx_t *ctx );
+void net_ctx_destroy( void **data );
+void net_ctx_dump( void *data );
 void net_ctx_dump_all( void );
-void net_ctx_lock( void );
-void net_ctx_unlock( void );
+void net_ctx_lock( net_ctx_t *ctx );
+void net_ctx_unlock( net_ctx_t *ctx );
+void net_connections_lock( void );
+void net_connections_unlock( void );
 void net_ctx_init( void );
 void net_ctx_teardown( void );
 net_ctx_t * net_ctx_find_by_id( uint8_t id );
@@ -68,8 +75,7 @@ net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
 net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator);
 net_ctx_t * net_ctx_find_by_name( char *name );
 net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port , char *name);
-net_ctx_t * net_ctx_get_last( void );
-char *net_ctx_status_to_string( net_ctx_status_t status );
+const char *net_ctx_status_to_string( net_ctx_status_t status );
 
 void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note );
 void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control );
@@ -82,13 +88,10 @@ void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet);
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control );
 void net_ctx_increment_seq( net_ctx_t *ctx );
 
-void net_ctx_iter_start_head(void);
-void net_ctx_iter_start_tail(void);
-net_ctx_t *net_ctx_iter_current(void);
-int net_ctx_iter_has_current(void);
-int net_ctx_iter_has_next(void);
-int net_ctx_iter_has_prev(void);
-void net_ctx_iter_next(void);
-void net_ctx_iter_prev(void);
+net_ctx_t *net_ctx_find_by_index( int index );
+int net_ctx_is_used( net_ctx_t *ctx );
+int net_ctx_get_num_connections( void );
+
+char *net_ctx_connections_to_string( void );
 
 #endif

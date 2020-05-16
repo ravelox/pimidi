@@ -22,12 +22,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "config.h"
 
 #include "midi_command.h"
 #include "midi_payload.h"
+#include "data_table.h"
 #include "utils.h"
 
 #include "logging.h"
@@ -157,11 +157,17 @@ void midi_payload_unset_p( midi_payload_t *payload )
 void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , size_t *buffer_size)
 {
 	int status_present = 0;
+	if( ! buffer_size ) return;
+
+
 	if( ! payload ) return;
+	if( ! buffer ) return;
 
 	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: payload=%p,buffer=%p,buffer_size=%u\n", payload, buffer, *buffer_size);
 
 	status_present = buffer[0] & 0x80;
+
+	logging_printf( LOGGING_DEBUG, "midi_payload_set_buffer: status_present=%d\n", status_present);
 
 	/* If the first byte doesn't include a status then add one */
 	if( ! status_present )
@@ -184,7 +190,6 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 		}
 	}
 }
-
 
 void midi_payload_header_dump( midi_payload_header_t *header )
 {
@@ -311,206 +316,6 @@ midi_payload_unpack_success:
 	return;
 }
 
-void midi_payload_to_commands( midi_payload_t *payload, midi_payload_data_t data_type, midi_command_t **commands, size_t *num_commands )
-{
-	unsigned char *p;
-	size_t current_len;
-	uint64_t current_delta;
-	unsigned char data_byte;
-	char *command_description;
-	enum midi_message_type_t message_type;
-	size_t index, sysex_len;
-	unsigned char *sysex_start_byte = NULL;
-	
-
-	*commands = NULL;
-	*num_commands = 0;
-
-	if( ! payload ) return;
-
-	if( ! payload->header ) return;
-	if( ! payload->buffer ) return;
-
-	p = payload->buffer;
-	current_len = payload->header->len;
-
-	logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: payload->header->len=%zu\n", payload->header->len);
-	hex_dump( p, current_len );
-	
-	do 
-	{
-		logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: current_len=%zu\n", current_len );
-		current_delta = 0;
-		if( data_type == MIDI_PAYLOAD_RTP )
-		{
-			/* If the Z flag == 0 then no delta time is present for the first midi command */
-			if( ( payload->header->Z == 0 ) && ( *num_commands == 0 ) )
-			{ 
-				/*Do nothing*/
-			} else {
-				// Get the delta
-				do
-				{
-					data_byte = *p;
-					current_delta <<= 8;
-					current_delta += ( data_byte & 0x7f );
-					p++;
-					current_len--;
-				} while ( ( data_byte & 0x80 ) && current_len > 0 );
-			}	
-		}
-
-		(*num_commands)++;
-
-		logging_printf( LOGGING_DEBUG, "midi_payload_to_commands: next byte = 0x%02x\n", *p );
-		midi_command_t *temp_commands = (midi_command_t * ) realloc( *commands, sizeof(midi_command_t) * (*num_commands) );
-
-		if( ! temp_commands ) break;
-		*commands = temp_commands;
-		index = (*num_commands) - 1;
-
-		(*commands)[index].delta = current_delta;
-		(*commands)[index].data_len = 0;
-		(*commands)[index].data = NULL;
-
-		// Get the status byte. If bit 7 is not set, use the running status
-		if( current_len > 0 )
-		{
-			data_byte = *p;
-
-			if( data_byte & 0x80 )
-			{
-				running_status = data_byte;
-				p++;
-				current_len--;
-			}
-			(*commands)[index].status = running_status;
-		}
-
-		midi_command_map( &((*commands)[index]) , &command_description, &message_type );
-		midi_command_dump( &((*commands)[index]));
-
-		switch( message_type )
-		{
-			case MIDI_NOTE_OFF:
-			case MIDI_NOTE_ON:
-			case MIDI_POLY_PRESSURE:
-			case MIDI_CONTROL_CHANGE:
-			case MIDI_PITCH_BEND:
-			case MIDI_SONG_POSITION:
-				if( current_len >= 2 )
-				{
-					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
-					if( (*commands)[index].data )
-					{
-						memcpy( (*commands)[index].data, p, 2 );
-						(*commands)[index].data_len = 2;
-					}
-					current_len -= 2;
-					p+=2;
-				}
-				break;
-			case MIDI_PROGRAM_CHANGE:
-			case MIDI_CHANNEL_PRESSURE:
-			case MIDI_TIME_CODE_QF:
-			case MIDI_SONG_SELECT:
-				if( current_len >= 1 )
-				{
-					(*commands)[index].data = ( unsigned char * ) malloc( 2 );
-					memset( (*commands)[index].data, 0, 2 );
-					if( (*commands)[index].data )
-					{
-						memcpy( (*commands)[index].data, p, 1);
-						(*commands)[index].data_len = 1;
-					}
-					current_len -= 1;
-					p+=1;
-				}
-				break;
-			case MIDI_SYSEX:
-			case MIDI_END_SYSEX:
-				// Read until the end of the SYSEX block
-				// RFC6295 sec 3.2 indicates that the following may occur
-				// 0xF0-0xF0 == first block of multiple SysEx segments
-				// 0xF7-0xF0 == middle block
-				// 0xF7-0xF7 == end block
-				// 0xF7-0xF4 == cancel ( FIXME: Need to code for this )
-				sysex_start_byte = p;
-				sysex_len = 0;
-				do {
-					data_byte = *p;
-					sysex_len++;
-					p++;
-					current_len--;
-				} while( ( current_len > 0 ) && ( (data_byte != 0xF7 )  && (data_byte != 0xF0) && (data_byte != 0xF4) ) );
-				logging_printf( LOGGING_DEBUG, "SysEx end: 0x%02X\n", data_byte);
-				if( ( message_type == MIDI_SYSEX ) && ( data_byte == 0xF0 ) )
-				{
-					logging_printf(LOGGING_DEBUG, "MIDI SYSEX first block\n");
-				}
-				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF0 ) )
-				{
-					logging_printf(LOGGING_DEBUG, "MIDI SYSEX middle block\n");
-				}
-				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF7 ) )
-				{
-					logging_printf(LOGGING_DEBUG, "MIDI SYSEX last block\n");
-				}
-				if( ( message_type == MIDI_END_SYSEX ) && ( data_byte == 0xF4 ) ) // FIXME: Need to code for this
-				{
-					logging_printf(LOGGING_DEBUG, "MIDI SYSEX cancel block\n");
-				}
-				if( sysex_len > 0 )
-				{
-					(*commands)[index].data = (unsigned char *) malloc( sysex_len );
-					if( (*commands)[index].data ) 
-					{
-						memcpy( (*commands)[index].data, sysex_start_byte, sysex_len );
-						(*commands)[index].data_len = sysex_len;
-					}
-				}
-				break;
-			case MIDI_TUNE_REQUEST:
-			case MIDI_TIMING_CLOCK:
-			case MIDI_START:
-			case MIDI_CONTINUE:
-			case MIDI_STOP:
-			case MIDI_ACTIVE_SENSING:
-			case MIDI_RESET:
-			case MIDI_NULL:
-				break;
-		}
-		
-		switch( message_type )
-		{
-			case MIDI_NOTE_OFF:
-			case MIDI_NOTE_ON:
-			case MIDI_POLY_PRESSURE:
-			case MIDI_CONTROL_CHANGE:
-			case MIDI_PITCH_BEND:
-			case MIDI_PROGRAM_CHANGE:
-			case MIDI_CHANNEL_PRESSURE:
-				logging_printf( LOGGING_INFO, "\tChannel: %u\n", (*commands)[index].status & 0x0f );
-				break;
-			case MIDI_SYSEX:
-			case MIDI_TIME_CODE_QF:
-			case MIDI_SONG_POSITION:
-			case MIDI_SONG_SELECT:
-			case MIDI_TUNE_REQUEST:
-			case MIDI_END_SYSEX:
-			case MIDI_TIMING_CLOCK:
-			case MIDI_START:
-			case MIDI_CONTINUE:
-			case MIDI_STOP:
-			case MIDI_ACTIVE_SENSING:
-			case MIDI_RESET:
-			case MIDI_NULL:
-				break;
-		}
-
-	} while( current_len > 0 );
-}
-
 void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload )
 {
 	size_t new_payload_size = 0;
@@ -536,6 +341,7 @@ void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload 
 		logging_printf(LOGGING_ERROR,"midi_command_to_payload: Unable to allocate memory for new payload buffer\n");
 		midi_payload_destroy( &(*payload) );
 		*payload = NULL;
+		return;
 	}
 
 	new_payload_buffer[0] = command->status;

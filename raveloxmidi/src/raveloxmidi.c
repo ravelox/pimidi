@@ -47,16 +47,27 @@
 
 #include "utils.h"
 
-static int running_as_daemon=0;
+#include "build_info.h"
 
 int main(int argc, char *argv[])
 {
 	dns_service_desc_t service_desc;
 	int ret = 0;
+	int running_as_daemon = 0;
 
 	utils_init();
 
-	config_init( argc, argv);
+	ret = config_init( argc, argv);
+
+	logging_init();
+	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
+
+	/* If config should be displayed, do it and then exit */
+	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
+	{
+		config_dump();
+		if( ret == CONFIG_DUMP_EXIT ) goto daemon_stop;
+	}
 
 	if( ! config_is_set("network.bind_address") )
 	{
@@ -64,18 +75,12 @@ int main(int argc, char *argv[])
 		goto daemon_stop;
 	}
 
-	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s)\n", PACKAGE, VERSION);
 
 	service_desc.name = config_string_get("service.name");
 	service_desc.service = "_apple-midi._udp";
 	service_desc.port = config_int_get("network.control.port");
 	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
 	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
-
-#ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( config_string_get("alsa.input_device") , config_string_get("alsa.output_device") , config_int_get("alsa.input_buffer_size") );
-#endif
 
 	if( is_yes( config_string_get("run_as_daemon") ) )
 	{
@@ -89,11 +94,11 @@ int main(int argc, char *argv[])
 		goto daemon_stop;
 	}
 
-	net_ctx_init();
+#ifdef HAVE_ALSA
+	raveloxmidi_alsa_init( "alsa.input_device" , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
+#endif
 
-        signal( SIGINT , net_socket_loop_shutdown);
-        signal( SIGTERM , net_socket_loop_shutdown);
-        signal( SIGUSR2 , net_socket_loop_shutdown);
+	net_ctx_init();
 
 	ret = dns_service_publisher_start( &service_desc );
 	
@@ -103,6 +108,10 @@ int main(int argc, char *argv[])
 	} else {
 		net_socket_loop_init();
 
+		signal( SIGINT , net_socket_loop_shutdown);
+		signal( SIGTERM , net_socket_loop_shutdown);
+		signal( SIGUSR2 , net_socket_loop_shutdown);
+
 		if( config_string_get("remote.connect") )
 		{
 			dns_discover_init();
@@ -110,15 +119,16 @@ int main(int argc, char *argv[])
 			dns_discover_teardown();
 		}
 
-		if( net_socket_get_shutdown_lock() == 0 )
+		if( net_socket_get_shutdown_status() == OK )
 		{
 #ifdef HAVE_ALSA
-			net_socket_alsa_loop();
+			raveloxmidi_alsa_loop();
 #endif
 			net_socket_fd_loop();
 		}
 #ifdef HAVE_ALSA
-		net_socket_wait_for_alsa();
+		raveloxmidi_wait_for_alsa();
+		raveloxmidi_alsa_teardown();
 #endif
 		net_socket_loop_teardown();
 	}
@@ -129,16 +139,11 @@ int main(int argc, char *argv[])
 	net_socket_teardown();
 	net_ctx_teardown();
 
-#ifdef HAVE_ALSA
-	raveloxmidi_alsa_teardown();
-#endif
-
 daemon_stop:
 	if( running_as_daemon )
 	{
 		daemon_teardown();
 	}
-
 
 	config_teardown();
 

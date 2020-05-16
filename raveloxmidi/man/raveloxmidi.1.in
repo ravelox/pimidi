@@ -39,7 +39,20 @@ Display help information including default values for some parameters.
 .B -C
 Display the current config to stderr
 .SH NOTES
-The available options for the configuration file are as follows:
+The available options for the configuration file are listed below. Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.
+For example, if there is a parameter called \fBalsa.output_device\fP you can use either:
+.LP
+alsa.output_device = device_name
+.LP
+or
+.LP
+alsa.output_device.0 = first_device
+.br
+alsa.output_device.1 = second_device
+.LP
+A multi-value configuration option \fBmust\fP start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then \fBonly\fP 0 and 1 will be detected.
+.LP
+The available options are:
 .TP
 .B network.bind_address
 IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
@@ -98,7 +111,7 @@ To connect directly to a server/port, use the format:
 .br
 A port number \fBmust\fP be specified if making a direct connection.
 .TP
-.B remote.use_control
+.B remote.use_control_for_ck
 Indicates whether CK (AppleMIDI Feedback) messages are sent to the a remote connection using the control port.
 .br
 Default is yes
@@ -175,14 +188,32 @@ If ALSA is detected, the following options are also available:
 .TP
 .B alsa.output_device
 Name of the rawmidi ALSA device to send MIDI events to.
+.br
+This is a multi-value configuration option. See the \fBNOTES\fP section above for how to specify multiple values.
 .TP
 .B alsa.input_device
 Name of the rawmidi ALSA device to read MIDI events from.
+.br
+This is a multi-value configuration option. See the \fBNOTES\fP section above for how to specify multiple values.
 .TP 
 .B alsa.input_buffer_size
 Size of the buffer to use for reading data from the input device.
 .br
 Default is 4096. Maximum is 65535.
+.TP 
+.B alsa.writeback
+If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same level number.
+.br
+See also \fBalsa.writeback.level\fP.
+.br
+This is a yes/no option. Default is no.
+.TP 
+.B alsa.writeback.level
+Indicates how granular to make the alsa.writeback check.
+.br
+Possible values are \fBcard\fP (hw:X,*,*) or \fBdevice\fP (hw:X,Y,*)
+.br
+Default is card.
 .fi
 .SH AUTHOR
 .B raveloxmidi

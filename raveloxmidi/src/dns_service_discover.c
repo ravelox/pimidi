@@ -45,8 +45,6 @@
 
 #include "raveloxmidi_config.h"
 
-static pthread_mutex_t	discover_mutex;
-
 static dns_service_t **services = NULL;
 static int num_services = 0;
 
@@ -116,7 +114,7 @@ static void browse_callback(
     }
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void discover_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
 
     assert(c);
 
@@ -139,7 +137,7 @@ int dns_discover_services( int use_ipv4, int use_ipv6 )
         goto fail;
     }
 
-    client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
+    client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, discover_callback, NULL, &error);
 
     if (!client) {
         logging_printf(LOGGING_WARN, "dns_discover_services: Failed to create client: %s\n", avahi_strerror(error));
@@ -213,7 +211,7 @@ void dns_discover_add( const char *name, char *address, int port)
 		return;
 	}
 
-	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t) * ( num_services + 1 ) ) ;
+	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t *) * ( num_services + 1 ) ) ;
 
 	if( new_services_list )	
 	{
@@ -254,7 +252,6 @@ void dns_discover_free_services( void )
 
 void dns_discover_init( void )
 {
-	pthread_mutex_init( &discover_mutex , NULL );
 	dns_discover_free_services();
 	num_services = 0;
 }
@@ -262,7 +259,6 @@ void dns_discover_init( void )
 void dns_discover_teardown( void )
 {
 	dns_discover_free_services();
-	pthread_mutex_destroy( &discover_mutex );
 }
 
 void dns_discover_dump( void )

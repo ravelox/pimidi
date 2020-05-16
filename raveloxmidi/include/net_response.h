@@ -21,6 +21,8 @@
 #ifndef NET_RESPONSE_H
 #define NET_RESPONSE_H
 
+#include <stdint.h>
+
 typedef struct net_response_t {
         unsigned char *buffer;
         size_t len;

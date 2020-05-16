@@ -20,9 +20,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <ctype.h>
+#include <stdint.h>
 
 #include "config.h"
 
@@ -40,7 +39,9 @@ rtp_packet_t * rtp_packet_create( void )
 	if( new )
 	{
 		memset( new, 0 , sizeof( rtp_packet_t ) );
+
 		new->payload = NULL;
+		new->payload_len = 0;
 
 		// Initialise the standard fields
 
@@ -127,6 +128,9 @@ void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *
 	size_t current_buffer_len;
 
 	if( ! buffer ) return;
+	if( ! rtp_packet ) return;
+
+	memset( rtp_packet, 0, sizeof( rtp_packet_t ) );
 
 	p = buffer;
 	current_buffer_len = buffer_len;
@@ -147,8 +151,6 @@ void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *
 	get_uint32( &(rtp_packet->header.ssrc), &p, &current_buffer_len );	
 
 	/* Get the payload */
-	rtp_packet->payload = NULL;
-	rtp_packet->payload_len = 0;
 	if( current_buffer_len > 0 )
 	{
 		logging_printf( LOGGING_DEBUG, "rtp_packet_unpack: current_buffer_len = %zu\n", current_buffer_len );

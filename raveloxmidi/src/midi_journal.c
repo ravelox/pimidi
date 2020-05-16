@@ -20,9 +20,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <ctype.h>
+#include <stdint.h>
 
 #include "config.h"
 
@@ -42,7 +41,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 
 	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 	memset( *packed, 0 , JOURNAL_HEADER_PACKED_SIZE );
 
 	p = *packed;
@@ -88,7 +87,7 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 	*packed = ( unsigned char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
 
-	if( ! packed ) return;
+	if( ! *packed ) return;
 
 	memset( *packed, 0, CHANNEL_HEADER_PACKED_SIZE );
 
@@ -176,7 +175,7 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 
 	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size );
 
-	if( ! packed ) goto channel_pack_cleanup;
+	if( ! *packed ) goto channel_pack_cleanup;
 
 	p = *packed;
 
@@ -331,7 +330,7 @@ int journal_init( journal_t **journal )
 
 	*journal = ( journal_t * ) malloc( sizeof ( journal_t ) );
 
-	if( ! journal )
+	if( ! *journal )
 	{
 		return -1;
 	}
@@ -390,7 +389,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 	if( ! midi_note ) return;
 
 	channel = midi_note->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
@@ -461,7 +460,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	if( ! midi_control ) return;
 
 	channel = midi_control->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	controller = midi_control->controller_number;
 	if( controller > (MAX_CHAPTER_C_CONTROLLERS - 1) ) return;
@@ -508,7 +507,7 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t 
 	if( ! midi_program ) return;
 
 	channel = midi_program->channel;
-	if( channel > MAX_MIDI_CHANNELS ) return;
+	if( channel >= MAX_MIDI_CHANNELS ) return;
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );

@@ -21,8 +21,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "kv_table.h"
+#include "logging.h"
+
+void kv_table_lock( kv_table_t *table )
+{
+	if( ! table ) return;
+	
+	pthread_mutex_lock( &(table->lock) );
+}
+
+void kv_table_unlock( kv_table_t *table )
+{
+	pthread_mutex_unlock( &(table->lock) );
+}
 
 kv_table_t *kv_table_create( char *name )
 {
@@ -39,6 +53,8 @@ kv_table_t *kv_table_create( char *name )
 	new_table->items = NULL;
 	new_table->count = 0;
 
+	pthread_mutex_init( &new_table->lock, NULL );
+
 	return new_table;
 }
 
@@ -49,51 +65,68 @@ void kv_table_dump( kv_table_t *table )
 	if( ! table ) return;
 	if( ! table->items ) return;
 
+	if( table->name )
+	{
+		logging_printf( LOGGING_DEBUG, "kv_table: name=[%s]\n", table->name );
+	}
+
 	for( i=0; i < table->count; i++ )
 	{
 		if( table->items[i]->key )
 		{
 			if( table->items[i]->value )
 			{
-				fprintf(stderr, "%s = %s\n", table->items[i]->key, table->items[i]->value);
+				logging_printf( LOGGING_DEBUG, "\t[%s] = [%s]\n", table->items[i]->key, table->items[i]->value);
 			}
 		}
 	}
 }
 
-void kv_table_reset( kv_table_t *table )
+void kv_table_destroy( kv_table_t **table )
 {
 	int i = 0;
 
 	if( ! table ) return;
-	if( ! table->items) return;
-	if( table->count <= 0 ) return;
+	if( ! *table ) return;
+
+	kv_table_lock( *table );
+
+	if( ! (*table)->items) goto kv_table_destroy_end;
+	if( (*table)->count <= 0 ) goto kv_table_destroy_end;
 	
-	for(i=0; i < table->count; i++)
+	for(i=0; i < (*table)->count; i++)
 	{
-		if( table->items[i] )
+		if( (*table)->items[i] )
 		{
-			if( table->items[i]->key )
+			if( (*table)->items[i]->key )
 			{
-				free( table->items[i]->key );
-				table->items[i]->key = NULL;
+				free( (*table)->items[i]->key );
+				(*table)->items[i]->key = NULL;
 			}
-			if( table->items[i]->value )
+			if( (*table)->items[i]->value )
 			{
-				free( table->items[i]->value );
-				table->items[i]->value = NULL;
+				free( (*table)->items[i]->value );
+				(*table)->items[i]->value = NULL;
 			}
-			free( table->items[i] );
-			table->items[i] = NULL;
+			free( (*table)->items[i] );
+			(*table)->items[i] = NULL;
 		}
 	}
 
-	free( table->items);
-	table->items = NULL;
+	free( (*table)->items);
+	(*table)->items = NULL;
 
-	table->count = 0;
-	if( table->name ) free( table->name);
-	table->name = NULL;
+	(*table)->count = 0;
+	if( (*table)->name ) free( (*table)->name );
+	(*table)->name = NULL;
+
+kv_table_destroy_end:
+	kv_table_unlock( *table );
+
+	pthread_mutex_destroy( &( (*table)->lock ) );
+
+	free( *table );
+	*table = NULL;
 }
 		
 kv_item_t *kv_find_item( kv_table_t *table, char *key )
@@ -175,4 +208,34 @@ void kv_add_item( kv_table_t *table, char *key, char *value )
 			new_item->value = NULL;
 		}
 	}
+}
+
+size_t kv_item_count( kv_table_t *table )
+{
+	size_t item_count = 0;
+	if( ! table ) return 0;
+
+	kv_table_lock( table );
+	item_count = table->count;
+	kv_table_unlock( table );
+
+	return item_count;
+}
+
+void kv_get_item_by_index( kv_table_t *table, size_t index, char **key, char **value )
+{
+	*key = NULL;
+	*value = NULL;
+
+	if( ! table ) return;
+
+	kv_table_lock( table );
+
+	if( index > table->count ) goto kv_get_item_by_index_end;
+
+	*key = table->items[ index ]->key;
+	*value = table->items[ index ]->value;
+
+kv_get_item_by_index_end:
+	kv_table_unlock( table );
 }

@@ -23,13 +23,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
-
 #include <pthread.h>
 
 #include <errno.h>
@@ -187,8 +180,10 @@ make_remote_connection:
 		{
 			logging_printf( LOGGING_ERROR, "remote_connect_init: Unable to create socket context\n");
 		} else {
+			net_ctx_lock( ctx );
 			ctx->send_ssrc = ssrc;
 			ctx->status = NET_CTX_STATUS_FIRST_INV;
+			net_ctx_unlock( ctx );
 			logging_printf( LOGGING_DEBUG, "remote_connect_init: Sending INV request to [%s]:%d\n", ctx->ip_address, ctx->control_port );
 			net_ctx_send( ctx, response->buffer, response->len , USE_CONTROL_PORT );
 		}
@@ -230,9 +225,11 @@ void remote_connect_teardown( void )
 		return;
 	}
 
+	net_ctx_lock( ctx );
 	by->ssrc = ctx->send_ssrc;
 	by->version = 2;
 	by->initiator = ctx->initiator;
+	net_ctx_unlock( ctx );
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_END );
 	
@@ -276,7 +273,7 @@ static void *remote_connect_sync_thread( void *data )
 	fd_set read_fds;
 	struct timeval tv;
 	int sync_interval = 0;
-	int use_control = 0;
+	int use_control_for_ck = 0;
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: start\n");
 	logging_printf( LOGGING_DEBUG, "rmeote_connect_sync_thread: sync.interval=%s\n", config_string_get("sync.interval"));
@@ -289,11 +286,11 @@ static void *remote_connect_sync_thread( void *data )
 
 	/* Determine if CK messages are sent over the control port or not */
 	/* This is a workaround for rtpMIDI not responding unless CK messages are sent via the data port */
-	if( config_is_set("remote.use_control") )
+	if( config_is_set("remote.use_control_for_ck") )
 	{
-		use_control = ( is_yes( config_string_get("remote.use_control") ) ? 1 : 0 );
+		use_control_for_ck = ( is_yes( config_string_get("remote.use_control_for_ck") ) ? 1 : 0 );
 	} else {
-		use_control = 1;
+		use_control_for_ck = 1;
 	}
 
 	do
@@ -310,18 +307,18 @@ static void *remote_connect_sync_thread( void *data )
 		tv.tv_sec = sync_interval;
 		select( shutdown_fd + 1, &read_fds, NULL , NULL, &tv );
 		logging_printf( LOGGING_DEBUG, "remote_connect_sync_thread: select()=\"%s\"\n", strerror( errno ) );
-		if( net_socket_get_shutdown_lock() == 1 )
+		if( net_socket_get_shutdown_status() == SHUTDOWN )
 		{
 			logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received during poll\n");
 			break;
 		}
 		response = net_response_sync( ctx->send_ssrc , ctx->start );
-		net_ctx_send( ctx, response->buffer, response->len, use_control );
+		net_ctx_send( ctx, response->buffer, response->len, use_control_for_ck );
 		hex_dump( response->buffer, response->len );
 		net_response_destroy( &response );
 	} while( 1 );
 
-	if( net_socket_get_shutdown_lock() == 1 )
+	if( net_socket_get_shutdown_status() == SHUTDOWN )
 	{
 		logging_printf(LOGGING_DEBUG, "remote_connect_sync_thread: shutdown received\n");
 	}

@@ -21,14 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-
-#include <fcntl.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
 
 #include <errno.h>
 extern int errno;
@@ -64,12 +56,13 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	/* We assume that the current port is the control port */
 	if( ! ctx )
 	{
-		logging_printf( LOGGING_DEBUG, "applemidi_inv_responder: Registering new connection\n");
+		logging_printf( LOGGING_INFO, "applemidi_inv_responder: Registering new connection from [%s]:[%u] [%s]\n", ip_address, port, ( inv->name ? inv->name : "") );
 		ctx = net_ctx_register( inv->ssrc, inv->initiator, ip_address, port , inv->name );
 
 		if( ! ctx ) 
 		{
 			logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Error registering connection\n");
+			return NULL;
 		}
 	}
 
@@ -78,7 +71,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	if( ! cmd )
 	{
 		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command\n");
-		net_ctx_destroy( &ctx );
+		net_ctx_reset( ctx );
 		return NULL;
 	}
 
@@ -87,7 +80,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	if( ! accept_inv ) {
 		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command data\n");
 		free( cmd );
-		net_ctx_destroy( &ctx );
+		net_ctx_reset( ctx );
 		return NULL;
 	}
 

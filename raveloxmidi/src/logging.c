@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <pthread.h>
 
 #include "config.h"
@@ -47,11 +48,21 @@ static name_map_t loglevel_map[] = {
 	{ NULL, -1}
 };
 
-static pthread_mutex_t	logging_mutex;
+static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int logging_enabled = 0;
 static char *logging_file_name = NULL;
 static unsigned char prefix_disabled = 0;
+
+void logging_lock( void )
+{
+	pthread_mutex_lock( &logging_mutex );
+}
+
+void logging_unlock( void )
+{
+	pthread_mutex_unlock( &logging_mutex );
+}
 
 int logging_name_to_value(name_map_t *map, const char *name)
 {
@@ -97,16 +108,16 @@ char *logging_value_to_name(name_map_t *map, int value)
 
 void logging_prefix_disable( void )
 {
-	pthread_mutex_lock( &logging_mutex );
+	logging_lock();
 	prefix_disabled = 1;
-	pthread_mutex_unlock( &logging_mutex );
+	logging_unlock();
 }
 
 void logging_prefix_enable( void )
 {
-	pthread_mutex_lock( &logging_mutex );
+	logging_lock();
 	prefix_disabled = 0;
-	pthread_mutex_unlock( &logging_mutex );
+	logging_unlock();
 }
 
 void logging_printf(int level, const char *format, ...)
@@ -114,7 +125,7 @@ void logging_printf(int level, const char *format, ...)
 	FILE *logging_fp = NULL;
 	va_list ap;
 
-	pthread_mutex_lock( &logging_mutex );
+	logging_lock();
 
 	if( logging_enabled == 0 )
 	{
@@ -140,7 +151,12 @@ void logging_printf(int level, const char *format, ...)
 
 	if( ! prefix_disabled )
 	{
-		fprintf( logging_fp , "[%lu]\t[tid=%lu]\t%s: ", time( NULL ) , pthread_self(), logging_value_to_name( loglevel_map, level ) );
+		struct timeval tv;
+		struct timezone tz;
+
+		gettimeofday( &tv, &tz);
+
+		fprintf( logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
 	va_start(ap, format);
@@ -155,7 +171,7 @@ void logging_printf(int level, const char *format, ...)
 	}
 
 logging_end:
-	pthread_mutex_unlock( &logging_mutex );
+	logging_unlock();
 }
 
 void logging_init(void)
@@ -164,7 +180,7 @@ void logging_init(void)
 
 	pthread_mutex_init( &logging_mutex, NULL );
 
-	pthread_mutex_lock( &logging_mutex );
+	logging_lock();
 
 	if( is_yes( config_string_get("logging.enabled") ) )
 	{
@@ -188,12 +204,12 @@ void logging_init(void)
 		logging_enabled = 1;
 	}
 
-	pthread_mutex_unlock( &logging_mutex );
+	logging_unlock();
 }
 
 void logging_teardown(void)
 {
-	pthread_mutex_lock( &logging_mutex);
+	logging_lock();
 
 	if( logging_file_name )
 	{
@@ -203,7 +219,18 @@ void logging_teardown(void)
 
 	logging_enabled = 0;
 	
-	pthread_mutex_unlock( &logging_mutex );
+	logging_unlock();
 
 	pthread_mutex_destroy( &logging_mutex );
+}
+
+int logging_get_threshold( void )
+{
+	int return_value = 0;
+
+	logging_lock();
+	return_value = logging_threshold;
+	logging_unlock();
+
+	return return_value;
 }

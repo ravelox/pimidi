@@ -115,11 +115,12 @@ static void create_services(AvahiClient *c) {
      * because it was reset previously, add our entries.  */
 
     if (avahi_entry_group_is_empty(group)) {
-        logging_printf(LOGGING_INFO, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
+        logging_printf(LOGGING_DEBUG, "Adding service '%s.%s'\n", sd_name_copy, sd_service_copy );
 
         /* Create some random TXT data */
         snprintf(r, sizeof(r), "random=%i", rand());
 
+	logging_printf( LOGGING_DEBUG, "create_services: use_ipv4=%d, use_ipv6=%d\n", use_ipv4, use_ipv6 );
 	if( use_ipv4 && use_ipv6 )
 	{
 		protocol = AVAHI_PROTO_UNSPEC;
@@ -166,7 +167,7 @@ fail:
     avahi_threaded_poll_quit(threaded_poll);
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void publish_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
     assert(c);
 
     /* Called whenever the client or server state changes */
@@ -205,7 +206,11 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
             break;
 
         case AVAHI_CLIENT_CONNECTING:
-            ;
+		break;
+
+	default:
+	   logging_printf(LOGGING_DEBUG, "avahi publish_callback: unknown state\n");
+	   break;
     }
 }
 
@@ -261,7 +266,7 @@ int dns_service_publisher_start( dns_service_desc_t *service_desc )
 	use_ipv4 = service_desc->publish_ipv4;
 	use_ipv6 = service_desc->publish_ipv6;
 
-	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, client_callback, NULL, &error);
+	client = avahi_client_new(avahi_threaded_poll_get(threaded_poll), 0, publish_callback, NULL, &error);
 
 	if (! client) {
 		logging_printf(LOGGING_ERROR, "Failed to create client: %s\n", avahi_strerror(error));
@@ -279,6 +284,5 @@ void dns_service_publisher_stop( void )
 	{
 		avahi_threaded_poll_stop( threaded_poll );
 	}
-
 	dns_service_publisher_cleanup();
 }

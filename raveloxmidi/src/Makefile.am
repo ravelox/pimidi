@@ -20,6 +20,8 @@ raveloxmidi_SOURCES = \
 	midi_program.c \
 	midi_payload.c \
 	midi_command.c \
+	ring_buffer.c \
+	midi_state.c \
 	net_applemidi.c \
 	net_connection.c \
 	remote_connection.c \
@@ -30,7 +32,10 @@ raveloxmidi_SOURCES = \
 	utils.c \
 	raveloxmidi_alsa.c \
 	kv_table.c \
-	net_distribute.c
+	net_distribute.c \
+	data_table.c \
+	dbuffer.c \
+	dstring.c
 
 raveloxmidi_LDADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@

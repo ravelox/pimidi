@@ -1,7 +1,7 @@
 /*
    This file is part of raveloxmidi.
 
-   Copyright (C) 2019 Dave Kelly
+   Copyright (C) 2020 Dave Kelly
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,11 +18,28 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA 
 */
 
-#ifndef _NET_DISTRIBUTE_H
-#define _NET_DISTRIBUTE_H
+#ifndef DBUFFER_H
+#define DBUFFER_H
 
-#include "midi_state.h"
+#include <pthread.h>
 
-void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc , int originator_device_hash );
+typedef struct dbuffer_t
+{
+	size_t len;
+	size_t block_size;
+	size_t num_blocks;
+	unsigned char *data;
+	pthread_mutex_t	lock;
+} dbuffer_t;
+
+dbuffer_t *dbuffer_create( size_t block_size );
+int dbuffer_reset( dbuffer_t *dbuffer );
+void dbuffer_destroy( dbuffer_t **dbuffer );
+void dbuffer_dump( dbuffer_t *dbuffer );
+size_t dbuffer_len( dbuffer_t *dbuffer );
+size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len );
+size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer );
+
+#define DBUFFER_DEFAULT_BLOCK_SIZE	512
 
 #endif

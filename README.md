@@ -76,6 +76,46 @@ raveloxmidi keeps track of the sequence number in the connection table and, if t
 ## Inbound MIDI commands 
 raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection. A Feedback response is sent back when inbound midi events are received.
 
+## Command interface
+raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. The commands can only be received on the local listening port ( default is 5006 ). The commands are:
+
+*STAT*
+
+This is the heartbeat command. The response will always be *OK* if raveloxmidi is running. The script python/send_stat.py is available for this command.
+
+*QUIT*
+
+This will shut down raveloxmidi. The response will always be *QT* to indicate that the command has been received. The script python/send_quit.py is available for this command.
+
+*LIST*
+
+This requests a lists of current connections into raveloxmidi. The response will be a JSON blob of information. The script python/send_list.py is available for this command.
+The JSON data looks like this:
+
+```
+~/pimidi/python$ ./send_list.py | python -m json.tool
+
+{
+    "connections": [
+        {
+            "control": 5004,
+            "ctx": "0x556d380bac30",
+            "data": 5005,
+            "host": "192.168.1.145",
+            "id": 0,
+            "initiator": "0x19495cff",
+            "send_ssrc": "0x2dfec3cc",
+            "seq": 1,
+            "ssrc": "0x4181a596",
+            "start": 15861082588188,
+            "status": "idle"
+        }
+    ],
+    "count": 1
+}
+```
+To parse the data, the *count* field will be the number of connections in the list. The connections array holds each connection. The *id* field in the connections array is an internal id for the array. The value of that field *may* change. It is recommended that you use the *ssrc* field as the uniq identifier for the connection.
+
 ## Configuration
 raveloxmidi can be run with a -c parameter to specify a configuration file with the options listed below.
 Where the option isn't specified, a default value is used.
@@ -83,6 +123,21 @@ Where the option isn't specified, a default value is used.
 For debugging, you can run ```raveloxmidi -N -d``` to keep raveloxmidi in the foreground and send debug-level output to stderr.
 
 ### Options
+
+Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.  For example, if there is a parameter called ```alsa.output_device``` you can use either:
+
+```
+alsa.output_device = device_name
+```
+or
+
+```
+alsa.output_device.0 = first_device
+alsa.output_device.1 = second_device
+```
+
+A multi-value configuration option must start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then only 0 and 1 will be detected.
+
 ```
 network.bind_address
 	IP address that raveloxmidi listens on. This can be an IPv4 or IPv6 address.
@@ -116,7 +171,7 @@ remote.connect
 		To connect directly to a server/port, use the format:
 			remote.connect = [address]:port
 			A port number must be specified if making a direct connection.
-remote.use_control
+remote.use_control_for_ck
 	Indicates whether CK (AppleMIDI Feedback) messages are sent to the a remote connection using the control port.
 	Default is yes
 client.name
@@ -159,9 +214,22 @@ If ALSA is detected, the following options are also available:
 ```
 alsa.output_device
 	Name of the rawmidi ALSA device to send MIDI events to.
+	This is a multi-value option.
 alsa.input_device
 	Name of the rawmidi ALSA device to read MIDI events from.
+	This is a multi-value option.
 alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device.
 	Default is 4096. Maximum is 65535.
+alsa.writeback
+	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
+	This is a yes/no option. Default is no.
+alsa.writeback
+	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same level number.
+	See also **alsa.writeback.level**.
+	This is a yes/no option. Default is no.
+alsa.writeback.level
+	Indicates how granular to make the alsa.writeback check.
+	Possible values are **card** (hw:X,*,*) or **device** (hw:X,Y,*)
+	Default is card.
 ```

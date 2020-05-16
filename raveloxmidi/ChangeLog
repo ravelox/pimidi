@@ -1,0 +1,98 @@
+2020-05-16 V0.9.0
+
+There are some big changes under the hood that fix a lot of problems that people were having.
+Specifically, I've refactored the MIDI parsing so that each connection has its own state machine to handle data coming in multiple directions.
+
+Many thanks go to a number of users who raised issues:
+
+mganss who did some intense code inspection.
+qzic
+alpho-gav
+vldp2000
+mrsstaceyseigle
+TheTechnobear
+
+If I missed out your name, don’t think I didn’t appreciate that you took time out of your life to help improve the software.
+
+Some specific changes that might affect you, if you have been running the code from the master branch in the past and haven’t been testing the experimental code, are:
+
+1. If you are sending data to the local port ( default is 5006 ) and are prefixing that data with the 0xAA byte, you need to stop adding that prefix.
+
+There was an original design reason for needing that byte but all the refactoring has removed the need for that. All the example scripts in the python/ directory have been corrected for that.
+
+2. The setting name "remote.use_control" has changed to remote.use_control_for_ck
+
+The functionality remains the same but I wanted the setting name to be more descriptive.
+
+Now for some other changes:
+
+1. You can specify multiple ALSA input or output devices in the configuration file.
+
+For example, if there is a parameter called alsa.output_device you can use either:
+
+alsa.output_device = device_name
+
+or
+
+alsa.output_device.0 = first_device
+alsa.output_device.1 = second_device
+
+A multi-value configuration option must start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then only 0 and 1 will be detected.
+
+2. The code has been in for a long while but raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. 
+
+The commands can only be received on the local listening port ( default is 5006 ). The commands are:
+
+STAT
+
+This is the heartbeat command. The response will always be *OK* if raveloxmidi is running. The script python/send_stat.py is available for this command.
+
+QUIT
+
+This will shut down raveloxmidi. The response will always be *QT* to indicate that the command has been received. The script python/send_quit.py is available for this command.
+
+LIST
+
+This requests a lists of current connections into raveloxmidi. The response will be a JSON blob of information. The script python/send_list.py is available for this command.
+The JSON data looks like this:
+
+
+~/pimidi/python$ ./send_list.py | python -m json.tool
+
+{
+    "connections": [
+        {       
+            "control": 5004,
+            "ctx": "0x556d380bac30",
+            "data": 5005,
+            "host": "192.168.1.145",
+            "id": 0,
+            "initiator": "0x19495cff",
+            "send_ssrc": "0x2dfec3cc",
+            "seq": 1,
+            "ssrc": "0x4181a596",
+            "start": 15861082588188,
+            "status": "idle"
+        }       
+    ],
+    "count": 1
+}
+
+I'll be working on also including the ALSA devices in a future update.
+
+To parse the data, the *count* field will be the number of connections in the list. The connections array holds each connection. The *id* field in the connections array is an internal id for the array. The value of that field *may* change. It is recommended that you use the *ssrc* field as the uniq identifier for the connection.
+
+3. New setting **alsa.writeback**
+
+If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
+This is a yes/no option. Default is no.
+
+There is also an associated setting **alsa.writeback.level** which can be either "card" (hw:X,*,*) or "device" (hw:X,Y,*) ( default is "card" ). This determines the level that the writeback prevention operates.
+
+4. New setting "read.ring_buffer_size"
+
+This is more of an internal setting but it controls the space available for reading data from input connections or devices. The default ( and minimum ) is 10K ( 10240 bytes ).
+
+5. Log entries now include microseconds (users)
+
+As I've added threads for extra functionality, I needed microsecond resolution in the debug logs so I can see when specific events are occurring,
