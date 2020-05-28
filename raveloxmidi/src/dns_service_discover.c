@@ -237,9 +237,10 @@ void dns_discover_add( const char *name, char *address, int port)
 
 void dns_discover_free_services( void )
 {
+	int i = 0;
 	if( ! services ) return;
 	if( num_services <= 0 ) return;
-	for(int i = 0; i < num_services; i++)
+	for(i = 0; i < num_services; i++)
 	{
 		if( services[i]->name ) free( services[i]->name );
 		if( services[i]->ip_address) free( services[i]->ip_address);
@@ -263,10 +264,11 @@ void dns_discover_teardown( void )
 
 void dns_discover_dump( void )
 {
+	int i = 0;
 	if( ! services ) return;
 	if( num_services <= 0 ) return;
 
-	for( int i = 0; i < num_services; i++ )
+	for(i = 0; i < num_services; i++ )
 	{
 		fprintf(stderr, "%03d) %s\t%s:%u\n", i, services[i]->name, services[i]->ip_address, services[i]->port );
 	}
