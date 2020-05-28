@@ -32,7 +32,7 @@ typedef struct system_message_t {
 	unsigned char message;
 } system_message_t;
 
-enum midi_message_type_t {
+typedef enum midi_message_type_t {
 	MIDI_NULL = 0x00,
 	MIDI_NOTE_OFF,
 	MIDI_NOTE_ON,

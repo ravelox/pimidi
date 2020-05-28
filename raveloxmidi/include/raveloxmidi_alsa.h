@@ -23,7 +23,7 @@
 #ifndef _RAVELOXMIDI_ALSA_H
 #define _RAVELOXMIDI_ALSA_H
 
-#include <asoundlib.h>
+#include <alsa/asoundlib.h>
 
 void raveloxmidi_alsa_list_rawmidi_devices( void );
 void raveloxmidi_alsa_init( char *input_name, char *output_name , size_t buffer_size);

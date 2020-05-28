@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <asoundlib.h>
+#include <alsa/asoundlib.h>
 
 #include <signal.h>
 #include <pthread.h>
