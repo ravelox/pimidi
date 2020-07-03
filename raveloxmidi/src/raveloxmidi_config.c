@@ -33,6 +33,8 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
+#include "build_info.h"
+
 static kv_table_t *config_items = NULL;
 
 static void config_set_defaults( void )
@@ -183,7 +185,7 @@ int config_init( int argc, char *argv[] )
 				exit(0);
 			/* This option exits */
 			case 'v':
-				fprintf(stderr, "%s (%s)\n", PACKAGE, VERSION);
+				fprintf(stderr, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
 				exit(0);
 			case 'N':
 				config_add_item("run_as_daemon", "no");
