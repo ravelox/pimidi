@@ -107,7 +107,6 @@ static void raveloxmidi_alsa_add_input( const char *device_name , size_t buffer_
 		snd_rawmidi_params_set_buffer_size( input_handle, params, buffer_size );
 		snd_rawmidi_params( input_handle, params );
 		snd_rawmidi_params_free( params );
-		free( params );
 	}
 
 	raveloxmidi_alsa_dump_rawmidi( input_handle );
