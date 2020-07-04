@@ -35,7 +35,10 @@ raveloxmidi_SOURCES = \
 	net_distribute.c \
 	data_table.c \
 	dbuffer.c \
-	dstring.c
+	dstring.c \
+	data_queue.c \
+	data_context.c \
+	midi_sender.c
 
 raveloxmidi_LDADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
