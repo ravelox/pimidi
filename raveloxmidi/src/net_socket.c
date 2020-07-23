@@ -140,9 +140,11 @@ void net_socket_destroy( void **data )
 
 	net_socket_lock( socket );
 
+#ifdef HAVE_ALSA
 	/* We don't destroy the ALSA handle as that gets cleaned up in the ALSA routines */
 	/* so just NULL out the handle */
 	if( socket->handle ) socket->handle = NULL;
+#endif
 
 	/* Only close the FD if it's a non-ALSA socket */
 	if( socket->type == RAVELOXMIDI_SOCKET_FD_TYPE )
