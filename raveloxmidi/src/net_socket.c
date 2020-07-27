@@ -64,6 +64,9 @@ extern int errno;
 #include "raveloxmidi_alsa.h"
 #include "data_table.h"
 
+#define NO_DELTA	0
+#define GET_DELTA	1
+
 static data_table_t *sockets = NULL;
 
 static int net_socket_shutdown = 0;
@@ -532,7 +535,7 @@ int net_socket_read( int fd )
 */
 	{
 		midi_state_dump( found_socket->state );
-		net_distribute_midi( found_socket->state , 0, found_socket->device_hash );
+		net_distribute_midi( found_socket->state , 0, found_socket->device_hash , NO_DELTA );
 	} else {
 /*
 	RTP MIDI inbound from remote socket
@@ -596,7 +599,8 @@ int net_socket_read( int fd )
 			net_response_destroy( &response );
 		}
 
-		net_distribute_midi( current_ctx->midi_state, current_ctx->ssrc , 0 );
+		// Use the Z flag from the payload header to determine if deltas are present
+		net_distribute_midi( current_ctx->midi_state, current_ctx->ssrc , 0 , (midi_payload->header->Z ? GET_DELTA : NO_DELTA ) );
 
 		// Clean up
 net_socket_read_midi_clean:

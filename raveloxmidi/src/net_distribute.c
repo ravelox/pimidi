@@ -62,7 +62,7 @@ extern int errno;
 extern int inbound_midi_fd;
 
 /* Send MIDI commands to all connections */
-void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc , int alsa_originator_card )
+void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc , int alsa_originator_card , char get_delta)
 {
 	rtp_packet_t *rtp_packet = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
@@ -99,7 +99,7 @@ void net_distribute_midi( midi_state_t *state, uint32_t originator_ssrc , int al
 	output_available |= raveloxmidi_alsa_out_available();
 #endif
 	// Convert the buffer into a set of commands
-	midi_state_to_commands( state, &midi_commands, 0);
+	midi_state_to_commands( state, &midi_commands, get_delta);
 
 	num_midi_commands = data_table_item_count( midi_commands );
 	for( midi_command_index = 0 ; midi_command_index < num_midi_commands ; midi_command_index++ )
