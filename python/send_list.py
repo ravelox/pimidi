@@ -7,7 +7,7 @@ import sys
 local_port = 5006
 
 # Request status
-bytes = struct.pack( "4s", "LIST" )
+send_bytes = b"LIST"
 
 if len(sys.argv) == 1:
 	family = socket.AF_INET
@@ -23,7 +23,7 @@ else:
 s = socket.socket( family, socket.SOCK_DGRAM )
 s.setblocking(0)
 s.connect( connect_tuple )
-s.sendall( bytes )
+s.sendall( send_bytes )
 
 data = ''
 while True:
@@ -34,5 +34,5 @@ while True:
 	if data:
 		break
 
-print data
+print(data)
 s.close()
