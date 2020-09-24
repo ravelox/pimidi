@@ -31,13 +31,13 @@
 void ring_buffer_lock( ring_buffer_t *ring )
 {
 	if( ! ring ) return;
-	pthread_mutex_lock( &(ring->lock) );
+	X_MUTEX_LOCK( &(ring->lock) );
 }
 
 void ring_buffer_unlock( ring_buffer_t *ring )
 {
 	if( ! ring ) return;
-	pthread_mutex_unlock( &(ring->lock) );
+	X_MUTEX_UNLOCK( &(ring->lock) );
 }
 
 size_t ring_buffer_used( ring_buffer_t *ring )
@@ -78,8 +78,8 @@ void ring_buffer_reset( ring_buffer_t *ring , size_t size)
 
 	if( ring->data )
 	{
-		free( ring->data );
-		ring->data = ( char * ) malloc( size );
+		X_FREE( ring->data );
+		ring->data = ( char * ) X_MALLOC( size );
 		if( ring->data )
 		{
 			memset( ring->data, 0, size );
@@ -99,7 +99,7 @@ ring_buffer_t *ring_buffer_create( size_t size )
 		return NULL;
 	}
 
-	new_buffer = (ring_buffer_t *)malloc( sizeof( ring_buffer_t ) );
+	new_buffer = (ring_buffer_t *)X_MALLOC( sizeof( ring_buffer_t ) );
 
 	if( ! new_buffer )
 	{
@@ -107,11 +107,11 @@ ring_buffer_t *ring_buffer_create( size_t size )
 		return NULL;
 	}
 
-	new_buffer->data = ( char * ) malloc( size );
+	new_buffer->data = ( char * ) X_MALLOC( size );
 	if( ! new_buffer->data )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_create: insufficient memory to create internal data buffer\n");
-		free( new_buffer );
+		X_FREE( new_buffer );
 		return NULL;
 	}
 
@@ -133,7 +133,7 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 	
 	if( (*ring)->data )
 	{
-		free( (*ring)->data );
+		X_FREE( (*ring)->data );
 		(*ring)->data = NULL;
 	}
 
@@ -141,7 +141,7 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 
 	pthread_mutex_destroy( &(*ring)->lock );
 	
-	FREENULL("ring", (void **)ring);
+	X_FREENULL("ring", (void **)ring);
 }
 
 size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
@@ -154,10 +154,12 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 
 	ring_buffer_lock( ring );
 
+	logging_printf( LOGGING_ERROR, "ring_buffer_write: stage=start len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
+
 	/* Not enough space */
 	if( ring->used + len > ring->size )
 	{
-		logging_printf( LOGGING_ERROR, "ring_buffer_write: Insufficient space available in buffer\n");
+		logging_printf( LOGGING_ERROR, "ring_buffer_write: ring=%p Insufficient space available in buffer\n", ring);
 		return_val = 0;
 		goto ring_buffer_write_end;
 	}
@@ -169,6 +171,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 		/* 1: The buffer isn't wrapped and data can be stored contiguously */
 		if( ( ring->end + len ) <= ring->size )
 		{
+			logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=contiguous write=contiguous ring=%p\n", ring);
 			char *dest = ring->data + ring->end;
 
 			/* Copy the data */
@@ -183,6 +186,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 			size_t second_part = len - first_part;
 			char *dest = NULL;
 
+			logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=wrapped ring=%p\n", ring);
 			/* Copy the first part */
 			dest = ring->data + ring->end;
 			memcpy( dest, data, first_part );
@@ -200,6 +204,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 		/* 3: The buffer is wrapped and the data can be stored contiguously */
 		char *dest = ring->data + ring->end;
 
+		logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=contiguous ring=%p\n", ring );
 		memcpy( dest, data, len );
 
 		/* Update the pointers */
@@ -208,6 +213,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 	}
 
 ring_buffer_write_end:
+	logging_printf( LOGGING_ERROR, "ring_buffer_write: stage=end len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
 	ring_buffer_unlock( ring );
 
 	return return_val;
@@ -226,13 +232,13 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 
 	ring_buffer_lock( ring );
 
+	logging_printf( LOGGING_DEBUG, "ring_buffer_read: ring=%p,len=%zu,advance=%d\n", ring, len, advance);
+
 	if( ! ring->data ) goto ring_buffer_read_end;
 	if( ring->used == 0 ) goto ring_buffer_read_end;
 	if( len > ring->used ) goto ring_buffer_read_end;
 
-	logging_printf( LOGGING_DEBUG, "ring_buffer_read: ring=%p\tused=%zu\tstart=%zu\tend=%zu\tlen=%zu\n",
-		ring, ring->used, ring->start, ring->end, len );
-	dest = ( char * ) malloc( len );
+	dest = ( char * ) X_MALLOC( len );
 	if( ! dest )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_read: Insufficient memory to allocate read output buffer\n");
@@ -326,7 +332,7 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 
 	if( ! ring ) return 0;
 
-	new_data = ( char * )malloc( new_size );
+	new_data = ( char * )X_MALLOC( new_size );
 	if( ! new_data )
 	{
 		logging_printf( LOGGING_DEBUG, "ring_buffer_resize: Insufficient memory to resize\n");
@@ -342,7 +348,7 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 	{
 		memcpy( new_data, old_data, bytes_used );
 		ring_buffer_lock( ring );
-		free( ring->data );
+		X_FREE( ring->data );
 		ring->data = new_data;
 		ring->start = 0;
 		ring->end = bytes_used;
@@ -350,7 +356,7 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 		ring->used = bytes_used;
 		ring_buffer_unlock( ring );
 
-		free( old_data );
+		X_FREE( old_data );
 	} else {
 		ring_buffer_reset( ring, new_size );
 	}
@@ -396,7 +402,7 @@ int ring_buffer_compare( ring_buffer_t *ring, const char *compare, size_t compar
 		ret = strcmp( data, compare );
 	}
 
-	free(data);
+	X_FREE(data);
 	return ret;
 }
 
@@ -420,7 +426,7 @@ int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )
 
 	ret = ( data[index] == compare );
 
-	free(data);
+	X_FREE(data);
 
 	return ret;
 }
@@ -436,7 +442,7 @@ void ring_buffer_advance( ring_buffer_t *ring, size_t steps )
 	real_steps = MIN( steps, ring->used );
 
 	data = ring_buffer_read( ring, real_steps, RING_YES );
-	free(data);
+	X_FREE(data);
 }
 
 size_t ring_buffer_get_size( ring_buffer_t *ring )

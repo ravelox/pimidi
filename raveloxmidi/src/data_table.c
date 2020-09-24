@@ -29,13 +29,13 @@
 void data_table_lock( data_table_t *table )
 {
 	if(! table ) return;
-	pthread_mutex_lock( &(table->lock) );
+	X_MUTEX_LOCK( &(table->lock) );
 }
 
 void data_table_unlock( data_table_t *table )
 {
 	if(! table ) return;
-	pthread_mutex_unlock( &(table->lock) );
+	X_MUTEX_UNLOCK( &(table->lock) );
 }
 
 void data_table_dump( data_table_t *table )
@@ -65,7 +65,7 @@ data_table_t *data_table_create( char *name, data_item_destructor_t destructor ,
 {
 	data_table_t *new_table = NULL;
 	
-	new_table = ( data_table_t *) malloc( sizeof( data_table_t ) );
+	new_table = ( data_table_t *) X_MALLOC( sizeof( data_table_t ) );
 
 	if( ! new_table )
 	{
@@ -83,7 +83,7 @@ data_table_t *data_table_create( char *name, data_item_destructor_t destructor ,
 
 	if( name )
 	{
-		new_table->name = (char *)strdup( name );
+		new_table->name = (char *)X_STRDUP( name );
 	}
 	return new_table;
 }
@@ -117,21 +117,21 @@ void data_table_destroy( data_table_t **table )
 					(*table)->item_destructor( &( (*table)->items[index]->data ) );
 				}
 			}
-			free( (*table)->items[index] );
+			X_FREE( (*table)->items[index] );
 			(*table)->items[index] = NULL;
 		}
-		free( (*table)->items );
+		X_FREE( (*table)->items );
 		(*table)->items = NULL;
 	}
 
 	(*table)->count = 0;
-	if( (*table)->name ) free( (*table)->name );
+	if( (*table)->name ) X_FREE( (*table)->name );
 
 	data_table_unlock( *table );
 
 	pthread_mutex_destroy( &((*table)->lock) );
 
-	FREENULL("data_table", (void **)table );
+	X_FREENULL("data_table", (void **)table );
 }
 
 void data_table_set_item_destructor( data_table_t *table, data_item_destructor_t destructor )
@@ -175,7 +175,7 @@ int data_table_add_item( data_table_t *table, void *data )
 		data_item_t **new_items;
 
 		/* Create a new item for the list */
-		new_item = ( data_item_t * )malloc( sizeof( data_item_t ) );
+		new_item = ( data_item_t * )X_MALLOC( sizeof( data_item_t ) );
 		if( ! new_item )
 		{
 			logging_printf(LOGGING_ERROR,"data_table_add_item: Insufficient memory to create new table item\n");
@@ -184,11 +184,11 @@ int data_table_add_item( data_table_t *table, void *data )
 		}
 	
 		/* Extend the list */
-		new_items = ( data_item_t **)realloc( table->items, sizeof( data_item_t * ) * (table->count + 1) );
+		new_items = ( data_item_t **)X_REALLOC( table->items, sizeof( data_item_t * ) * (table->count + 1) );
 		if(! new_items )
 		{
 			logging_printf(LOGGING_ERROR,"data_table_add_item: Insufficient memory to extend table list\n");
-			free(new_item);
+			X_FREE(new_item);
 			data_table_unlock( table );
 			return 0;
 		}
@@ -294,7 +294,7 @@ void data_table_delete_item( data_table_t *table, size_t index )
 	{
 		data_table_lock( table );
 		table->item_destructor( table->items[index]->data );
-		free( &(table->items[index]->data) );
+		X_FREE( &(table->items[index]->data) );
 		table->items[index]->data = NULL;
 		table->items[index]->used = 0;
 	}

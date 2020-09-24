@@ -113,7 +113,7 @@ net_applemidi_inv * net_applemidi_inv_create( void )
 {
 	net_applemidi_inv *inv = NULL;
 
-	inv = ( net_applemidi_inv * ) malloc( sizeof( net_applemidi_inv ) );
+	inv = ( net_applemidi_inv * ) X_MALLOC( sizeof( net_applemidi_inv ) );
 	
 	if( inv )
 	{
@@ -133,11 +133,11 @@ void net_applemidi_inv_destroy( net_applemidi_inv **inv )
 	
 	if( (*inv)->name )
 	{
-		free( (*inv)->name );
+		X_FREE( (*inv)->name );
 		(*inv)->name = NULL;
 	}
 
-	free( *inv );
+	X_FREE( *inv );
 	*inv = NULL;
 }
 
@@ -145,7 +145,7 @@ net_applemidi_sync * net_applemidi_sync_create( void )
 {
 	net_applemidi_sync *sync = NULL;
 
-	sync = ( net_applemidi_sync * ) malloc( sizeof( net_applemidi_sync ) );
+	sync = ( net_applemidi_sync * ) X_MALLOC( sizeof( net_applemidi_sync ) );
 
 	if( sync )
 	{
@@ -160,7 +160,7 @@ void net_applemidi_sync_destroy( net_applemidi_sync **sync )
 	if( ! sync ) return;
 	if( ! *sync ) return;
 
-	free( *sync );
+	X_FREE( *sync );
 	*sync = NULL;
 }
 
@@ -168,7 +168,7 @@ net_applemidi_feedback * net_applemidi_feedback_create( void )
 {
 	net_applemidi_feedback *feedback = NULL;
 	
-	feedback = (net_applemidi_feedback *) malloc( sizeof( net_applemidi_feedback ) );
+	feedback = (net_applemidi_feedback *) X_MALLOC( sizeof( net_applemidi_feedback ) );
 
 	if( feedback )
 	{
@@ -196,7 +196,7 @@ int net_applemidi_cmd_destroy( net_applemidi_command **command )
 				net_applemidi_inv *inv = (net_applemidi_inv *)(*command)->data;
 				if( inv->name )
 				{
-					free( inv->name );
+					X_FREE( inv->name );
 					inv->name = NULL;
 				}
 			}
@@ -207,11 +207,11 @@ int net_applemidi_cmd_destroy( net_applemidi_command **command )
 
 	if( (*command)->data )
 	{
-		free( (*command)->data );
+		X_FREE( (*command)->data );
 		(*command)->data = NULL;
 	}
 
-	free( *command );
+	X_FREE( *command );
 	*command = NULL;
 	return NET_APPLEMIDI_DONE;
 }
@@ -237,7 +237,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 
 	p = in_buffer;
 
-	*command_buffer = (net_applemidi_command *)malloc( sizeof( net_applemidi_command ) );
+	*command_buffer = (net_applemidi_command *)X_MALLOC( sizeof( net_applemidi_command ) );
 
 	if( ! *command_buffer )
 	{
@@ -255,7 +255,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 	{
 		if( in_buffer_len < ( NET_APPLEMIDI_INV_STATIC_SIZE - sizeof( char * ) ) )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
@@ -263,7 +263,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 		net_applemidi_inv *inv = net_applemidi_inv_create();
 		if( ! inv )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NO_MEMORY;
 		}
@@ -277,7 +277,7 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 		{
 			if( p )
 			{
-				inv->name = ( char * )strdup( (const char *)p );
+				inv->name = ( char * )X_STRDUP( (const char *)p );
 				in_buffer_len = 0;
 			}
 		} else {
@@ -290,17 +290,17 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 	{
 		if( in_buffer_len < sizeof( net_applemidi_feedback ) )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
 		net_applemidi_feedback *feedback;
-		feedback = (net_applemidi_feedback *)malloc( sizeof( net_applemidi_feedback ) );
+		feedback = (net_applemidi_feedback *)X_MALLOC( sizeof( net_applemidi_feedback ) );
 
 		if( ! feedback )
 		{
-			free(*command_buffer );
+			X_FREE(*command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NO_MEMORY;
 		}
@@ -316,17 +316,17 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 	{
 		if( in_buffer_len < sizeof( net_applemidi_bitrate ) )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
 		net_applemidi_bitrate *bitrate;
-		bitrate = (net_applemidi_bitrate *)malloc( sizeof( net_applemidi_bitrate ) );
+		bitrate = (net_applemidi_bitrate *)X_MALLOC( sizeof( net_applemidi_bitrate ) );
 
 		if( ! bitrate )
 		{
-			free(*command_buffer );
+			X_FREE(*command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NO_MEMORY;
 		}
@@ -342,16 +342,16 @@ int net_applemidi_unpack( net_applemidi_command **command_buffer, unsigned char 
 	{
 		if( in_buffer_len <  sizeof( net_applemidi_sync ) )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
 		net_applemidi_sync *sync;
-		sync = (net_applemidi_sync *)malloc( sizeof (net_applemidi_sync) );
+		sync = (net_applemidi_sync *)X_MALLOC( sizeof (net_applemidi_sync) );
 		if( ! sync )
 		{
-			free( *command_buffer );
+			X_FREE( *command_buffer );
 			*command_buffer = NULL;
 			return NET_APPLEMIDI_NO_MEMORY;
 		}
@@ -388,7 +388,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 		return NET_APPLEMIDI_NEED_DATA;
 	}
 
-	*out_buffer = ( unsigned char * ) malloc( NET_APPLEMIDI_COMMAND_SIZE );
+	*out_buffer = ( unsigned char * ) X_MALLOC( NET_APPLEMIDI_COMMAND_SIZE );
 
 	if( ! *out_buffer )
 	{
@@ -410,13 +410,13 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 		if( ! inv )
 		{
-			free( *out_buffer );
+			X_FREE( *out_buffer );
 			*out_buffer = NULL;
 			*out_buffer_len = 0;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
-		*out_buffer = ( unsigned char * ) realloc( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_INV_STATIC_SIZE );
+		*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_INV_STATIC_SIZE );
 		p = *out_buffer + *out_buffer_len;
 
 		put_uint32( &p, inv->version, out_buffer_len );
@@ -425,7 +425,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 		if( inv->name )
 		{
-			*out_buffer = ( unsigned char * ) realloc( *out_buffer, *out_buffer_len + strlen( inv->name ) + 1 );
+			*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, *out_buffer_len + strlen( inv->name ) + 1 );
 
 			if( ! *out_buffer )
 			{
@@ -449,13 +449,13 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 		if( ! feedback )
 		{
-			free( *out_buffer );
+			X_FREE( *out_buffer );
 			*out_buffer = NULL;
 			*out_buffer_len = 0;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
-		*out_buffer = ( unsigned char * ) realloc( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_FEEDBACK_SIZE );
+		*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_FEEDBACK_SIZE );
 		p = *out_buffer + *out_buffer_len;
 
 		put_uint32( &p, feedback->ssrc ,  out_buffer_len );
@@ -469,13 +469,13 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 		if( ! bitrate )
 		{
-			free( *out_buffer );
+			X_FREE( *out_buffer );
 			*out_buffer = NULL;
 			*out_buffer_len = 0;
 			return NET_APPLEMIDI_NEED_DATA;
 		}
 
-		*out_buffer = ( unsigned char * ) realloc( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_BITRATE_SIZE );
+		*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_BITRATE_SIZE );
 		p = *out_buffer + *out_buffer_len;
 
 		put_uint32( &p, bitrate->ssrc ,  out_buffer_len );
@@ -488,7 +488,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 		sync = (net_applemidi_sync *)command_buffer->data;
 
-		*out_buffer = ( unsigned char * ) realloc( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_SYNC_SIZE );
+		*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_SYNC_SIZE );
 
 		if( ! *out_buffer )
 		{
@@ -521,7 +521,7 @@ net_applemidi_command * net_applemidi_cmd_create( uint16_t command )
 {
 	net_applemidi_command *new_command = NULL;
 
-	new_command = ( net_applemidi_command *) malloc( sizeof( net_applemidi_command ) );
+	new_command = ( net_applemidi_command *) X_MALLOC( sizeof( net_applemidi_command ) );
 	if( new_command )
 	{
 		new_command->signature = 0xffff;

@@ -34,7 +34,6 @@ void put_uint64( unsigned char **dest, uint64_t src, size_t *len );
 void get_uint32( void *dest, unsigned char **src, size_t *len );
 void get_uint64( void *dest, unsigned char **src, size_t *len );
 void hex_dump( unsigned char *buffer, size_t len );
-void FREENULL( const char *description, void **ptr );
 int check_file_security( const char *filepath );
 int is_yes( const char *value );
 int is_no( const char *value );
@@ -51,6 +50,32 @@ void utils_unlock( void );
 void utils_init( void );
 void utils_teardown( void );
 
+// Memory tracking utilities
+void utils_mem_tracking_init( void );
+void utils_mem_tracking_teardown( void );
+
+void *utils_malloc( size_t size, const char *code_file_name, unsigned int line_number );
+void utils_free( void *ptr , const char *code_file_name, unsigned int line_number);
+void *utils_realloc( void *orig_ptr, size_t new_size, const char *code_file_name, unsigned int line_number );
+char *utils_strdup( const char *s , const char *code_file_name, unsigned int line_number);
+void utils_freenull( const char *description, void **ptr, const char *code_file_name, unsigned int line_number );
+
+#define X_MALLOC(a)	utils_malloc( a, __FILE__, __LINE__ )
+#define X_FREE(a)	utils_free( a, __FILE__, __LINE__ )
+#define X_REALLOC(a,b)	utils_realloc( a,b, __FILE__, __LINE__ )
+#define X_STRDUP(a)	utils_strdup( a, __FILE__, __LINE__ )
+#define X_FREENULL(a,b) utils_freenull( a, b, __FILE__, __LINE__ )
+
+// Mutex tracking utilities
+void utils_pthread_tracking_init( void );
+void utils_pthread_tracking_teardown( void );
+void utils_pthread_mutex_lock( pthread_mutex_t *mutex, const char *code_file_name, unsigned int line_number);
+void utils_pthread_mutex_unlock( pthread_mutex_t *mutex, const char *code_file_name, unsigned int line_number);
+
+#define X_MUTEX_LOCK(a)	utils_pthread_mutex_lock( a, __FILE__, __LINE__ )
+#define X_MUTEX_UNLOCK(a)	utils_pthread_mutex_unlock( a, __FILE__, __LINE__ )
+
+// Generic macros
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MIN(a,b) ( (a) < (b) ? (a) : (b) )
 

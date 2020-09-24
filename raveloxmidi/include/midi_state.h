@@ -27,6 +27,7 @@
 #include "data_table.h"
 #include "ring_buffer.h"
 #include "dbuffer.h"
+#include "data_context.h"
 
 typedef enum midi_state_status_t {
 	MIDI_STATE_INIT,
@@ -62,6 +63,6 @@ void midi_state_reset( midi_state_t *state );
 
 void midi_state_dump( midi_state_t *state );
 
-void midi_state_to_commands( midi_state_t *state, data_table_t **table, char get_delta );
+void midi_state_send( midi_state_t *state, data_context_t *context, char get_delta );
 
 #endif

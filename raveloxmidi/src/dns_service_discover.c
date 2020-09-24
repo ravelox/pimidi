@@ -211,19 +211,19 @@ void dns_discover_add( const char *name, char *address, int port)
 		return;
 	}
 
-	new_services_list = (dns_service_t ** ) realloc( services, sizeof(dns_service_t *) * ( num_services + 1 ) ) ;
+	new_services_list = (dns_service_t ** ) X_REALLOC( services, sizeof(dns_service_t *) * ( num_services + 1 ) ) ;
 
 	if( new_services_list )	
 	{
 		dns_service_t *new_service;
 		services = new_services_list;
 
-		new_service = (dns_service_t *)malloc( sizeof( dns_service_t ) );
+		new_service = (dns_service_t *)X_MALLOC( sizeof( dns_service_t ) );
 
 		if( new_service )
 		{
-			new_service->name = (char *)strdup( name );
-			new_service->ip_address = ( char *)strdup( address );
+			new_service->name = (char *)X_STRDUP( name );
+			new_service->ip_address = ( char *)X_STRDUP( address );
 			new_service->port = port;
 			services[ num_services ] = new_service;
 			num_services++;
@@ -242,11 +242,11 @@ void dns_discover_free_services( void )
 	if( num_services <= 0 ) return;
 	for(i = 0; i < num_services; i++)
 	{
-		if( services[i]->name ) free( services[i]->name );
-		if( services[i]->ip_address) free( services[i]->ip_address);
-		FREENULL( "dns_service_t", (void **)&(services[i]) );
+		if( services[i]->name ) X_FREE( services[i]->name );
+		if( services[i]->ip_address) X_FREE( services[i]->ip_address);
+		X_FREENULL( "dns_service_t", (void **)&(services[i]) );
 	}
-	free(services);
+	X_FREE(services);
 	services = NULL;
 	num_services = 0;
 }

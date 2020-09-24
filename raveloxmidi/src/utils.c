@@ -37,10 +37,23 @@ extern int errno;
 #include "config.h"
 #include "logging.h"
 
+#define INSIDE_UTILS
+
 #include "utils.h"
 
 static pthread_mutex_t utils_thread_lock;
 static unsigned int random_seed = 0;
+
+static pthread_mutex_t utils_diag_mem_lock;
+int utils_mem_tracking_enabled = 0;
+static char *utils_mem_tracking_filename = NULL;
+static char *utils_timestamp_string = NULL;
+#define	UTILS_MEM_TRACKING_ENV	"RAVELOXMIDI_MEM_FILE"
+
+int utils_pthread_enabled = 0;
+static char *utils_pthread_filename = NULL;
+static FILE *utils_pthread_fp = NULL;
+#define UTILS_PTHREAD_TRACKING_ENV	"RAVELOXMIDI_PTHREAD_FILE"
 
 extern int errno;
 
@@ -198,6 +211,8 @@ void hex_dump( unsigned char *buffer, size_t len )
 
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
+/* And if it is enabled */
+	HEX_DUMP_ENABLED;
 
 	utils_lock();
 	logging_prefix_disable();
@@ -224,16 +239,6 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_enable();
 
 	utils_unlock();
-}
-
-void FREENULL( const char *description, void **ptr )
-{
-	if( ! ptr ) return;
-	if( ! *ptr ) return;
-
-	logging_printf(LOGGING_DEBUG,"FREENULL: \"%s\"=%p\n", description, *ptr);
-	free( *ptr );
-	*ptr = NULL;
 }
 
 int check_file_security( const char *filepath )
@@ -383,12 +388,12 @@ long time_in_microseconds( void )
 
 void utils_lock( void )
 {
-	pthread_mutex_lock( &utils_thread_lock );
+	X_MUTEX_LOCK( &utils_thread_lock );
 }
 
 void utils_unlock( void )
 {
-	pthread_mutex_unlock( &utils_thread_lock );
+	X_MUTEX_UNLOCK( &utils_thread_lock );
 }
 
 void utils_init( void )
@@ -400,4 +405,234 @@ void utils_init( void )
 void utils_teardown( void )
 {
 	pthread_mutex_destroy( &utils_thread_lock );
+}
+
+static void utils_mem_tracking_lock( void )
+{
+	X_MUTEX_LOCK( &utils_diag_mem_lock );
+}
+
+static void utils_mem_tracking_unlock( void )
+{
+	X_MUTEX_UNLOCK( &utils_diag_mem_lock );
+}
+
+void utils_pthread_tracking_init( void )
+{
+	utils_pthread_filename = getenv( UTILS_PTHREAD_TRACKING_ENV );
+
+	if( utils_pthread_filename )
+	{
+		utils_pthread_enabled = 1;
+		utils_pthread_fp = fopen( utils_pthread_filename, "a" );
+	}
+}
+
+void utils_pthread_tracking_teardown( void )
+{
+	if(  utils_pthread_fp )
+	{
+		fclose( utils_pthread_fp );
+		utils_pthread_fp = NULL;
+	}
+
+	if( utils_timestamp_string )
+	{
+		free( utils_timestamp_string );
+		utils_timestamp_string = NULL;
+	}
+}
+
+void utils_mem_tracking_init( void )
+{
+	utils_mem_tracking_filename = getenv( UTILS_MEM_TRACKING_ENV );
+
+	if( utils_mem_tracking_filename )
+	{
+		utils_mem_tracking_enabled = 1;
+	}
+	pthread_mutex_init( &utils_diag_mem_lock, NULL );
+}
+
+void utils_mem_tracking_teardown( void )
+{
+	utils_mem_tracking_lock();	
+	utils_mem_tracking_enabled = 0;
+	if( utils_timestamp_string )
+	{
+		free( utils_timestamp_string );
+		utils_timestamp_string = NULL;
+	}
+	utils_mem_tracking_unlock();
+	pthread_mutex_destroy( &utils_diag_mem_lock );
+}
+
+char *utils_timestamp( void )
+{
+	struct timeval tv;
+	struct timezone tz;
+	gettimeofday( &tv, &tz);
+
+	if( ! utils_timestamp_string )
+	{
+		utils_timestamp_string = (char *)malloc( 100 );
+	}
+
+	memset( utils_timestamp_string, 0, 100 );
+	sprintf( utils_timestamp_string , "%lu.%lu:%lu", tv.tv_sec, tv.tv_usec, pthread_self());
+	return utils_timestamp_string;
+}
+
+void *utils_malloc( size_t size, const char *code_file_name, unsigned int line_number )
+{
+	void *ptr = NULL;
+	ptr = malloc( size );
+
+#ifdef _UTILS_MEMTRACKING_
+	utils_mem_tracking_lock();
+	if( utils_mem_tracking_enabled && utils_mem_tracking_filename)
+	{
+		FILE *fp = NULL;
+		fp = fopen(utils_mem_tracking_filename, "a");
+		if( fp )
+		{
+			fprintf( fp, "%s:%p:A:%zu:%s:%u\n", utils_timestamp(), ptr, size, code_file_name, line_number );
+			fclose(fp);
+		}
+	}
+	utils_mem_tracking_unlock();
+#endif
+
+	return ptr;
+}
+
+void utils_free( void *ptr, const char *code_file_name, unsigned int line_number )
+{
+#ifdef _UTILS_MEMTRACKING_
+	utils_mem_tracking_lock();
+	if( utils_mem_tracking_enabled && utils_mem_tracking_filename )
+	{
+		FILE *fp = NULL;
+		fp = fopen(utils_mem_tracking_filename , "a");
+		if( fp )
+		{
+			fprintf( fp, "%s:%p:F:%s:%u\n", utils_timestamp(), ptr, code_file_name, line_number );
+			fclose( fp );
+		}
+	}
+	utils_mem_tracking_unlock();
+#endif
+
+	free( ptr );
+}
+
+void *utils_realloc( void *orig_ptr, size_t size, const char *code_file_name, unsigned int line_number )
+{
+	void *ptr = NULL;
+
+	ptr = realloc( orig_ptr, size );
+
+#ifdef _UTILS_MEMTRACKING_
+	utils_mem_tracking_lock();
+	if( utils_mem_tracking_enabled && utils_mem_tracking_filename )
+	{
+		FILE *fp = NULL;
+		fp = fopen( utils_mem_tracking_filename, "a");
+		if( fp )
+		{
+			if( orig_ptr )
+			{
+				fprintf( fp, "%s:%p:F:%zu:%s:%u\n", utils_timestamp(),orig_ptr, size, code_file_name, line_number );
+			}
+			fprintf( fp, "%s:%p:A:%zu:%s:%u\n", utils_timestamp(),ptr, size, code_file_name, line_number );
+			fclose(fp);
+		}
+	}
+	utils_mem_tracking_unlock();
+#endif
+
+	return ptr;
+}
+
+char *utils_strdup(const char *s , const char *code_file_name, unsigned int line_number)
+{
+	char *ptr = NULL;
+
+	if( ! s ) return NULL;
+
+	ptr = strdup( s );
+
+#ifdef _UTILS_MEMTRACKING_
+	utils_mem_tracking_lock();
+	if( utils_mem_tracking_enabled && utils_mem_tracking_filename )
+	{
+		FILE *fp = NULL;
+		fp = fopen( utils_mem_tracking_filename, "a");
+		if( fp )
+		{
+			fprintf( fp, "%s:%p:D:%s:%u\n", utils_timestamp(),ptr, code_file_name, line_number );
+			fclose(fp);
+		}
+	}
+	utils_mem_tracking_unlock();
+#endif
+
+	return ptr;
+}
+
+void utils_freenull( const char *description, void **ptr , const char *code_file_name, unsigned int line_number)
+{
+	if( ! ptr ) return;
+	if( ! *ptr ) return;
+
+#ifdef _UTILS_MEMTRACKING_
+	if( utils_mem_tracking_enabled && utils_mem_tracking_filename )
+	{
+		FILE *fp = NULL;
+		utils_mem_tracking_lock();
+		fp = fopen( utils_mem_tracking_filename, "a");
+		if( fp )
+		{
+			fprintf( fp, "%s:%p:F:%s:%u\n", utils_timestamp(),*ptr, code_file_name, line_number );
+			fclose(fp);
+		}
+		utils_mem_tracking_unlock();
+	}
+#endif
+	
+	free( *ptr );
+	*ptr = NULL;
+}
+
+void utils_pthread_mutex_lock( pthread_mutex_t *mutex , const char *code_file_name, unsigned int line_number)
+{
+	if( ! mutex ) return;
+
+#ifdef _UTILS_PTHREAD_
+	if( utils_pthread_fp )
+	{
+		fprintf( utils_pthread_fp, "%s:w:%p:%s:%u\n", utils_timestamp(), mutex, code_file_name, line_number );
+	}
+#endif
+	pthread_mutex_lock( mutex );
+#ifdef _UTILS_PTHREAD_
+	if( utils_pthread_fp )
+	{
+		fprintf( utils_pthread_fp, "%s:l:%p:%s:%u\n", utils_timestamp(), mutex, code_file_name, line_number );
+	}
+#endif
+}
+
+
+void utils_pthread_mutex_unlock( pthread_mutex_t *mutex, const char *code_file_name, unsigned int line_number)
+{
+	if( ! mutex ) return;
+
+	pthread_mutex_unlock( mutex );
+#ifdef _UTILS_PTHREAD_
+	if( utils_pthread_fp )
+	{
+		fprintf( utils_pthread_fp, "%s:u:%p:%s:%u\n", utils_timestamp(), mutex, code_file_name, line_number );
+	}
+#endif
 }

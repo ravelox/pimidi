@@ -40,7 +40,7 @@ void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed 
 	if( ! header ) return;
 
 	chapter_n_header_dump( header );
-	*packed = ( unsigned char *)malloc( CHAPTER_N_HEADER_PACKED_SIZE );
+	*packed = ( unsigned char *)X_MALLOC( CHAPTER_N_HEADER_PACKED_SIZE );
 
 	if( ! *packed ) return;
 	memset( *packed, 0 , CHAPTER_N_HEADER_PACKED_SIZE );
@@ -61,14 +61,14 @@ void chapter_n_header_pack( chapter_n_header_t *header , unsigned char **packed 
 
 void chapter_n_header_destroy( chapter_n_header_t **header )
 {
-	FREENULL( "chapter_n_header",(void **)header);
+	X_FREENULL( "chapter_n_header",(void **)header);
 }
 
 chapter_n_header_t * chapter_n_header_create( void )
 {
 	chapter_n_header_t *header = NULL;
 
-	header = ( chapter_n_header_t *) malloc( sizeof( chapter_n_header_t ) );
+	header = ( chapter_n_header_t *) X_MALLOC( sizeof( chapter_n_header_t ) );
 
 	if( header )
 	{
@@ -110,7 +110,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	if( chapter_n->num_notes > 0 )
 	{
 		note_buffer_size = CHAPTER_N_NOTE_PACKED_SIZE * chapter_n->num_notes;
-		note_buffer = ( unsigned char * ) malloc( note_buffer_size );
+		note_buffer = ( unsigned char * ) X_MALLOC( note_buffer_size );
 		if( note_buffer ) 
 		{
 			memset( note_buffer, 0 , note_buffer_size);
@@ -122,7 +122,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 				memcpy( p, packed_note, note_size );
 				p += note_size;
 				*size += note_size;
-				free( packed_note );
+				X_FREE( packed_note );
 			}
 		} else {
 			logging_printf(LOGGING_ERROR, "chapter_n_pack: Insufficient memory to create note buffer\n");
@@ -135,7 +135,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	offbits_size = ( chapter_n->header->high - chapter_n->header->low ) + 1;
 	if( offbits_size > 0 )
 	{
-		offbits_buffer = ( unsigned char * )malloc( offbits_size );
+		offbits_buffer = ( unsigned char * )X_MALLOC( offbits_size );
 		if (!offbits_buffer)
 		{
 			logging_printf(LOGGING_ERROR, "chapter_n_pack: Insufficient memory to create offbits buffer\n");
@@ -147,7 +147,7 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	}
 
 	// Now pack it all together
-	*packed = ( unsigned char * ) malloc( *size );
+	*packed = ( unsigned char * ) X_MALLOC( *size );
 
 	if( ! *packed ) goto chapter_n_pack_cleanup;
 
@@ -171,9 +171,9 @@ void chapter_n_pack( chapter_n_t *chapter_n, unsigned char **packed, size_t *siz
 	}
 
 chapter_n_pack_cleanup:
-	FREENULL( "chapter_n:packed_header", (void **)&packed_header );
-	FREENULL( "chapter_n:note_buffer", (void **)&note_buffer );
-	FREENULL( "chapter_n:offbits_buffer",(void **)&offbits_buffer );
+	X_FREENULL( "chapter_n:packed_header", (void **)&packed_header );
+	X_FREENULL( "chapter_n:note_buffer", (void **)&note_buffer );
+	X_FREENULL( "chapter_n:offbits_buffer",(void **)&offbits_buffer );
 }
 
 chapter_n_t * chapter_n_create( void )
@@ -181,7 +181,7 @@ chapter_n_t * chapter_n_create( void )
 	chapter_n_t *chapter_n = NULL;
 	unsigned int i = 0;
 
-	chapter_n = ( chapter_n_t * ) malloc( sizeof( chapter_n_t ) );
+	chapter_n = ( chapter_n_t * ) X_MALLOC( sizeof( chapter_n_t ) );
 
 	if( chapter_n )
 	{
@@ -190,7 +190,7 @@ chapter_n_t * chapter_n_create( void )
 		memset( chapter_n, 0, sizeof( chapter_n_t ) );
 		if( ! header )
 		{
-			free( chapter_n );
+			X_FREE( chapter_n );
 			return NULL;
 		}
 
@@ -202,7 +202,7 @@ chapter_n_t * chapter_n_create( void )
 			chapter_n->notes[i] = NULL;
 		}
 		
-		chapter_n->offbits = ( unsigned char *)malloc( MAX_OFFBITS );
+		chapter_n->offbits = ( unsigned char *)X_MALLOC( MAX_OFFBITS );
 		if (! chapter_n->offbits )
 		{
 			chapter_n_destroy( &chapter_n );
@@ -231,7 +231,7 @@ void chapter_n_destroy( chapter_n_t **chapter_n )
 
 	if( (*chapter_n)->offbits )
 	{
-		free( (*chapter_n)->offbits );
+		X_FREE( (*chapter_n)->offbits );
 		(*chapter_n)->offbits = NULL;
 	}
 
@@ -241,7 +241,7 @@ void chapter_n_destroy( chapter_n_t **chapter_n )
 		(*chapter_n)->header = NULL;
 	}
 
-	free( *chapter_n );
+	X_FREE( *chapter_n );
 
 	*chapter_n = NULL;
 
@@ -308,7 +308,7 @@ void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size
 
 	if( ! note ) return;
 
-	*packed = ( unsigned char *)malloc( CHAPTER_N_NOTE_PACKED_SIZE );
+	*packed = ( unsigned char *)X_MALLOC( CHAPTER_N_NOTE_PACKED_SIZE );
 
 	if( ! *packed ) return;
 
@@ -327,14 +327,14 @@ void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size
 
 void chapter_n_note_destroy( chapter_n_note_t **note )
 {
-	FREENULL( "chapter_n:note",(void **)note );
+	X_FREENULL( "chapter_n:note",(void **)note );
 }
 
 chapter_n_note_t * chapter_n_note_create( void )
 {
 	chapter_n_note_t *note = NULL;
 	
-	note = ( chapter_n_note_t * ) malloc( sizeof( chapter_n_note_t ) );
+	note = ( chapter_n_note_t * ) X_MALLOC( sizeof( chapter_n_note_t ) );
 
 	if( note )
 	{

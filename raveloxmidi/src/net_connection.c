@@ -64,24 +64,25 @@ void net_connections_unlock( void )
 void net_ctx_lock( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
-	pthread_mutex_lock( &(ctx->lock) );
+	X_MUTEX_LOCK( &(ctx->lock) );
 }
 
 void net_ctx_unlock( net_ctx_t *ctx )
 {
 	if( ! ctx ) return;
-	pthread_mutex_unlock( &(ctx->lock) );
+	X_MUTEX_UNLOCK( &(ctx->lock) );
 }
 
 void net_ctx_destroy( void **data )
 {
 	net_ctx_t **ctx = NULL;
-	if( ! ctx ) return;
+	if( ! data ) return;
+	if( ! *data ) return;
 
 	ctx = (net_ctx_t **)data;
 	logging_printf(LOGGING_DEBUG,"net_ctx_destroy: ctx=%p\n", *ctx);
-	if( (*ctx)->name ) FREENULL( "name",(void **)&((*ctx)->name) );
-	if( (*ctx)->ip_address) FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
+	if( (*ctx)->name ) X_FREENULL( "name",(void **)&((*ctx)->name) );
+	if( (*ctx)->ip_address) X_FREENULL( "ip_address",(void **)&((*ctx)->ip_address) );
 	journal_destroy( &((*ctx)->journal) );
 
 	if( (*ctx)->midi_state )
@@ -89,7 +90,7 @@ void net_ctx_destroy( void **data )
 		midi_state_destroy( &((*ctx)->midi_state) );
 	}
 	pthread_mutex_destroy( &((*ctx)->lock) );
-	FREENULL( "net_ctx_destroy: ctx", data );
+	X_FREENULL( "net_ctx_destroy: ctx", data );
 }
 
 void net_ctx_dump( void *data )
@@ -126,22 +127,24 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->data_port = port+1;
 	ctx->start = time_in_microseconds();
 
+
 	if( ctx->ip_address )
 	{
-		free( ctx->ip_address );
+		X_FREE( ctx->ip_address );
 	}
-	ctx->ip_address = ( char *) strdup( ip_address );
+	ctx->ip_address = ( char *) X_STRDUP( ip_address );
 
 	if( ctx->name )
 	{
-		free( ctx->name );
+		X_FREE( ctx->name );
 	}
-	ctx->name = ( char *) strdup( name );
+	ctx->name = ( char *) X_STRDUP( name );
 
 	if( ctx->midi_state )
 	{
 		midi_state_reset( ctx->midi_state );
 	}
+
 	ctx->status = NET_CTX_STATUS_IDLE;
 	net_ctx_unlock( ctx );
 }
@@ -191,7 +194,7 @@ net_ctx_t * net_ctx_create( void )
 	midi_state_t *new_midi_state = NULL;
 	size_t ring_buffer_size = 0;
 
-	new_ctx = ( net_ctx_t * ) malloc( sizeof( net_ctx_t ) );
+	new_ctx = ( net_ctx_t * ) X_MALLOC( sizeof( net_ctx_t ) );
 
 	if( ! new_ctx )
 	{
@@ -213,6 +216,7 @@ net_ctx_t * net_ctx_create( void )
 		logging_printf( LOGGING_ERROR, "net_ctx_create: Unable to create midi_state_t for net_ctx_t\n");
 	} else {
 		new_ctx->midi_state = new_midi_state;
+		logging_printf( LOGGING_DEBUG, "net_ctx_create: midi_state->ring=%p\n", new_midi_state->ring );
 	}
 	new_ctx->status = NET_CTX_STATUS_UNUSED;
 
@@ -523,7 +527,7 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
 {
-	struct sockaddr_in6 send_address, socket_address;
+	struct sockaddr_in6 send_address;
 	ssize_t bytes_sent = 0;
 	socklen_t addr_len = 0, socket_addr_len = 0;
 	int port_number = 0;
@@ -545,13 +549,10 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 	get_sock_info( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len, &family);
 
 	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
-	socket_addr_len = sizeof( socket_address );
-	getsockname(send_socket , (struct sockaddr *)&socket_address, &socket_addr_len);
-	logging_printf( LOGGING_DEBUG, "net_ctx_send: outbound socket=%d\n", ntohs( ((struct sockaddr_in *)&socket_address)->sin_port ) );
 
-	net_socket_send_lock();
-	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_CONFIRM, (struct sockaddr *)&send_address, addr_len);
-	net_socket_send_unlock();
+	//net_socket_send_lock();
+	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, (struct sockaddr *)&send_address, addr_len);
+	//net_socket_send_unlock();
 
 	if( bytes_sent < 0 )
 	{
@@ -638,7 +639,7 @@ char *net_ctx_connections_to_string( void )
 
 	net_connections_unlock();
 
-	out_buffer = strdup( dstring_value( dstring ) );
+	out_buffer = X_STRDUP( dstring_value( dstring ) );
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
 

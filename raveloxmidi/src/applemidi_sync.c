@@ -40,8 +40,8 @@ net_response_t * applemidi_sync_responder( void *data )
 	net_applemidi_sync *sync_resp = NULL;
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
-	long delta = 0;
-	long current_time = 0;
+	unsigned long local_timestamp = 0;
+	unsigned long current_time = 0;
 
 	if( ! data ) return NULL;
 
@@ -69,7 +69,7 @@ net_response_t * applemidi_sync_responder( void *data )
 	
 	if( ! sync_resp ) {
 		logging_printf( LOGGING_ERROR, "applemidi_sync_responder: Unable to allocate memory for sync_resp command data\n");
-		free( cmd );
+		X_FREE( cmd );
 		return NULL;
 	}
 
@@ -84,20 +84,20 @@ net_response_t * applemidi_sync_responder( void *data )
 	memcpy( sync_resp->padding, sync->padding, 3 );
 
 	current_time = time_in_microseconds();
-	delta = current_time - ctx->start;
+	local_timestamp = current_time - ctx->start;
 
-	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%ld start=%ld delta=%ld\n", current_time, ctx->start, delta );
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%lu start=%lu local_timestamp=%lu\n", current_time, ctx->start, local_timestamp );
 	
 	switch( sync_resp->count )
 	{
 		case 2:
-			sync_resp->timestamp3 = delta;
+			sync_resp->timestamp3 = local_timestamp;
 			break;
 		case 1:
-			sync_resp->timestamp2 = delta;
+			sync_resp->timestamp2 = local_timestamp;
 			break;
 		case 0:
-			sync_resp->timestamp1 = delta;
+			sync_resp->timestamp1 = local_timestamp;
 			break;
 	}
 

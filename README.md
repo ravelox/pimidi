@@ -196,6 +196,9 @@ logging.log_file
 logging.log_level
 	Threshold for log events. Acceptable values are debug,info,normal,warning and error.
 	Default is normal.
+logging.hex_dump
+	Set to yes to write hex dump of data buffers to log file. This can slow down processing for large buffers if enabled.
+	Default is no
 security.check
 	If set to yes, it is not possible to write the daemon pid to a file with executable permissions.
 	Default is yes.
@@ -207,6 +210,8 @@ file_mode
 	Default is 0640.
 sync.interval
 	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
+journal.write
+	Set to yes to enable MIDI recovery journal. Default is no.
 ```
 
 If ALSA is detected, the following options are also available:
@@ -221,9 +226,6 @@ alsa.input_device
 alsa.input_buffer_size
 	Size of the buffer to use for reading data from the input device.
 	Default is 4096. Maximum is 65535.
-alsa.writeback
-	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same card number.
-	This is a yes/no option. Default is no.
 alsa.writeback
 	If a MIDI command is received from an inbound ALSA device, this option controls whether that event is written to an ALSA output device if it has the same level number.
 	See also **alsa.writeback.level**.

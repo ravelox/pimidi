@@ -35,7 +35,7 @@ midi_program_t * midi_program_create( void )
 {
 	midi_program_t *new_program = NULL;
 
-	new_program = (midi_program_t *) malloc( sizeof( midi_program_t ) );
+	new_program = (midi_program_t *) X_MALLOC( sizeof( midi_program_t ) );
 
 	if( ! new_program )
 	{
@@ -49,7 +49,7 @@ midi_program_t * midi_program_create( void )
 
 void midi_program_destroy( midi_program_t **midi_program )
 {
-	FREENULL( "midi_program", (void **)midi_program );
+	X_FREENULL( "midi_program", (void **)midi_program );
 }
 
 int midi_program_unpack( midi_program_t **midi_program, unsigned char *buffer, size_t buffer_len )
@@ -93,7 +93,7 @@ int midi_program_pack( midi_program_t *midi_program, unsigned char **buffer, siz
 		return -1;
 	}
 
-	*buffer = (unsigned char *)malloc( PACKED_MIDI_PROGRAM_SIZE );
+	*buffer = (unsigned char *)X_MALLOC( PACKED_MIDI_PROGRAM_SIZE );
 	
 	if( !*buffer) return -1;
 

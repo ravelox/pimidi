@@ -71,7 +71,7 @@ void remote_connect_init( void )
 		return;
 	}
 
-	remote_service_name = (char *) strdup( config_string_get("remote.connect") );
+	remote_service_name = (char *) X_STRDUP( config_string_get("remote.connect") );
 
 	logging_printf(LOGGING_DEBUG, "remote_connect_init: Looking for [%s]\n", remote_service_name);
 
@@ -99,7 +99,7 @@ void remote_connect_init( void )
 		if( dns_discover_services( use_ipv4, use_ipv6 ) <= 0 )
 		{
 			logging_printf(LOGGING_WARN, "remote_connect_init: No services available\n");
-			free( remote_service_name );
+			X_FREE( remote_service_name );
 			return;
 		}
 
@@ -137,7 +137,7 @@ void remote_connect_init( void )
 		if( remote_port_number == 0 )
 		{
 			logging_printf( LOGGING_ERROR, "remote_connect_init: No port number specified\n");
-			free( remote_service_name );
+			X_FREE( remote_service_name );
 			return;
 		}
 
@@ -154,10 +154,10 @@ make_remote_connection:
 	if( ! found_service )
 	{
 		logging_printf(LOGGING_WARN, "remote_connect_init: No service found: %s\n", remote_service_name );
-		free( remote_service_name );
+		X_FREE( remote_service_name );
 		return;
 	}
-	free( remote_service_name );
+	X_FREE( remote_service_name );
 
 	logging_printf( LOGGING_DEBUG, "remote_connect_init: Found name=\"%s\" address=[%s]:%d\n", found_service->name, found_service->ip_address, found_service->port);
 	ssrc = random_number();

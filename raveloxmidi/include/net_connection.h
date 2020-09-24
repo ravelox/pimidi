@@ -21,6 +21,8 @@
 #ifndef NET_CONNECTION_H
 #define NET_CONNECTION_H
 
+#include <arpa/inet.h>
+
 #include <pthread.h>
 
 #include "midi_note.h"

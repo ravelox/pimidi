@@ -34,7 +34,7 @@ rtp_packet_t * rtp_packet_create( void )
 {
 	rtp_packet_t *new;
 
-	new = ( rtp_packet_t * ) malloc( sizeof( rtp_packet_t ) );
+	new = ( rtp_packet_t * ) X_MALLOC( sizeof( rtp_packet_t ) );
 
 	if( new )
 	{
@@ -62,12 +62,13 @@ void rtp_packet_destroy( rtp_packet_t **packet )
 	if( ! *packet ) return ;
 
 	if( (*packet)->payload ) {
-		free( (*packet)->payload );
+		X_FREE( (*packet)->payload );
 	}
 	(*packet)->payload = NULL;
 	(*packet)->payload_len = 0;
 
-	FREENULL( "rtp_packet", (void **)packet);
+	X_FREE( *packet );
+	*packet = NULL;
 }
 
 int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *out_buffer_len )
@@ -85,7 +86,7 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 	}
 
 	packed_header_buffer_size = ( sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint32_t) );
-	*out_buffer = (unsigned char *)malloc( packed_header_buffer_size );
+	*out_buffer = (unsigned char *)X_MALLOC( packed_header_buffer_size );
 	memset( *out_buffer, 0, packed_header_buffer_size );
 
 	if( ! *out_buffer )
@@ -154,7 +155,7 @@ void rtp_packet_unpack( unsigned char *buffer, size_t buffer_len, rtp_packet_t *
 	if( current_buffer_len > 0 )
 	{
 		logging_printf( LOGGING_DEBUG, "rtp_packet_unpack: current_buffer_len = %zu\n", current_buffer_len );
-		rtp_packet->payload = ( unsigned char * ) malloc( current_buffer_len );
+		rtp_packet->payload = ( unsigned char * ) X_MALLOC( current_buffer_len );
 		rtp_packet->payload_len = current_buffer_len;
 		memcpy( rtp_packet->payload, p, current_buffer_len );
 	}

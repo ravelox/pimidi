@@ -31,13 +31,13 @@
 static void dbuffer_lock( dbuffer_t *dbuffer )
 {
 	if( ! dbuffer ) return;
-	pthread_mutex_lock( &(dbuffer->lock) );
+	X_MUTEX_LOCK( &(dbuffer->lock) );
 }
 
 static void dbuffer_unlock( dbuffer_t *dbuffer )
 {
 	if( ! dbuffer ) return;
-	pthread_mutex_unlock( &(dbuffer->lock) );
+	X_MUTEX_UNLOCK( &(dbuffer->lock) );
 }
 
 dbuffer_t *dbuffer_create( size_t block_size )
@@ -46,7 +46,7 @@ dbuffer_t *dbuffer_create( size_t block_size )
 
 	if( block_size == 0 ) return NULL;
 
-	new_buffer = ( dbuffer_t *)malloc( sizeof( dbuffer_t ) );
+	new_buffer = ( dbuffer_t *)X_MALLOC( sizeof( dbuffer_t ) );
 
 	if( ! new_buffer )
 	{
@@ -70,7 +70,7 @@ int dbuffer_reset( dbuffer_t *dbuffer )
 	dbuffer_lock( dbuffer );
 	if( dbuffer->data )
 	{
-		free( dbuffer->data );
+		X_FREE( dbuffer->data );
 	}
 	dbuffer->data = NULL;
 	dbuffer->len = 0;
@@ -85,7 +85,7 @@ void dbuffer_destroy( dbuffer_t **dbuffer )
 
 	dbuffer_reset( *dbuffer );
 	pthread_mutex_destroy( &((*dbuffer)->lock) );
-	free( *dbuffer);
+	X_FREE( *dbuffer);
 	*dbuffer = NULL;
 }
 
@@ -125,7 +125,7 @@ size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len 
 		size_t new_block_count = 0;
 
 		new_block_count = ( ( dbuffer->len + in_buffer_len + 1 ) / dbuffer->block_size ) + 1 ;
-		new_dbuffer_data = (char *)realloc( dbuffer->data, new_block_count * dbuffer->block_size );
+		new_dbuffer_data = (char *)X_REALLOC( dbuffer->data, new_block_count * dbuffer->block_size );
 
 		if( ! new_dbuffer_data )
 		{
@@ -161,7 +161,7 @@ size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
 
 	dbuffer_dump( dbuffer );
 
-	*out_buffer = ( char * ) malloc( dbuffer->len );
+	*out_buffer = ( char * ) X_MALLOC( dbuffer->len );
 	memset( *out_buffer, 0, dbuffer->len );
 	if( ! *out_buffer )
 	{

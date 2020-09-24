@@ -35,6 +35,8 @@ extern int errno;
 
 #include "build_info.h"
 
+#include "utils.h"
+
 static kv_table_t *config_items = NULL;
 
 static void config_set_defaults( void )
@@ -51,6 +53,7 @@ static void config_set_defaults( void )
 	config_add_item("logging.enabled", "yes");
 	config_add_item("logging.log_file", NULL );
 	config_add_item("logging.log_level", "normal");
+	config_add_item("logging.hex_dump", "no");
 	config_add_item("security.check", "yes");
 	config_add_item("readonly","no");
 	config_add_item("inbound_midi","/dev/sequencer");
@@ -58,6 +61,7 @@ static void config_set_defaults( void )
 	config_add_item("discover.timeout","5");
 	config_add_item("sync.interval","10");
 	config_add_item("network.read.blocksize","2048");
+	config_add_item("journal.write","no");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 	config_add_item("alsa.writeback", "no");
@@ -254,9 +258,9 @@ raveloxmidi_config_iter_t *config_iter_create( char *prefix )
 {
 	raveloxmidi_config_iter_t *new_iter = NULL;
 	if( ! prefix ) return NULL;
-	new_iter = ( raveloxmidi_config_iter_t * ) malloc( sizeof( raveloxmidi_config_iter_t ) );
+	new_iter = ( raveloxmidi_config_iter_t * ) X_MALLOC( sizeof( raveloxmidi_config_iter_t ) );
 	if( ! new_iter ) return NULL;
-	new_iter->prefix = ( char * ) strdup( prefix );
+	new_iter->prefix = ( char * ) X_STRDUP( prefix );
 	new_iter->index = 0;
 
 	return new_iter;
@@ -269,11 +273,11 @@ void config_iter_destroy( raveloxmidi_config_iter_t **iter )
 
 	if( (*iter)->prefix )
 	{
-		free( (*iter)->prefix );
+		X_FREE( (*iter)->prefix );
 		(*iter)->prefix = NULL;
 	}
 
-	free( *iter );
+	X_FREE( *iter );
 	*iter = NULL;
 }
 
@@ -295,7 +299,7 @@ static char *config_make_key( char *prefix , int index )
 	char *key = NULL;
 	if( ! prefix ) return NULL;
 	key_len = strlen( prefix ) + 7;
-	key = ( char * ) malloc( key_len );
+	key = ( char * ) X_MALLOC( key_len );
 	if( ! key ) return NULL;
 	sprintf( key, "%s.%d", prefix, index );
 	return key;
@@ -310,7 +314,7 @@ char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
 	key = config_make_key( iter->prefix, iter->index );
 	if( ! key ) return NULL;
 	result = config_string_get( key );
-	free( key );
+	X_FREE( key );
 	return result;
 }
 
@@ -323,7 +327,7 @@ int config_iter_int_get( raveloxmidi_config_iter_t *iter )
 	key = config_make_key( iter->prefix, iter->index );
 	if( ! key ) return 0;
 	result = config_int_get( key );
-	free( key );
+	X_FREE( key );
 	return result;
 }
 
@@ -336,7 +340,7 @@ long config_iter_long_get( raveloxmidi_config_iter_t *iter )
 	key = config_make_key( iter->prefix, iter->index );
 	if( ! key ) return 0;
 	result = config_long_get( key );
-	free( key );
+	X_FREE( key );
 	return result;
 }
 
@@ -349,7 +353,7 @@ int config_iter_is_set( raveloxmidi_config_iter_t *iter )
 	key = config_make_key( iter->prefix , iter->index);
 	if( ! key ) return 0;
 	result = config_is_set( key );
-	free( key );
+	X_FREE( key );
 	return result;
 }
 

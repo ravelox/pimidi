@@ -35,7 +35,7 @@ midi_note_t * midi_note_create( void )
 {
 	midi_note_t *new_note;
 
-	new_note = (midi_note_t *) malloc( sizeof( midi_note_t ) );
+	new_note = (midi_note_t *) X_MALLOC( sizeof( midi_note_t ) );
 
 	if( ! new_note )  return NULL;
 
@@ -46,7 +46,7 @@ midi_note_t * midi_note_create( void )
 
 void midi_note_destroy( midi_note_t **midi_note )
 {
-	FREENULL( "midi_note", (void **)midi_note );
+	X_FREENULL( "midi_note", (void **)midi_note );
 }
 
 int midi_note_unpack( midi_note_t **midi_note, unsigned char *buffer, size_t buffer_len )
@@ -88,7 +88,7 @@ int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buff
 		return -1;
 	}
 
-	*buffer = (unsigned char *)malloc( PACKED_MIDI_NOTE_SIZE );
+	*buffer = (unsigned char *)X_MALLOC( PACKED_MIDI_NOTE_SIZE );
 	
 	if( !*buffer) return -1;
 

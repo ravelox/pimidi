@@ -156,6 +156,12 @@ Threshold for log events. Acceptable values are \fBdebug\fP , \fBinfo\fP , \fBno
 Default is normal.
 .TP
 .B
+logging.hex_dump
+Set to yes to write hex dump of data buffers to log file. This can slow down processing for large buffers if enabled.
+.br
+Default is no
+.TP
+.B
 security.check
 If set to yes, it is not possible to write the daemon pid to a file with executable permissions.
 .br
@@ -183,6 +189,12 @@ See
 .B
 https://developer.apple.com/library/archive/documentation/Audio/Conceptual/MIDINetworkDriverProtocol/MIDI/MIDI.html
 for more information
+.TP
+.B
+journal.write
+Set to yes to enable MIDI recovery journal.
+.br
+Default is no.
 .TP
 If ALSA is detected, the following options are also available:
 .TP
@@ -215,6 +227,8 @@ Possible values are \fBcard\fP (hw:X,*,*) or \fBdevice\fP (hw:X,Y,*)
 .br
 Default is card.
 .fi
+.SH DEBUGGING
+For debugging, additional logging can be generated for each memory allocation and release. An environment variable \fBRAVELOXMIDI_MEM_FILE\fP can be set to the name of a file to log the extra information into. This should only be enabled on request.
 .SH AUTHOR
 .B raveloxmidi
 is developed by Dave Kelly (c) @COPYRIGHT_YEAR@

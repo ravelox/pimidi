@@ -26,29 +26,32 @@
 #include "kv_table.h"
 #include "logging.h"
 
+#include "utils.h"
+
 void kv_table_lock( kv_table_t *table )
 {
 	if( ! table ) return;
 	
-	pthread_mutex_lock( &(table->lock) );
+	X_MUTEX_LOCK( &(table->lock) );
 }
 
 void kv_table_unlock( kv_table_t *table )
 {
-	pthread_mutex_unlock( &(table->lock) );
+	if( ! table ) return;
+	X_MUTEX_UNLOCK( &(table->lock) );
 }
 
 kv_table_t *kv_table_create( char *name )
 {
 	kv_table_t *new_table = NULL;
 
-	new_table = ( kv_table_t *)malloc( sizeof( kv_table_t ) );
+	new_table = ( kv_table_t *)X_MALLOC( sizeof( kv_table_t ) );
 	if( ! new_table ) 
 	{
 		return NULL;
 	}
 
-	if( name ) new_table->name = strdup( name );
+	if( name ) new_table->name = X_STRDUP( name );
 
 	new_table->items = NULL;
 	new_table->count = 0;
@@ -100,24 +103,24 @@ void kv_table_destroy( kv_table_t **table )
 		{
 			if( (*table)->items[i]->key )
 			{
-				free( (*table)->items[i]->key );
+				X_FREE( (*table)->items[i]->key );
 				(*table)->items[i]->key = NULL;
 			}
 			if( (*table)->items[i]->value )
 			{
-				free( (*table)->items[i]->value );
+				X_FREE( (*table)->items[i]->value );
 				(*table)->items[i]->value = NULL;
 			}
-			free( (*table)->items[i] );
+			X_FREE( (*table)->items[i] );
 			(*table)->items[i] = NULL;
 		}
 	}
 
-	free( (*table)->items);
+	X_FREE( (*table)->items );
 	(*table)->items = NULL;
 
 	(*table)->count = 0;
-	if( (*table)->name ) free( (*table)->name );
+	if( (*table)->name ) X_FREE( (*table)->name );
 	(*table)->name = NULL;
 
 kv_table_destroy_end:
@@ -125,7 +128,7 @@ kv_table_destroy_end:
 
 	pthread_mutex_destroy( &( (*table)->lock ) );
 
-	free( *table );
+	X_FREE( *table );
 	*table = NULL;
 }
 		
@@ -173,26 +176,26 @@ void kv_add_item( kv_table_t *table, char *key, char *value )
 
 	if( ! new_item )
 	{
-		new_item = (kv_item_t *)malloc( sizeof( kv_item_t ) );
+		new_item = (kv_item_t *)X_MALLOC( sizeof( kv_item_t ) );
 		if( ! new_item )
 		{
 			return;
 		}
 		memset( new_item, 0, sizeof( kv_item_t ) );
-		new_item->key = (char *)strdup( key );
+		new_item->key = (char *)X_STRDUP( key );
 		if( value )
 		{
-			new_item->value = (char *)strdup( value );
+			new_item->value = (char *)X_STRDUP( value );
 		} else {
 			new_item->value = NULL;
 		}
 
-		new_item_list = ( kv_item_t **)realloc( table->items, sizeof( kv_item_t * ) * ( table->count + 1 ) );
+		new_item_list = ( kv_item_t **)X_REALLOC( table->items, sizeof( kv_item_t * ) * ( table->count + 1 ) );
 		if( ! new_item_list )
 		{
-			if( new_item->value ) free( new_item->value);
-			if( new_item->key ) free( new_item->key );
-			free( new_item );
+			if( new_item->value ) X_FREE( new_item->value);
+			if( new_item->key ) X_FREE( new_item->key );
+			X_FREE( new_item );
 			return;
 		}
 
@@ -200,10 +203,10 @@ void kv_add_item( kv_table_t *table, char *key, char *value )
 		table->items[ table->count ] = new_item;
 		table->count += 1;
 	} else {
-		if( new_item->value ) free( new_item->value );
+		if( new_item->value ) X_FREE( new_item->value );
 		if( value )
 		{
-			new_item->value = ( char * )strdup( value );
+			new_item->value = ( char * )X_STRDUP( value );
 		} else {
 			new_item->value = NULL;
 		}

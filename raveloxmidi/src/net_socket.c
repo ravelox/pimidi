@@ -41,7 +41,7 @@ extern int errno;
 #include "net_response.h"
 #include "net_socket.h"
 #include "net_connection.h"
-#include "net_distribute.h"
+#include "midi_sender.h"
 
 #include "applemidi_inv.h"
 #include "applemidi_ok.h"
@@ -64,8 +64,9 @@ extern int errno;
 #include "raveloxmidi_alsa.h"
 #include "data_table.h"
 
-#define NO_DELTA	0
-#define GET_DELTA	1
+#include "data_context.h"
+
+#include "midi_state.h"
 
 static data_table_t *sockets = NULL;
 
@@ -86,34 +87,34 @@ static void net_socket_set_shutdown_lock( int i );
 
 void net_socket_poll_fds_lock( void )
 {
-	pthread_mutex_lock( &poll_fds_lock );
+	X_MUTEX_LOCK( &poll_fds_lock );
 }
 
 void net_socket_poll_fds_unlock( void )
 {
-	pthread_mutex_unlock( &poll_fds_lock );
+	X_MUTEX_UNLOCK( &poll_fds_lock );
 }
 
 void net_socket_send_lock( void )
 {
-	pthread_mutex_lock( &send_lock );
+	X_MUTEX_LOCK( &send_lock );
 }
 
 void net_socket_send_unlock( void )
 {
-	pthread_mutex_unlock( &send_lock );
+	X_MUTEX_UNLOCK( &send_lock );
 }
 
 void net_socket_lock( raveloxmidi_socket_t *socket )
 {
 	if( ! socket ) return;
-	pthread_mutex_lock( &(socket->lock) );
+	X_MUTEX_LOCK( &(socket->lock) );
 }
 
 void net_socket_unlock( raveloxmidi_socket_t *socket )
 {
 	if(! socket ) return;
-	pthread_mutex_unlock( &(socket->lock) );
+	X_MUTEX_UNLOCK( &(socket->lock) );
 }
 	
 void net_socket_dump( void *data )
@@ -157,7 +158,7 @@ void net_socket_destroy( void **data )
 
 	if( socket->packet )
 	{
-		free( socket->packet );
+		X_FREE( socket->packet );
 		socket->packet = NULL;
 	}
 
@@ -170,7 +171,7 @@ void net_socket_destroy( void **data )
 	net_socket_unlock( socket );
 	pthread_mutex_destroy( &(socket->lock) );
 
-	free( *data );
+	X_FREE( *data );
 	*data = NULL;
 }
 
@@ -211,7 +212,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 #endif
 	size_t ring_buffer_size = 0;
 
-	new_socket = (raveloxmidi_socket_t *)malloc( sizeof(raveloxmidi_socket_t) );
+	new_socket = (raveloxmidi_socket_t *)X_MALLOC( sizeof(raveloxmidi_socket_t) );
 
 	if( ! new_socket )
 	{
@@ -233,11 +234,11 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 	new_socket->packet_size = NET_APPLEMIDI_UDPSIZE;
 #endif
 
-	new_socket->packet = ( unsigned char * ) malloc( new_socket->packet_size + 1 );
+	new_socket->packet = ( unsigned char * ) X_MALLOC( new_socket->packet_size + 1 );
 	if( ! new_socket->packet )
 	{
 		logging_printf(LOGGING_ERROR, "net_socket_create_item: Insufficient memory to create socket buffer. Need %zu\n", new_socket->packet_size + 1);
-		free( new_socket );
+		X_FREE( new_socket );
 		new_socket = NULL;
 	} else {
 		ring_buffer_size = config_int_get("read.ring_buffer_size");
@@ -250,6 +251,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 			net_socket_destroy( (void **)&new_socket );
 		} else {
 			new_socket->state = new_state;
+			logging_printf( LOGGING_DEBUG, "net_socket_create_item: midi_state->ring=%p\n", new_state->ring );
 		}
 	}
 
@@ -323,6 +325,13 @@ int net_socket_teardown( void )
 	return 0;
 }
 
+void net_socket_originators_destroy( void *originators )
+{
+	if( ! originators ) return;
+
+	X_FREE( originators );
+}
+
 int net_socket_read( int fd )
 {
 	ssize_t recv_len = 0;
@@ -342,11 +351,12 @@ int net_socket_read( int fd )
 	char *read_buffer = NULL;
 	size_t read_buffer_size = 0;
 
-	net_socket_send_lock();
+	midi_sender_context_t *originators = NULL;
+	data_context_t *context = NULL;
+
 	data_fd = net_socket_get_data_socket();
 	control_fd = net_socket_get_control_socket();
 	local_fd = net_socket_get_local_socket();
-	net_socket_send_unlock();
 
 	memset( ip_address, 0, INET6_ADDRSTRLEN );
 	from_len = sizeof( from_addr );
@@ -380,8 +390,8 @@ int net_socket_read( int fd )
 	} 
 #endif
 
-	while( 1 )
-	{
+//	while( 1 )
+//	{
 		memset( packet, 0, packet_size + 1 );
 #ifdef HAVE_ALSA
 		if( found_socket->type  == RAVELOXMIDI_SOCKET_ALSA_TYPE )
@@ -410,12 +420,14 @@ int net_socket_read( int fd )
 			}
 		}
 #endif
-		if ( recv_len <= 0) break;
+		//if ( recv_len <= 0) break;
+		if ( recv_len > 0)
+		{
+			hex_dump( packet, recv_len );
+			midi_state_write( found_socket->state, packet, recv_len );
+		}
 
-		hex_dump( packet, recv_len );
-		midi_state_write( found_socket->state, packet, recv_len );
-
-	}
+//	}
 
 /*
 	Apple MIDI command
@@ -458,9 +470,9 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_send_lock();
-			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_send_unlock();
+			//net_socket_send_lock();
+			bytes_written = sendto( fd, response->buffer, response->len , MSG_DONTWAIT, (void *)&from_addr, from_len);
+			//net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 			net_response_destroy( &response );
 		}
@@ -474,9 +486,9 @@ int net_socket_read( int fd )
 		const char *buffer="OK";
 		size_t bytes_written = 0;
 
-		net_socket_send_lock();
-		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_send_unlock();
+		//net_socket_send_lock();
+		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
+		//net_socket_send_unlock();
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		midi_state_advance( found_socket->state, 4);
@@ -488,9 +500,9 @@ int net_socket_read( int fd )
 		const char *buffer="QT";
 		size_t bytes_written = 0;
 
-		net_socket_send_lock();
-		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-		net_socket_send_unlock();
+		//net_socket_send_lock();
+		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
+		//net_socket_send_unlock();
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on local socket\n");
@@ -514,11 +526,11 @@ int net_socket_read( int fd )
 		{
 			hex_dump( buffer, strlen( buffer ) );
 
-			net_socket_send_lock();
-			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_send_unlock();
+			//net_socket_send_lock();
+			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
+			//net_socket_send_unlock();
 
-			free( buffer );
+			X_FREE( buffer );
 		}
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: List request. Response written: %u\n", bytes_written);
@@ -534,8 +546,31 @@ int net_socket_read( int fd )
 	MIDI data on internal socket or ALSA rawmidi device
 */
 	{
-		midi_state_dump( found_socket->state );
-		net_distribute_midi( found_socket->state , 0, found_socket->device_hash , NO_DELTA );
+		originators = ( midi_sender_context_t *)X_MALLOC( sizeof( midi_sender_context_t ) );
+		if( ! originators )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to create originator context for internal or ALSA socket\n");
+		} else {
+			originators->ssrc = 0;
+			originators->alsa_card_hash = found_socket->device_hash;
+		}
+
+		context = data_context_create( net_socket_originators_destroy );
+		if( ! context )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to create data context for internal or ALSA socket\n");
+		} else {
+			if( originators )
+			{
+				context->data = originators;
+			}
+			data_context_acquire( context );
+		}
+		midi_state_send( found_socket->state , context ,0 );
+		if( context )
+		{
+			data_context_release( &context );
+		}
 	} else {
 /*
 	RTP MIDI inbound from remote socket
@@ -587,20 +622,43 @@ int net_socket_read( int fd )
 		// Transfer the MIDI payload into the MIDI state for the connection context
 		midi_state_write( current_ctx->midi_state, midi_payload->buffer, midi_payload->header->len );
 
-		// Sent a FEEBACK packet back to the originating host to ack the MIDI packet
+		// Sent a FEEDBACK packet back to the originating host to ack the MIDI packet
 		response = applemidi_feedback_create( rtp_packet->header.ssrc, rtp_packet->header.seq );
 		if( response )
 		{
 			size_t bytes_written = 0;
-			net_socket_send_lock();
-			bytes_written = sendto( fd, response->buffer, response->len , MSG_CONFIRM, (void *)&from_addr, from_len);
-			net_socket_send_unlock();
+			//net_socket_send_lock();
+			bytes_written = sendto( fd, response->buffer, response->len , MSG_DONTWAIT, (void *)&from_addr, from_len);
+			//net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 			net_response_destroy( &response );
 		}
 
-		// Use the Z flag from the payload header to determine if deltas are present
-		net_distribute_midi( current_ctx->midi_state, current_ctx->ssrc , 0 , (midi_payload->header->Z ? GET_DELTA : NO_DELTA ) );
+                originators = ( midi_sender_context_t *)X_MALLOC( sizeof( midi_sender_context_t ) );
+		if( ! originators )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to create originator context for internal or ALSA socket\n");
+		} else {
+			originators->ssrc = 0;
+			originators->alsa_card_hash = found_socket->device_hash;
+		}
+
+		context = data_context_create( net_socket_originators_destroy );
+		if( ! context )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_read: Unable to create data context for internal or ALSA socket\n");
+		} else {
+			if( originators )
+			{
+				context->data = originators;
+			}
+			data_context_acquire( context );
+		}
+		midi_state_send( current_ctx->midi_state , context, midi_payload->header->Z );
+		if( context )
+		{
+			data_context_release( &context );
+		}
 
 		// Clean up
 net_socket_read_midi_clean:
@@ -611,26 +669,30 @@ net_socket_read_rtp_clean:
 	}
 
 	net_socket_unlock( found_socket );
-	free( read_buffer );
+
+	if( read_buffer )
+	{
+		X_FREE( read_buffer );
+	}
 	return ret;
 }
 
 static void net_socket_set_shutdown_lock( int i )
 {
-	pthread_mutex_lock( &shutdown_lock );
+	X_MUTEX_LOCK( &shutdown_lock );
 	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: %d\n", i);
 	net_socket_shutdown = i;
 	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: exit\n");
-	pthread_mutex_unlock( &shutdown_lock );
+	X_MUTEX_UNLOCK( &shutdown_lock );
 }
 
 int net_socket_get_shutdown_status( void )
 {
 	int i = OK;
 
-	pthread_mutex_lock( &shutdown_lock );
+	X_MUTEX_LOCK( &shutdown_lock );
 	i = net_socket_shutdown;
-	pthread_mutex_unlock( &shutdown_lock );
+	X_MUTEX_UNLOCK( &shutdown_lock );
 	return i;
 }
 
@@ -674,9 +736,9 @@ int net_socket_fd_loop()
 
 
         do {
-		net_socket_send_lock();
+		//net_socket_send_lock();
 		net_socket_set_fds();
-		net_socket_send_unlock();
+		//net_socket_send_unlock();
 
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = socket_timeout; 

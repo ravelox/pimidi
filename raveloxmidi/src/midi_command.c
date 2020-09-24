@@ -61,7 +61,7 @@ midi_command_t *midi_command_create(void)
 {
 	midi_command_t *new_command = NULL;
 
-	new_command = ( midi_command_t * ) malloc ( sizeof( midi_command_t ) );
+	new_command = ( midi_command_t * ) X_MALLOC ( sizeof( midi_command_t ) );
 
 	if( ! new_command ) return NULL;
 
@@ -80,9 +80,9 @@ void midi_command_destroy( void **data )
 	if( ! *data ) return;
 
 	command = (midi_command_t **)data;
-	if( (*command)->data ) FREENULL( "midi_command:command->data",(void **) &( (*command)->data ) );
+	if( (*command)->data ) X_FREENULL( "midi_command:command->data",(void **) &( (*command)->data ) );
 
-	FREENULL( "midi_command:command", (void **) command );
+	X_FREENULL( "midi_command:command", (void **) command );
 }
 
 void midi_command_reset( midi_command_t *command )
@@ -92,7 +92,7 @@ void midi_command_reset( midi_command_t *command )
 	command->delta = 0;
 	command->status = 0;
 
-	if(command->data) free( command->data );
+	if(command->data) X_FREE( command->data );
 	command->data = NULL;
 }
 
@@ -101,7 +101,7 @@ void midi_command_map( midi_command_t *command, char **description, enum midi_me
 	uint32_t i;
 	uint8_t status = 0;
 
-	*description = "Unknown";
+	if( description ) *description = "Unknown";
 	*message_type = MIDI_NULL;
 
 	for( i = 0; midi_message_map[i].message != 0x00; i++ )
@@ -118,7 +118,7 @@ void midi_command_map( midi_command_t *command, char **description, enum midi_me
 
 	if( midi_message_map[i].message != 0x00 )
 	{
-		*description = midi_message_map[i].description;
+		if( description ) *description = midi_message_map[i].description;
 		*message_type = midi_message_map[i].type;
 	}
 }
@@ -159,7 +159,7 @@ void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, 
 	
 	if( data )
 	{
-		command->data = ( char * ) malloc( data_len );
+		command->data = ( char * ) X_MALLOC( data_len );
 		if( ! command->data )
 		{
 			logging_printf( LOGGING_ERROR, "midi_command_set: Insufficient memory to create command data buffer\n");
@@ -177,6 +177,8 @@ void midi_command_dump( void *data )
 	char *description = NULL;
 	enum midi_message_type_t message_type;
 	midi_command_t *command = NULL;
+
+	INFO_ONLY;
 
 	if( ! data ) return;
 

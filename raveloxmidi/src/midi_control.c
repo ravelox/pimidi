@@ -35,7 +35,7 @@ midi_control_t * midi_control_create( void )
 {
 	midi_control_t *new_control;
 
-	new_control = (midi_control_t *) malloc( sizeof( midi_control_t ) );
+	new_control = (midi_control_t *) X_MALLOC( sizeof( midi_control_t ) );
 
 	if( ! new_control )  return NULL;
 
@@ -46,7 +46,7 @@ midi_control_t * midi_control_create( void )
 
 void midi_control_destroy( midi_control_t **midi_control )
 {
-	FREENULL( "midi_control", (void **)midi_control );
+	X_FREENULL( "midi_control", (void **)midi_control );
 }
 
 int midi_control_unpack( midi_control_t **midi_control, unsigned char *buffer, size_t buffer_len )
@@ -88,7 +88,7 @@ int midi_control_pack( midi_control_t *midi_control, unsigned char **buffer, siz
 		return -1;
 	}
 
-	*buffer = (unsigned char *)malloc( PACKED_MIDI_CONTROL_SIZE );
+	*buffer = (unsigned char *)X_MALLOC( PACKED_MIDI_CONTROL_SIZE );
 	
 	if( !*buffer) return -1;
 

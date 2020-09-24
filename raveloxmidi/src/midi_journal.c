@@ -39,7 +39,7 @@ void journal_header_pack( journal_header_t *header , char **packed , size_t *siz
 
 	if( ! header ) return;
 
-	*packed = ( char *)malloc( JOURNAL_HEADER_PACKED_SIZE );
+	*packed = ( char *)X_MALLOC( JOURNAL_HEADER_PACKED_SIZE );
 
 	if( ! *packed ) return;
 	memset( *packed, 0 , JOURNAL_HEADER_PACKED_SIZE );
@@ -59,7 +59,7 @@ journal_header_t * journal_header_create( void )
 {
 	journal_header_t *journal_header = NULL;
 
-	journal_header = ( journal_header_t * ) malloc( sizeof( journal_header_t ) );
+	journal_header = ( journal_header_t * ) X_MALLOC( sizeof( journal_header_t ) );
 	
 	if( journal_header )
 	{
@@ -72,7 +72,7 @@ journal_header_t * journal_header_create( void )
 
 void journal_header_destroy( journal_header_t **header )
 {
-	if( header ) FREENULL( "journal_header", (void **)header );
+	if( header ) X_FREENULL( "journal_header", (void **)header );
 }
 
 void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size )
@@ -85,7 +85,7 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 	if( ! header ) return;
 
-	*packed = ( unsigned char *)malloc( CHANNEL_HEADER_PACKED_SIZE );
+	*packed = ( unsigned char *)X_MALLOC( CHANNEL_HEADER_PACKED_SIZE );
 
 	if( ! *packed ) return;
 
@@ -106,14 +106,14 @@ void channel_header_pack( channel_header_t *header , unsigned char **packed , si
 
 void channel_header_destroy( channel_header_t **header )
 {
-	if( header) FREENULL( "channel_header", (void **)header);
+	if( header) X_FREENULL( "channel_header", (void **)header);
 }
 
 channel_header_t * channel_header_create( void )
 {
 	channel_header_t *header = NULL;
 
-	header = ( channel_header_t * ) malloc( sizeof( channel_header_t ) );
+	header = ( channel_header_t * ) X_MALLOC( sizeof( channel_header_t ) );
 
 	if( header )
 	{
@@ -173,7 +173,7 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
 	logging_printf(LOGGING_DEBUG, "channel_pack: packed_channel_header_size=%u channel->header->len=%u\n", packed_channel_header_size,channel->header->len);
 
-	*packed = ( char * ) malloc( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size );
+	*packed = ( char * ) X_MALLOC( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size );
 
 	if( ! *packed ) goto channel_pack_cleanup;
 
@@ -206,10 +206,10 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	}
 
 channel_pack_cleanup:
-	FREENULL( "packed_channel_header", (void **)&packed_channel_header );
-	FREENULL( "packed_chapter_n", (void **)&packed_chapter_n );
-	FREENULL( "packed_chapter_c", (void **)&packed_chapter_c );
-	FREENULL( "packed_chapter_p", (void **)&packed_chapter_p );
+	X_FREENULL( "packed_channel_header", (void **)&packed_channel_header );
+	X_FREENULL( "packed_chapter_n", (void **)&packed_chapter_n );
+	X_FREENULL( "packed_chapter_c", (void **)&packed_chapter_c );
+	X_FREENULL( "packed_chapter_p", (void **)&packed_chapter_p );
 }
 
 void channel_destroy( channel_t **channel )
@@ -238,7 +238,7 @@ void channel_destroy( channel_t **channel )
 		channel_header_destroy( &( (*channel)->header ) );
 	}
 
-	FREENULL("channel", (void **) channel);
+	X_FREENULL("channel", (void **) channel);
 }
 
 channel_t * channel_create( void )
@@ -246,7 +246,7 @@ channel_t * channel_create( void )
 	channel_t *new_channel = NULL;
 	channel_header_t *new_header = NULL;
 	
-	new_channel = ( channel_t * ) malloc( sizeof( channel_t ) );
+	new_channel = ( channel_t * ) X_MALLOC( sizeof( channel_t ) );
 
 	if( ! new_channel ) return NULL;
 
@@ -294,7 +294,7 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 		channel_pack( journal->channels[i], &packed_channel, &packed_channel_size );
 
-		packed_channel_buffer = ( char * )realloc( packed_channel_buffer, packed_channel_buffer_size + packed_channel_size );
+		packed_channel_buffer = ( char * )X_REALLOC( packed_channel_buffer, packed_channel_buffer_size + packed_channel_size );
 		if( ! packed_channel_buffer ) goto journal_pack_cleanup;
 
 		p = packed_channel_buffer + packed_channel_buffer_size;
@@ -303,12 +303,12 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 		packed_channel_buffer_size += packed_channel_size;
 		memcpy( p, packed_channel, packed_channel_size );
 
-		FREENULL( "packed_channel", (void **)&packed_channel );
+		X_FREENULL( "packed_channel", (void **)&packed_channel );
 	}
 
 	// Join it all together
 
-	*packed = ( char * )malloc( packed_journal_header_size + packed_channel_buffer_size );
+	*packed = ( char * )X_MALLOC( packed_journal_header_size + packed_channel_buffer_size );
 	p = *packed;
 	memcpy( p, packed_journal_header, packed_journal_header_size );
 	*size += packed_journal_header_size;
@@ -318,9 +318,9 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 	*size += packed_channel_buffer_size;
 	
 journal_pack_cleanup:
-	FREENULL( "packed_channel", (void **)&packed_channel );
-	FREENULL( "packed_channel_buffer", (void **)&packed_channel_buffer );
-	FREENULL( "packed_journal_header", (void **)&packed_journal_header );
+	X_FREENULL( "packed_channel", (void **)&packed_channel );
+	X_FREENULL( "packed_channel_buffer", (void **)&packed_channel_buffer );
+	X_FREENULL( "packed_journal_header", (void **)&packed_journal_header );
 }
 
 int journal_init( journal_t **journal )
@@ -328,7 +328,7 @@ int journal_init( journal_t **journal )
 	journal_header_t *header;
 	unsigned char i;
 
-	*journal = ( journal_t * ) malloc( sizeof ( journal_t ) );
+	*journal = ( journal_t * ) X_MALLOC( sizeof ( journal_t ) );
 
 	if( ! *journal )
 	{
@@ -339,7 +339,7 @@ int journal_init( journal_t **journal )
 		
 	if( ! header )
 	{
-		free( *journal );
+		X_FREE( *journal );
 		*journal = NULL;
 		return -1;
 	}
@@ -375,7 +375,7 @@ void journal_destroy( journal_t **journal )
 		(*journal)->header = NULL;
 	}
 
-	free( *journal );
+	X_FREE( *journal );
 	*journal = NULL;
 }
 
@@ -494,9 +494,9 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	journal->header->seq = seq;
 
 
-	journal->channels[ channel]->chapter_c->controller_log[ controller ].S = 1;
-	journal->channels[ channel]->chapter_c->controller_log[ controller ].number = controller;
-	journal->channels[ channel]->chapter_c->controller_log[ controller ].value = midi_control->controller_value;
+	journal->channels[ channel ]->chapter_c->controller_log[ controller ].S = 1;
+	journal->channels[ channel ]->chapter_c->controller_log[ controller ].number = controller;
+	journal->channels[ channel ]->chapter_c->controller_log[ controller ].value = midi_control->controller_value;
 }
 
 void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t *midi_program)

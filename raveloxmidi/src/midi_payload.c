@@ -47,22 +47,25 @@ void midi_payload_destroy( midi_payload_t **payload )
 
 	if( (*payload)->buffer )
 	{
-		FREENULL( "midi_payload:payload->buffer",(void **)&((*payload)->buffer) );
+		X_FREE( (*payload)->buffer );
+		(*payload)->buffer = NULL;
 	}
 
 	if( (*payload)->header )
 	{
-		FREENULL( "midi_payload:payload->header",(void **)&((*payload)->header) );
+		X_FREE( (*payload)->header );
+		(*payload)->header = NULL;
 	}
 
-	FREENULL( "midi_payload",(void **)payload );
+	X_FREE( *payload );
+	*payload = NULL;
 }
 
 void midi_payload_reset( midi_payload_t *payload )
 {
 	if( ! payload ) return;
 
-	if( payload->buffer ) free( payload->buffer );
+	if( payload->buffer ) X_FREE( payload->buffer );
 	payload->buffer = NULL;
 
 	if( payload->header )
@@ -79,17 +82,17 @@ midi_payload_t * midi_payload_create( void )
 {
 	midi_payload_t *payload = NULL;
 
-	payload = ( midi_payload_t * )malloc( sizeof( midi_payload_t ) );
+	payload = ( midi_payload_t * )X_MALLOC( sizeof( midi_payload_t ) );
 
 	if( ! payload ) return NULL;
 
 	memset( payload, 0, sizeof(midi_payload_t ) );
 
-	payload->header = ( midi_payload_header_t *)malloc( sizeof( midi_payload_header_t ) );
+	payload->header = ( midi_payload_header_t *)X_MALLOC( sizeof( midi_payload_header_t ) );
 	if( ! payload->header )
 	{
 		logging_printf( LOGGING_ERROR, "midi_payload_create: Not enough memory\n");
-		free( payload );
+		X_FREE( payload );
 		return NULL;
 	}
 	midi_payload_reset( payload );
@@ -176,7 +179,7 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 	}
 
 	payload->header->len = *buffer_size;
-	payload->buffer = (unsigned char *)malloc( *buffer_size );
+	payload->buffer = (unsigned char *)X_MALLOC( *buffer_size );
 	if( ! payload->buffer )
 	{
 		payload->header->len = 0;
@@ -216,7 +219,7 @@ void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t 
 	midi_payload_header_dump( payload->header );
 
 	*buffer_size = 1 + payload->header->len + (payload->header->len > 15 ? 1 : 0);
-	*buffer = (unsigned char *)malloc( *buffer_size );
+	*buffer = (unsigned char *)X_MALLOC( *buffer_size );
 
 	if( ! *buffer )
 	{
@@ -300,7 +303,7 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 		goto midi_payload_unpack_error;
 	}
 
-	(*payload)->buffer = (unsigned char *)malloc( temp_len );
+	(*payload)->buffer = (unsigned char *)X_MALLOC( temp_len );
 	if( ! (*payload)->buffer ) goto midi_payload_unpack_error;
 
 	memcpy( (*payload)->buffer, p, temp_len );
@@ -310,7 +313,6 @@ void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_
 
 midi_payload_unpack_error:
 	midi_payload_destroy( payload );
-	*payload = NULL;
 
 midi_payload_unpack_success:
 	return;
@@ -334,13 +336,12 @@ void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload 
 	}
 
 	new_payload_size = command->data_len + 1;
-	new_payload_buffer = (unsigned char *)malloc( new_payload_size );
+	new_payload_buffer = (unsigned char *)X_MALLOC( new_payload_size );
 
 	if( ! new_payload_buffer )
 	{
 		logging_printf(LOGGING_ERROR,"midi_command_to_payload: Unable to allocate memory for new payload buffer\n");
 		midi_payload_destroy( &(*payload) );
-		*payload = NULL;
 		return;
 	}
 
@@ -349,5 +350,5 @@ void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload 
 
 	midi_payload_set_buffer( *payload, new_payload_buffer, &new_payload_size );
 
-	free( new_payload_buffer );
+	X_FREE( new_payload_buffer );
 }

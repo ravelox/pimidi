@@ -35,7 +35,7 @@ chapter_c_t *chapter_c_create( void )
 	uint8_t index = 0;
 	chapter_c_t *new_chapter_c = NULL;
 
-	new_chapter_c = (chapter_c_t *)malloc( sizeof( chapter_c_t ) );
+	new_chapter_c = (chapter_c_t *)X_MALLOC( sizeof( chapter_c_t ) );
 	if( ! new_chapter_c )
 	{
 		logging_printf(LOGGING_ERROR, "chapter_c_create: Unable to allocate memory to create chapter_c log\n");
@@ -138,7 +138,7 @@ void chapter_c_pack( chapter_c_t *chapter_c, unsigned char **packed, size_t *siz
 	if( chapter_c->len == 0 ) return;
 
 	*size = PACKED_CHAPTER_C_HEADER_SIZE + ( (chapter_c->len) * PACKED_CONTROLLER_LOG_SIZE );
-	*packed = (unsigned char *)malloc( *size );
+	*packed = (unsigned char *)X_MALLOC( *size );
 	
 	if(! *packed )
 	{
@@ -194,7 +194,7 @@ void chapter_c_destroy( chapter_c_t **chapter_c )
 	if( ! chapter_c ) return;
 	if( ! *chapter_c ) return;
 
-	FREENULL( "chapter_c",(void **) &(*chapter_c) );
+	X_FREENULL( "chapter_c",(void **) &(*chapter_c) );
 }
 
 void chapter_c_reset( chapter_c_t *chapter_c )
@@ -232,7 +232,7 @@ controller_log_t *controller_log_create( void )
 {
 	controller_log_t *new_controller_log = NULL;
 
-	new_controller_log = (controller_log_t *)malloc( sizeof(controller_log_t ) );
+	new_controller_log = (controller_log_t *)X_MALLOC( sizeof(controller_log_t ) );
 	if( ! new_controller_log )
 	{
 		logging_printf( LOGGING_ERROR,"controller_log_create: Unable to allocate memory for new controller_log_t\n");
@@ -251,7 +251,7 @@ void controller_log_destroy( controller_log_t **controller_log )
 	if( ! controller_log ) return;
 	if( ! *controller_log) return;
 
-	FREENULL( "controller_log",(void **)controller_log);
+	X_FREENULL( "controller_log",(void **)controller_log);
 }
 void controller_log_reset( controller_log_t *controller_log )
 {

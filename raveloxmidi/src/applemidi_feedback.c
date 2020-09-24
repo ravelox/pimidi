@@ -37,6 +37,8 @@ extern int errno;
 
 #include "logging.h"
 
+#include "utils.h"
+
 void applemidi_feedback_responder( void *data )
 {
 	net_applemidi_feedback  *feedback;
@@ -81,7 +83,7 @@ net_response_t *applemidi_feedback_create( uint32_t ssrc, uint16_t rtp_seq )
 
 	if( ! cmd )
 	{
-		free( feedback );
+		X_FREE( feedback );
 		return NULL;
 	}
 	

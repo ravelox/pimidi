@@ -45,7 +45,7 @@ net_response_t * net_response_create( void )
 {
 	net_response_t *response = NULL;
 
-	response =( net_response_t *) malloc( sizeof( net_response_t ) );
+	response =( net_response_t *) X_MALLOC( sizeof( net_response_t ) );
 
 	if( response )
 	{
@@ -62,11 +62,11 @@ void net_response_destroy( net_response_t **response )
 
 	if( (*response)->buffer )
 	{
-		free( (*response)->buffer );
+		X_FREE( (*response)->buffer );
 		(*response)->buffer = NULL;
 	}
 
-	free( *response );
+	X_FREE( *response );
 	*response = NULL;
 }
 
@@ -90,9 +90,9 @@ net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name 
 	inv->initiator = initiator;
 	if( name )
 	{
-		inv->name = (char *)strdup( name );
+		inv->name = (char *)X_STRDUP( name );
 	} else {
-		inv->name = (char *)strdup( "RaveloxMIDIClient" );
+		inv->name = (char *)X_STRDUP( "RaveloxMIDIClient" );
 	}
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_INV );

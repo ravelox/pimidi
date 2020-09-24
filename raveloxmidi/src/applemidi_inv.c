@@ -35,6 +35,8 @@ extern int errno;
 #include "raveloxmidi_config.h"
 #include "logging.h"
 
+#include "utils.h"
+
 net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void *data )
 {
 	net_applemidi_command *cmd = NULL;
@@ -79,7 +81,7 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	
 	if( ! accept_inv ) {
 		logging_printf( LOGGING_ERROR, "applemidi_inv_responder: Unable to allocate memory for accept_inv command data\n");
-		free( cmd );
+		X_FREE( cmd );
 		net_ctx_reset( ctx );
 		return NULL;
 	}
@@ -90,9 +92,9 @@ net_response_t * applemidi_inv_responder( char *ip_address, uint16_t port, void 
 	service_name = config_string_get("service.name");
 	if( service_name )
 	{
-		accept_inv->name = (char *)strdup( service_name );
+		accept_inv->name = (char *)X_STRDUP( service_name );
 	} else {
-		accept_inv->name = (char *)strdup( "RaveloxMIDI" );
+		accept_inv->name = (char *)X_STRDUP( "RaveloxMIDI" );
 	}
 
 	cmd->data = accept_inv;

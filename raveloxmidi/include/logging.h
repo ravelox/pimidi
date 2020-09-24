@@ -36,9 +36,15 @@ typedef struct {
 
 #ifdef INSIDE_LOGGING
 int logging_threshold = 3;
+int logging_hex_dump = 0;
+int logging_enabled = 0;
 #else
 extern int logging_threshold;
-#define DEBUG_ONLY	if(logging_threshold!=LOGGING_DEBUG) return;
+extern int logging_hex_dump;
+extern int logging_enabled;
+#define DEBUG_ONLY	if( (logging_enabled==0) || (logging_threshold!=LOGGING_DEBUG)) return;
+#define INFO_ONLY	if( (logging_enabled==0) || (logging_threshold>LOGGING_INFO)) return;
+#define HEX_DUMP_ENABLED	if(logging_hex_dump==0) return;
 #endif
 
 int logging_name_to_value(name_map_t *map, const char *name);

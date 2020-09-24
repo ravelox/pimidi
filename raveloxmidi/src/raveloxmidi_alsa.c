@@ -54,12 +54,12 @@ extern int errno;
 
 static void poll_descriptors_lock( void )
 {
-	pthread_mutex_lock( &poll_descriptors_table_lock );
+	X_MUTEX_LOCK( &poll_descriptors_table_lock );
 }
 
 static void poll_descriptors_unlock( void )
 {
-	pthread_mutex_unlock( &poll_descriptors_table_lock );
+	X_MUTEX_UNLOCK( &poll_descriptors_table_lock );
 }
 
 /* Open an output handle for the specified ALSA device and add it to the list */
@@ -233,7 +233,7 @@ void raveloxmidi_alsa_teardown( void )
 	data_table_destroy( &outputs );
 
 	poll_descriptors_lock();
-	FREENULL( "raveloxmidi_alsa_teardown:poll_descriptors", (void **)&poll_descriptors );
+	X_FREENULL( "raveloxmidi_alsa_teardown:poll_descriptors", (void **)&poll_descriptors );
 	poll_descriptors_unlock();
 
 	pthread_mutex_destroy( &poll_descriptors_table_lock );
@@ -458,7 +458,7 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 	
 	poll_descriptors_lock();
 
-	new_fds = (struct pollfd * )realloc( poll_descriptors, ( num_poll_descriptors + 1 ) * sizeof( struct pollfd ) );
+	new_fds = (struct pollfd * )X_REALLOC( poll_descriptors, ( num_poll_descriptors + 1 ) * sizeof( struct pollfd ) );
 	if( ! new_fds )
 	{
 		logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_add_poll_fd: Insufficient memory to extend poll fd table\n");
@@ -496,7 +496,7 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
 
 	if( num_current_fds <= 0 ) return;
 
-	current_fds = (struct pollfd *)malloc( (num_current_fds+1) * sizeof( struct pollfd ) );
+	current_fds = (struct pollfd *)X_MALLOC( (num_current_fds+1) * sizeof( struct pollfd ) );
 
 	if(! current_fds )
 	{
@@ -515,7 +515,7 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
 		}
 	}
 
-	free( current_fds );
+	X_FREE( current_fds );
 
 }
 

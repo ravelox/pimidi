@@ -50,18 +50,17 @@ static name_map_t loglevel_map[] = {
 
 static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int logging_enabled = 0;
 static char *logging_file_name = NULL;
 static unsigned char prefix_disabled = 0;
 
 void logging_lock( void )
 {
-	pthread_mutex_lock( &logging_mutex );
+	X_MUTEX_LOCK( &logging_mutex );
 }
 
 void logging_unlock( void )
 {
-	pthread_mutex_unlock( &logging_mutex );
+	X_MUTEX_UNLOCK( &logging_mutex );
 }
 
 int logging_name_to_value(name_map_t *map, const char *name)
@@ -125,18 +124,10 @@ void logging_printf(int level, const char *format, ...)
 	FILE *logging_fp = NULL;
 	va_list ap;
 
-	logging_lock();
+	if( logging_enabled == 0 ) return;
+	if( level < logging_threshold ) return;
 
-	if( logging_enabled == 0 )
-	{
-		goto logging_end;
-	}
-
-
-	if( level < logging_threshold )
-	{
-		goto logging_end;
-	}
+	logging_lock(); 
 
 	if( logging_file_name )
 	{
@@ -170,7 +161,6 @@ void logging_printf(int level, const char *format, ...)
 		fclose( logging_fp );
 	}
 
-logging_end:
 	logging_unlock();
 }
 
@@ -192,7 +182,7 @@ void logging_init(void)
 			name = config_string_get("logging.log_file") ;
 			if( name )
 			{
-				logging_file_name = strdup( name );
+				logging_file_name = X_STRDUP( name );
 			} else {
 				logging_file_name = NULL;
 			}
@@ -204,6 +194,11 @@ void logging_init(void)
 		logging_enabled = 1;
 	}
 
+	if( is_yes( config_string_get("logging.hex_dump") ) )
+	{
+		logging_hex_dump = 1;
+	}
+
 	logging_unlock();
 }
 
@@ -213,7 +208,7 @@ void logging_teardown(void)
 
 	if( logging_file_name )
 	{
-		free( logging_file_name );
+		X_FREE( logging_file_name );
 		logging_file_name = NULL;
 	}
 

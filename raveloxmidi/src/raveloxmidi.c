@@ -36,6 +36,8 @@
 #include "dns_service_publisher.h"
 #include "dns_service_discover.h"
 
+#include "midi_sender.h"
+
 #include "raveloxmidi_config.h"
 #include "daemon.h"
 
@@ -55,6 +57,8 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	int running_as_daemon = 0;
 
+	utils_pthread_tracking_init();
+	utils_mem_tracking_init();
 	utils_init();
 
 	ret = config_init( argc, argv);
@@ -74,7 +78,6 @@ int main(int argc, char *argv[])
 		fprintf( stderr, "No network.bind_address configuration is set\n" );
 		goto daemon_stop;
 	}
-
 
 	service_desc.name = config_string_get("service.name");
 	service_desc.service = "_apple-midi._udp";
@@ -108,6 +111,9 @@ int main(int argc, char *argv[])
 	} else {
 		net_socket_loop_init();
 
+		midi_sender_init();
+		midi_sender_start();
+
 		signal( SIGINT , net_socket_loop_shutdown);
 		signal( SIGTERM , net_socket_loop_shutdown);
 		signal( SIGUSR2 , net_socket_loop_shutdown);
@@ -135,6 +141,9 @@ int main(int argc, char *argv[])
 
 	dns_service_publisher_stop();
 
+	midi_sender_stop();
+	midi_sender_teardown();
+
 	remote_connect_teardown();
 	net_socket_teardown();
 	net_ctx_teardown();
@@ -150,6 +159,9 @@ daemon_stop:
 	logging_teardown();
 
 	utils_teardown();
+
+	utils_mem_tracking_teardown();
+	utils_pthread_tracking_teardown();
 
 	return 0;
 }

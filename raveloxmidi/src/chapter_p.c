@@ -34,7 +34,7 @@ chapter_p_t *chapter_p_create( void )
 {
 	chapter_p_t *new_chapter_p;
 
-	new_chapter_p = (chapter_p_t *)malloc( sizeof( chapter_p_t ) );
+	new_chapter_p = (chapter_p_t *)X_MALLOC( sizeof( chapter_p_t ) );
 
 	if( ! new_chapter_p )
 	{
@@ -54,7 +54,7 @@ void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *siz
 
 	// Sec A.2 of RFC6295.txt
 	// Chapter has a fixed size of 24 bits
-	*packed = (unsigned char *)malloc( CHAPTER_P_PACKED_SIZE ); 
+	*packed = (unsigned char *)X_MALLOC( CHAPTER_P_PACKED_SIZE ); 
 
 	if( ! *packed )
 	{
@@ -95,7 +95,7 @@ void chapter_p_destroy( chapter_p_t **chapter_p )
 	if( ! chapter_p ) return;
 	if( ! *chapter_p ) return;
 
-	FREENULL( "chapter_p",(void **)chapter_p );
+	X_FREENULL( "chapter_p",(void **)chapter_p );
 }
 
 void chapter_p_dump( chapter_p_t *chapter_p )

@@ -31,13 +31,13 @@
 static void dstring_lock( dstring_t *dstring )
 {
 	if( ! dstring ) return;
-	pthread_mutex_lock( &(dstring->lock) );
+	X_MUTEX_LOCK( &(dstring->lock) );
 }
 
 static void dstring_unlock( dstring_t *dstring )
 {
 	if( ! dstring ) return;
-	pthread_mutex_unlock( &(dstring->lock) );
+	X_MUTEX_UNLOCK( &(dstring->lock) );
 }
 
 dstring_t *dstring_create( size_t block_size )
@@ -46,7 +46,7 @@ dstring_t *dstring_create( size_t block_size )
 
 	if( block_size == 0 ) return NULL;
 
-	new_string = ( dstring_t *)malloc( sizeof( dstring_t ) );
+	new_string = ( dstring_t *)X_MALLOC( sizeof( dstring_t ) );
 
 	if( ! new_string )
 	{
@@ -57,7 +57,7 @@ dstring_t *dstring_create( size_t block_size )
 	memset( new_string, 0, sizeof( dstring_t ) );
 	new_string->num_blocks = 1;
 	new_string->block_size = block_size;
-	new_string->data = (unsigned char *)malloc( new_string->num_blocks * new_string->block_size );
+	new_string->data = (unsigned char *)X_MALLOC( new_string->num_blocks * new_string->block_size );
 	memset( new_string->data, 0, new_string->num_blocks * new_string->block_size );
 	pthread_mutex_init( &(new_string->lock), NULL );
 
@@ -71,10 +71,10 @@ int dstring_reset( dstring_t *dstring )
 	dstring_lock( dstring );
 	if( dstring->data )
 	{
-		free( dstring->data );
+		X_FREE( dstring->data );
 	}
 	dstring->num_blocks = 1;
-	dstring->data = (unsigned char *)malloc( dstring->num_blocks * dstring->block_size );
+	dstring->data = (unsigned char *)X_MALLOC( dstring->num_blocks * dstring->block_size );
 	dstring_unlock( dstring );
 	return 1;
 }
@@ -85,7 +85,7 @@ void dstring_destroy( dstring_t **dstring )
 
 	dstring_reset( *dstring );
 	pthread_mutex_destroy( &((*dstring)->lock) );
-	free( *dstring);
+	X_FREE( *dstring);
 	*dstring = NULL;
 }
 
@@ -120,7 +120,7 @@ size_t dstring_append( dstring_t *dstring, char *in_string )
 		new_alloc = strlen( dstring->data ) + strlen( in_string ) + 1;
 
 		new_block_count = ( new_alloc / dstring->block_size ) + 1;
-		new_dstring_data = (char *)realloc( dstring->data, new_block_count * dstring->block_size );
+		new_dstring_data = (char *)X_REALLOC( dstring->data, new_block_count * dstring->block_size );
 
 		if( ! new_dstring_data )
 		{
