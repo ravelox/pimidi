@@ -52,6 +52,8 @@ static pthread_t alsa_listener_thread;
 
 extern int errno;
 
+static void raveloxmidi_alsa_disable_poll_fd( int fd );
+
 static void poll_descriptors_lock( void )
 {
 	X_MUTEX_LOCK( &poll_descriptors_table_lock );
@@ -378,7 +380,7 @@ int raveloxmidi_alsa_write( unsigned char *buffer, size_t buffer_size, int origi
 	return bytes_written;
 }
 
-int raveloxmidi_alsa_read( snd_rawmidi_t *handle, unsigned char *buffer, size_t buffer_size )
+int raveloxmidi_alsa_read( int fd, snd_rawmidi_t *handle, unsigned char *buffer, size_t buffer_size )
 {
 	ssize_t bytes_read = -1;
 	
@@ -397,6 +399,21 @@ int raveloxmidi_alsa_read( snd_rawmidi_t *handle, unsigned char *buffer, size_t 
 	if( handle )
 	{
 		bytes_read = snd_rawmidi_read( handle, buffer, buffer_size );
+		if( bytes_read < 0 )
+		{
+			switch(errno)
+			{
+				case ENODEV:
+					logging_printf( LOGGING_WARN, "raveloxmidi_alsa_read: ALSA device (fd=%d) not responding. Disabling polling\n", fd );
+					raveloxmidi_alsa_disable_poll_fd( fd );
+					break;
+				case EAGAIN:
+					break;
+				default:
+					logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_read: bytes_read=%zd errno=%d [%s]\n", bytes_read, errno, strerror( errno ) );
+					break;
+			}
+		}
 	} else {
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_read: No input handle\n");
 	}
@@ -416,7 +433,15 @@ int raveloxmidi_alsa_poll( int timeout )
  
 	shutdown_fd = net_socket_get_shutdown_fd();
 
+	poll_descriptors_lock();
+	for(i = 0; i < num_poll_descriptors; i++)
+	{
+		poll_descriptors[i].revents = 0;
+	}
+
 	err = poll( poll_descriptors, num_poll_descriptors, timeout );
+
+	poll_descriptors_unlock();
 
 	if( (errno != 0) && (errno != EAGAIN) )
 	{
@@ -465,7 +490,6 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 		goto add_poll_end;
 	}
 
-
 	poll_descriptors = new_fds;
 	poll_descriptors[ num_poll_descriptors ].fd = fd;
 	poll_descriptors[ num_poll_descriptors ].events = POLLIN | POLLERR | POLLNVAL | POLLHUP;
@@ -482,6 +506,67 @@ static void raveloxmidi_alsa_add_poll_fd( snd_rawmidi_t *handle, int fd )
 	}
 add_poll_end:
 	poll_descriptors_unlock();
+}
+
+static void raveloxmidi_alsa_pd_dump( char *label )
+{
+	int i = 0;
+
+	DEBUG_ONLY;
+
+	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_pd_dump: label=[%s] num_poll_descriptors=%d\n", label, num_poll_descriptors );
+	
+	for( i = 0; i < num_poll_descriptors; i++ )
+	{
+		logging_printf( LOGGING_DEBUG, "\tfd=%d, events=%d, revents=%d\n", poll_descriptors[i].fd, poll_descriptors[i].events, poll_descriptors[i].revents );
+	}
+}
+
+static void raveloxmidi_alsa_disable_poll_fd( int fd )
+{
+	struct pollfd *new_fds = NULL;
+	struct pollfd *old_fds = NULL;
+	int i = 0;
+	int new_index = 0;
+	size_t new_size = 0;
+
+	if( fd < 0 ) return;
+
+
+	poll_descriptors_lock();
+
+	raveloxmidi_alsa_pd_dump( "disable_poll" );
+
+	new_size = num_poll_descriptors * sizeof( struct pollfd );
+	new_fds = ( struct pollfd * )X_MALLOC( new_size );
+	if( ! new_fds )
+	{
+		logging_printf( LOGGING_ERROR, "raveloxmidi_alsa_disable_poll: Insufficient memory to create new poll fd table\n");
+		goto disable_poll_clean;
+	}
+
+	memset( new_fds, 0, new_size );
+
+	new_index = 0;
+
+	for( i = 0; i < num_poll_descriptors; i++ )
+	{
+		if( poll_descriptors[ i ].fd == fd ) continue;
+
+		memcpy( &(new_fds[new_index]), &(poll_descriptors[i]), sizeof( struct pollfd ) );
+		new_index++;
+	}
+
+	old_fds = poll_descriptors;
+	poll_descriptors = new_fds;
+	X_FREE( old_fds );
+	num_poll_descriptors = new_index;
+
+	logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_disable_poll: disabled=%d\n", fd);
+
+disable_poll_clean:
+	poll_descriptors_unlock();
+
 }
 
 void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
@@ -540,6 +625,10 @@ static void * raveloxmidi_alsa_listener( void *data )
 
 	do {
 		poll_result = raveloxmidi_alsa_poll( socket_timeout );
+
+		poll_descriptors_lock();
+		raveloxmidi_alsa_pd_dump( "post_poll" );
+		poll_descriptors_unlock();
 
 		if( poll_result > 0 )
 		{

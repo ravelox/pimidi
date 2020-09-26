@@ -390,44 +390,41 @@ int net_socket_read( int fd )
 	} 
 #endif
 
-//	while( 1 )
-//	{
-		memset( packet, 0, packet_size + 1 );
+	memset( packet, 0, packet_size + 1 );
 #ifdef HAVE_ALSA
-		if( found_socket->type  == RAVELOXMIDI_SOCKET_ALSA_TYPE )
-		{
-			recv_len = raveloxmidi_alsa_read( found_socket->handle, packet, packet_size);
-		} else {
+	if( found_socket->type  == RAVELOXMIDI_SOCKET_ALSA_TYPE )
+	{
+		recv_len = raveloxmidi_alsa_read( fd, found_socket->handle, packet, packet_size);
+	} else {
 #endif
-			recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
-			get_ip_string( (struct sockaddr *)&from_addr, ip_address, INET6_ADDRSTRLEN );
-			from_port = ntohs( ((struct sockaddr_in *)&from_addr)->sin_port );
+		recv_len = recvfrom( fd, packet, NET_APPLEMIDI_UDPSIZE, 0, (struct sockaddr *)&from_addr, &from_len );
+		get_ip_string( (struct sockaddr *)&from_addr, ip_address, INET6_ADDRSTRLEN );
+		from_port = ntohs( ((struct sockaddr_in *)&from_addr)->sin_port );
 #ifdef HAVE_ALSA
-		}
-		if( found_socket->type  != RAVELOXMIDI_SOCKET_ALSA_TYPE )
-		{
+	}
+	if( found_socket->type  != RAVELOXMIDI_SOCKET_ALSA_TYPE )
+	{
 #endif
-			if( recv_len > 0 )
-			{
-				logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=%d, recv_len=%ld, host=%s, port=%u, first_byte=%02x)\n", fd, recv_len, ip_address, from_port, packet[0]);
-			}
-
-#ifdef HAVE_ALSA
-		} else {
-			if( recv_len > 0 )
-			{
-				logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=ALSA(%d) recv_len=%ld first_byte=%02x\n", fd, recv_len, packet[0] );
-			}
-		}
-#endif
-		//if ( recv_len <= 0) break;
-		if ( recv_len > 0)
+		if( recv_len > 0 )
 		{
-			hex_dump( packet, recv_len );
-			midi_state_write( found_socket->state, packet, recv_len );
+			logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=%d, recv_len=%ld, host=%s, port=%u, first_byte=%02x)\n", fd, recv_len, ip_address, from_port, packet[0]);
 		}
 
-//	}
+#ifdef HAVE_ALSA
+	} else {
+		if( recv_len > 0 )
+		{
+			logging_printf( LOGGING_DEBUG, "net_socket_read: read socket=ALSA(%d) recv_len=%ld first_byte=%02x\n", fd, recv_len, packet[0] );
+		}
+	}
+#endif
+	if ( recv_len > 0)
+	{
+		hex_dump( packet, recv_len );
+		midi_state_write( found_socket->state, packet, recv_len );
+	} else {
+		goto net_socket_read_clean;
+	}
 
 /*
 	Apple MIDI command
@@ -668,6 +665,7 @@ net_socket_read_rtp_clean:
 		rtp_packet_destroy( &rtp_packet );
 	}
 
+net_socket_read_clean:
 	net_socket_unlock( found_socket );
 
 	if( read_buffer )
