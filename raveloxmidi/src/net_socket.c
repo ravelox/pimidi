@@ -626,8 +626,8 @@ int net_socket_read( int fd )
 		{
 			logging_printf( LOGGING_WARN, "net_socket_read: Unable to create originator context for internal or ALSA socket\n");
 		} else {
-			originators->ssrc = 0;
-			originators->alsa_card_hash = found_socket->device_hash;
+			originators->ssrc = rtp_packet->header.ssrc;
+			originators->alsa_card_hash = 0;
 		}
 
 		context = data_context_create( net_socket_originators_destroy );

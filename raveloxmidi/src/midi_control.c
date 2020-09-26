@@ -107,7 +107,7 @@ void midi_control_dump( midi_control_t *midi_control )
 	if(! midi_control ) return;
 
 	logging_printf( LOGGING_DEBUG, "MIDI Controller Change(command=%d,channel=%d,controller=%d,value=%d)\n",
-		midi_control->command, midi_control->channel, midi_control->controller_number, midi_control->controller_value);
+		midi_control->command, midi_control->channel + 1, midi_control->controller_number, midi_control->controller_value);
 }
 
 int midi_control_from_command( midi_command_t *command , midi_control_t **midi_control )

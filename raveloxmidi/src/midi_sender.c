@@ -183,9 +183,10 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 
 		net_ctx_t *current_ctx = net_ctx_find_by_index( i );
 
-		logging_printf( LOGGING_DEBUG, "net_distribute: current_ctx=%p\n", current_ctx );
+		logging_printf( LOGGING_DEBUG, "midi_sender_send_single: current_ctx=%p\n", current_ctx );
 		if(! current_ctx ) continue;
 
+		logging_printf( LOGGING_DEBUG, "midi_sender_send_single: current_ctx->ssrc=0x%08x, originator_ssrc=0x%08x\n", current_ctx->ssrc, originator_ssrc );
 		// If the current ctx is the originator, we don't need to send anything
 		if( current_ctx->ssrc == originator_ssrc ) continue;
 
@@ -202,7 +203,7 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		// We have to pack the payload again each time because some connections may not have a journal
 		// and the flag to indicate the journal being present is in the payload
 		midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
-		logging_printf(LOGGING_DEBUG, "net_distribute: packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
+		logging_printf(LOGGING_DEBUG, "midi_sender_send_single: packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
 
 		// Join the packed MIDI payload and the journal together
 		packed_rtp_payload = (unsigned char *)X_MALLOC( packed_payload_len + packed_journal_len );

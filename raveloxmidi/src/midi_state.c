@@ -253,6 +253,7 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 
 	get_delta = z_flag;
 
+	logging_printf( LOGGING_DEBUG, "midi_state_send: state=%p, context=%p, mode=%s, z=%d\n", state, context, (mode==MIDI_PARSE_MODE_SIMPLE ? "simple" : "RTP"), z_flag );
 	while( 1 )
 	{
 		read_status = midi_state_read_byte( state, &byte );

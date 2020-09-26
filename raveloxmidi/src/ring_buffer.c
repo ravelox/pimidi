@@ -154,7 +154,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 
 	ring_buffer_lock( ring );
 
-	logging_printf( LOGGING_ERROR, "ring_buffer_write: stage=start len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
+	logging_printf( LOGGING_DEBUG, "ring_buffer_write: stage=start len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
 
 	/* Not enough space */
 	if( ring->used + len > ring->size )
@@ -213,7 +213,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
 	}
 
 ring_buffer_write_end:
-	logging_printf( LOGGING_ERROR, "ring_buffer_write: stage=end len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
+	logging_printf( LOGGING_DEBUG, "ring_buffer_write: stage=end len=%zu, ring_buffer=%p,data=%p,size=%zu, start=%zu, end=%zu, used=%zu\n", len, ring, ring->data,ring->size, ring->start, ring->end, ring->used);
 	ring_buffer_unlock( ring );
 
 	return return_val;
