@@ -467,9 +467,7 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			//net_socket_send_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_DONTWAIT, (void *)&from_addr, from_len);
-			//net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: response write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port );	
 			net_response_destroy( &response );
 		}
@@ -483,9 +481,7 @@ int net_socket_read( int fd )
 		const char *buffer="OK";
 		size_t bytes_written = 0;
 
-		//net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
-		//net_socket_send_unlock();
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Heartbeat request. Response written: %u\n", bytes_written);
 		midi_state_advance( found_socket->state, 4);
@@ -497,9 +493,7 @@ int net_socket_read( int fd )
 		const char *buffer="QT";
 		size_t bytes_written = 0;
 
-		//net_socket_send_lock();
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
-		//net_socket_send_unlock();
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on local socket\n");
@@ -523,9 +517,7 @@ int net_socket_read( int fd )
 		{
 			hex_dump( buffer, strlen( buffer ) );
 
-			//net_socket_send_lock();
 			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
-			//net_socket_send_unlock();
 
 			X_FREE( buffer );
 		}
@@ -563,7 +555,7 @@ int net_socket_read( int fd )
 			}
 			data_context_acquire( context );
 		}
-		midi_state_send( found_socket->state , context ,0 );
+		midi_state_send( found_socket->state , context , MIDI_PARSE_MODE_SIMPLE, 0 );
 		if( context )
 		{
 			data_context_release( &context );
@@ -624,9 +616,7 @@ int net_socket_read( int fd )
 		if( response )
 		{
 			size_t bytes_written = 0;
-			//net_socket_send_lock();
 			bytes_written = sendto( fd, response->buffer, response->len , MSG_DONTWAIT, (void *)&from_addr, from_len);
-			//net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: feedback write(bytes=%u,socket=%d,host=%s,port=%u)\n", bytes_written, fd,ip_address, from_port);
 			net_response_destroy( &response );
 		}
@@ -651,7 +641,7 @@ int net_socket_read( int fd )
 			}
 			data_context_acquire( context );
 		}
-		midi_state_send( current_ctx->midi_state , context, midi_payload->header->Z );
+		midi_state_send( current_ctx->midi_state , context, MIDI_PARSE_MODE_RTP, midi_payload->header->Z );
 		if( context )
 		{
 			data_context_release( &context );
@@ -734,9 +724,7 @@ int net_socket_fd_loop()
 
 
         do {
-		//net_socket_send_lock();
 		net_socket_set_fds();
-		//net_socket_send_unlock();
 
 		memset( &tv, 0, sizeof( struct timeval ) );
 		tv.tv_sec = socket_timeout; 

@@ -63,6 +63,9 @@ void midi_state_reset( midi_state_t *state );
 
 void midi_state_dump( midi_state_t *state );
 
-void midi_state_send( midi_state_t *state, data_context_t *context, char get_delta );
+void midi_state_send( midi_state_t *state, data_context_t *context, char mode, char z_flag);
+
+#define MIDI_PARSE_MODE_SIMPLE	0
+#define MIDI_PARSE_MODE_RTP	1
 
 #endif

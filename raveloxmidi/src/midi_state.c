@@ -239,7 +239,7 @@ void midi_state_dump( midi_state_t *state )
 	dbuffer_dump( state->hold );
 }
 
-void midi_state_send( midi_state_t *state , data_context_t *context, char get_delta)
+void midi_state_send( midi_state_t *state , data_context_t *context, char mode, char z_flag)
 {
 	uint8_t byte = 0;
 	unsigned char bytes_needed = 0;
@@ -247,8 +247,11 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char get_de
 	size_t buffer_len = 0;
 	midi_command_t *new_command = NULL;
 	char read_status = 0;
+	char get_delta = 0;
 
 	if( ! state ) return;
+
+	get_delta = z_flag;
 
 	while( 1 )
 	{
@@ -257,7 +260,11 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char get_de
 		// If no bytes are available...return
 		if( read_status != 0 )
 		{
-			logging_printf( LOGGING_DEBUG, "midi_state_send: read_byte status=%d\n", read_status );
+			// Special case if this is a RTP buffer, we need to set the state back to MIDI_STATE_INIT
+			if( mode == MIDI_PARSE_MODE_RTP )
+			{
+				state->status = MIDI_STATE_INIT;
+			}
 			return;
 		}
 
@@ -274,7 +281,14 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char get_de
 		{
 			state->current_delta <<= 8;
 			state->current_delta += ( byte & 0x7f );
-			if( byte & 0x80 ) state->status = MIDI_STATE_WAIT_COMMAND;
+
+			// RFC6296 sec 3.1
+			// The final octet of the delta time will NOT have bit 7 set
+			if( ! (byte & 0x80) )
+			{
+				state->status = MIDI_STATE_WAIT_COMMAND;
+				
+			}
 			logging_printf( LOGGING_DEBUG, "midi_state_send: delta=%lu\n", state->current_delta);
 			continue;
 		// Check for real-time MIDI messages that should go through at any time
@@ -438,5 +452,8 @@ midi_state_send_end:
 
 		// Set the status back to INIT
 		state->status = MIDI_STATE_INIT;
+
+		// If this is a RTP buffer, we need to get subsequent deltas
+		if( mode == MIDI_PARSE_MODE_RTP ) get_delta = 1;
 	}
 }
