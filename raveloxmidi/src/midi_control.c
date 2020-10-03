@@ -103,10 +103,10 @@ int midi_control_pack( midi_control_t *midi_control, unsigned char **buffer, siz
 
 void midi_control_dump( midi_control_t *midi_control )
 {
-	DEBUG_ONLY;
+	INFO_ONLY;
 	if(! midi_control ) return;
 
-	logging_printf( LOGGING_DEBUG, "MIDI Controller Change(command=%d,channel=%d,controller=%d,value=%d)\n",
+	logging_printf( LOGGING_INFO, "MIDI Controller Change(channel=%d,controller=%d,value=%d)\n",
 		midi_control->command, midi_control->channel + 1, midi_control->controller_number, midi_control->controller_value);
 }
 

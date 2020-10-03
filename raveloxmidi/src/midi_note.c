@@ -118,10 +118,11 @@ int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buff
 
 void midi_note_dump( midi_note_t *midi_note )
 {
-	DEBUG_ONLY;
+	INFO_ONLY;
 	if(! midi_note ) return;
 
-	logging_printf( LOGGING_DEBUG, "MIDI Note(c=%d, n=%s (0x%02x), v=%d)\n",
+	logging_printf( LOGGING_INFO, "MIDI Note(cmd=%s, c=%d, n=%s (0x%02x), v=%d)\n", 
+		( midi_note->command == 0x9 ? "NoteOn" : "NoteOff" ),
 		midi_note->channel + 1,
 		( (midi_note->note >= 0) && (midi_note->note <= 127) ? midi_note_name[midi_note->note] : "toobig"), midi_note->note,
 		midi_note->velocity);
