@@ -323,7 +323,6 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 	if( val )
 	{
 		logging_printf(LOGGING_WARN, "get_sock_info: Invalid address: [%s]:%d\n", ip_address, port );
-		freeaddrinfo( result );
 		return 1;
 	}
 
