@@ -121,7 +121,10 @@ void remote_connect_init( void )
 			*p2='\0';
 			while( p1 < p2 )
 			{
-				if( *p1 == '[' ) break;
+				if ( *p1 == '[' ) {
+				    p1++;
+                                    break;
+                                }
 				p1++;
 			}
 
@@ -129,10 +132,7 @@ void remote_connect_init( void )
 		if( p1 == p2 )
 		{
 			p1 = remote_service_name;
-		} else {
-			*p1='\0';
-			p1++;
-		}
+		} 
 
 		if( remote_port_number == 0 )
 		{
