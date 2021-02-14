@@ -57,6 +57,15 @@ net_response_t * applemidi_sync_responder( void *data )
 
 	net_ctx_dump( ctx );
 
+        if ( sync->count == 2 )
+	{
+                long long offset_estimate = ((sync->timestamp3 + sync->timestamp1) / 2) - sync->timestamp2;
+                current_time = time_in_microseconds();
+                local_timestamp = current_time - ctx->start;
+                logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: CK2 Received. Sync Done. now=%lu start=%lu local_timestamp=%lu offset_estimate=%lu\n", current_time, ctx->start, local_timestamp, offset_estimate );
+                return NULL;
+        }
+
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
 	if( ! cmd )
