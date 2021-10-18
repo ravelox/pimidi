@@ -149,7 +149,7 @@ int config_init( int argc, char *argv[] )
 		{"help", no_argument, NULL, 'h'},
 		{0,0,0,0}
 	};
-	const char *short_options = "c:dIhNP:RCv";
+	const char *short_options = "c:dihNP:RCv";
 	int c;
 
 	config_items = kv_table_create("config_items");

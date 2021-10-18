@@ -215,13 +215,13 @@ void raveloxmidi_alsa_handle_destroy( void **data )
 	if( ! rawmidi ) return;
 
 	status = snd_rawmidi_drain( rawmidi );
-	if( status > 0 )
+	if( status < 0 )
 	{
 		logging_printf(LOGGING_ERROR, "raveloxmidi_alsa_handle_destroy: snd_rawmidi_drain()=%d : %s\n", status, snd_strerror(status) );
 	}
 
 	status = snd_rawmidi_close( rawmidi );
-	if( status > 0 )
+	if( status < 0 )
 	{
 		logging_printf(LOGGING_WARN, "raveloxmidi_alsa_handle_destroy: snd_rawmidi_close()=%d : %s\n", status, snd_strerror(status) );
 	}
