@@ -1,0 +1,15 @@
+[Unit]
+After=local-fs.target network.target
+Description=@PACKAGE@ @VERSION@ RTP-MIDI network server
+Documentation=man:raveloxmidi(1)
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+User=root
+PIDFile=/run/raveloxmidi.pid
+ExecStart=/usr/local/bin/raveloxmidi -c /etc/raveloxmidi.conf -P /run/raveloxmidi.pid
+Type=forking
+Restart=on-failure
+RestartSec=3

@@ -70,11 +70,15 @@ int main(int argc, char *argv[])
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
 	{
 		config_dump();
-		if( ret == CONFIG_DUMP_EXIT ) goto daemon_stop;
+		if( ret == CONFIG_DUMP_EXIT ) {
+			ret = EXIT_SUCCESS;
+			goto daemon_stop;
+		}
 	}
 
 	if( ! config_is_set("network.bind_address") )
 	{
+		ret = EXIT_FAILURE;
 		fprintf( stderr, "No network.bind_address configuration is set\n" );
 		goto daemon_stop;
 	}
@@ -93,6 +97,7 @@ int main(int argc, char *argv[])
 
 	if( net_socket_init() != 0 )
 	{
+		ret = EXIT_FAILURE;
 		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
 		goto daemon_stop;
 	}
@@ -107,37 +112,38 @@ int main(int argc, char *argv[])
 	
 	if( ret != 0 )
 	{
+		ret = EXIT_FAILURE;
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
-	} else {
-		net_socket_loop_init();
-
-		midi_sender_init();
-		midi_sender_start();
-
-		signal( SIGINT , net_socket_loop_shutdown);
-		signal( SIGTERM , net_socket_loop_shutdown);
-		signal( SIGUSR2 , net_socket_loop_shutdown);
-
-		if( config_string_get("remote.connect") )
-		{
-			dns_discover_init();
-			remote_connect_init();
-			dns_discover_teardown();
-		}
-
-		if( net_socket_get_shutdown_status() == OK )
-		{
-#ifdef HAVE_ALSA
-			raveloxmidi_alsa_loop();
-#endif
-			net_socket_fd_loop();
-		}
-#ifdef HAVE_ALSA
-		raveloxmidi_wait_for_alsa();
-		raveloxmidi_alsa_teardown();
-#endif
-		net_socket_loop_teardown();
+		goto daemon_stop;
 	}
+	net_socket_loop_init();
+
+	midi_sender_init();
+	midi_sender_start();
+
+	signal( SIGINT , net_socket_loop_shutdown);
+	signal( SIGTERM , net_socket_loop_shutdown);
+	signal( SIGUSR2 , net_socket_loop_shutdown);
+
+	if( config_string_get("remote.connect") )
+	{
+		dns_discover_init();
+		remote_connect_init();
+		dns_discover_teardown();
+	}
+
+	if( net_socket_get_shutdown_status() == OK )
+	{
+#ifdef HAVE_ALSA
+		raveloxmidi_alsa_loop();
+#endif
+		net_socket_fd_loop();
+	}
+#ifdef HAVE_ALSA
+	raveloxmidi_wait_for_alsa();
+	raveloxmidi_alsa_teardown();
+#endif
+	net_socket_loop_teardown();
 
 	dns_service_publisher_stop();
 
@@ -145,14 +151,18 @@ int main(int argc, char *argv[])
 	midi_sender_teardown();
 
 	remote_connect_teardown();
-	net_socket_teardown();
-	net_ctx_teardown();
+
+	/* XXX: Not really sure it was a success... */
+	ret = EXIT_SUCCESS;
 
 daemon_stop:
 	if( running_as_daemon )
 	{
 		daemon_teardown();
 	}
+
+	net_socket_teardown();
+	net_ctx_teardown();
 
 	config_teardown();
 
@@ -163,5 +173,5 @@ daemon_stop:
 	utils_mem_tracking_teardown();
 	utils_pthread_tracking_teardown();
 
-	return 0;
+	return ret;
 }
