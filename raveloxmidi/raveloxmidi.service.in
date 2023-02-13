@@ -8,8 +8,8 @@ WantedBy=multi-user.target
 
 [Service]
 User=root
-PIDFile=/var/run/raveloxmidi.pid
-ExecStart=/usr/local/bin/raveloxmidi -c /etc/raveloxmidi.conf -P /var/run/raveloxmidi.pid
+PIDFile=/run/raveloxmidi.pid
+ExecStart=/usr/local/bin/raveloxmidi -c /etc/raveloxmidi.conf -P /run/raveloxmidi.pid
 Type=forking
 Restart=on-failure
 RestartSec=3
