@@ -129,7 +129,7 @@ Default is 5 seconds.
 .B run_as_daemon
 Specifies that raveloxmidi should run in the background.
 .br
-Default is yes.
+Default is no.
 .TP
 .B
 daemon.pid_file
