@@ -1,6 +1,6 @@
-.TH raveloxmidi "@VERSION@"
+.TH raveloxmidi "1"
 .SH NAME
-raveloxmidi \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
+raveloxmidi @VERSION@ \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
 \fBraveloxmidi\fP [-v] [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
 
