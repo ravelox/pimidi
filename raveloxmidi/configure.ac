@@ -49,4 +49,4 @@ AC_SUBST(COPYRIGHT_YEAR)
 GIT_BRANCH_NAME="`pkgscripts/branch_name`"
 AC_SUBST(GIT_BRANCH_NAME)
 
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.spec include/build_info.h)
+AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h)
