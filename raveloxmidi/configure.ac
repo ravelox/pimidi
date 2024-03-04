@@ -1,3 +1,5 @@
+AC_CONFIG_MACRO_DIRS([m4])
+
 m4_define([VERSION_NUMBER],[0.10.3])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
@@ -7,11 +9,11 @@ AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([foreign])
 
 AC_CONFIG_HEADERS([config.h])
 
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AC_PROG_INSTALL
 
@@ -19,9 +21,13 @@ AC_SYS_LARGEFILE
 
 PKG_PROG_PKG_CONFIG
 
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
+LT_INIT
+
 PKG_CHECK_MODULES(AVAHI, avahi-client)
 
-ACX_PTHREAD([],[])
+AX_PTHREAD
 
 AC_CHECK_LIB(asound,snd_rawmidi_open,have_alsa="yes",AC_MSG_WARN([ALSA library not found. Check raveloxmidi/required for the list of packages to install.]))
 if test "$have_alsa" == "yes"
@@ -40,7 +46,8 @@ if test "$have_dpkg" == "yes"
 then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
-	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
+	AC_CONFIG_FILES([DEBIAN/control pkgscripts/build_deb ])
+AC_OUTPUT
 fi
 
 COPYRIGHT_YEAR="`date +'%Y'`"
@@ -49,4 +56,5 @@ AC_SUBST(COPYRIGHT_YEAR)
 GIT_BRANCH_NAME="`pkgscripts/branch_name`"
 AC_SUBST(GIT_BRANCH_NAME)
 
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h)
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h])
+AC_OUTPUT
