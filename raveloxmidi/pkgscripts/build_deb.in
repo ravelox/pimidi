@@ -1,5 +1,6 @@
 #!/bin/bash
 
+FULLDIRPATH=$(pwd)
 #
 # Define the local build directory
 #
@@ -8,7 +9,7 @@ BUILDDIR=build/@PACKAGE@_@VERSION@-1
 #
 # Use the automake installer to install the files in the local build directory
 #
-DESTDIR=../${BUILDDIR} make install
+DESTDIR=${FULLDIRPATH}/../${BUILDDIR} make install
 
 #
 # Copy the debian control file

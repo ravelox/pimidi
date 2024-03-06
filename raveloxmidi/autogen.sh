@@ -6,6 +6,6 @@ rm -Rf autom4te.cache
 mkdir -vp m4
 
 aclocal
-autoconf -f
+autoreconf -ivf
 autoheader
 automake --foreign --add-missing --force-missing --copy
