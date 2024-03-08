@@ -18,7 +18,7 @@ mkdir -p ${BUILDDIR}/DEBIAN
 cp -R DEBIAN/control ${BUILDDIR}/DEBIAN
 
 #
-# Make the debian packate
+# Make the debian package
 #
 cd build
 dpkg-deb --build @PACKAGE@_@VERSION@-1
