@@ -14,8 +14,8 @@ Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
 %setup -q
 
 %build
-%configure --sysconfdir=%{_sysconfdir}/@PACKAGE@
-make 
+%configure --sysconfdir=%{_sysconfdir}/raveloxmidi
+make
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -24,8 +24,22 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %clean
 rm -rf $RPM_BUILD_ROOT
 
-%files
+%package server
+Summary: Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
+%description server
+Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
+%files server
 %{_bindir}/*
-%doc %attr(444, bin, bin) %{_mandir}/man1/@PACKAGE@.1.gz
+%doc %attr(444, bin, bin) %{_mandir}/man1/raveloxmidi.1.gz
+
+%package lib
+Summary: rtpMIDI library
+%description lib
+Associated library
+%files lib
+%{_libdir}/*
 
 %changelog
+* Thu Mar  7 2024 Dave Kelly <github@ravelox.co.uk>
+- Initial spec for multi-package build
+
