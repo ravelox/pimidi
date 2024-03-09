@@ -1,7 +1,7 @@
 SUBDIRS = src man
 
 CPPFLAGS = '-g -Wall -I ./include'
-EXTRA_DIST = include LICENSE DEBIAN/control raveloxmidi.spec*
+EXTRA_DIST = include LICENSE DEBIAN/control raveloxmidi.spec* raveloxmidi.service.* pkgscripts/*
 
 ACLOCAL_AMFLAGS = -I m4
 

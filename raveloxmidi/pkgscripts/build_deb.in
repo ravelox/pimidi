@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 FULLDIRPATH=$(pwd)
 #
@@ -20,7 +20,8 @@ cp -R DEBIAN/control ${BUILDDIR}/DEBIAN
 #
 # Make the debian package
 #
-cd build
-dpkg-deb --build @PACKAGE@_@VERSION@-1
+OLDDIR=$(pwd)
+cd  ${BUILDDIR}
+dpkg-deb --build
 rm -Rf "@PACKAGE@_@VERSION@-1/"
-cd ..
+cd  $OLDDIR
