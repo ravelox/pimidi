@@ -43,7 +43,7 @@ libraveloxmidi_la_SOURCES = \
 	data_context.c \
 	midi_sender.c
 
-libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
+libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@ rvxmidi/librvxmidi.a
 
 raveloxmidi_SOURCES = \
 	raveloxmidi.c 
@@ -52,5 +52,7 @@ raveloxmidi_LDADD = libraveloxmidi.la
 raveloxmidi_CPPFLAGS = -I ../include
 
 EXTRA_DIST = 
+
+SUBDIRS = rvxmidi
 
 
