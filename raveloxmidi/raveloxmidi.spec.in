@@ -37,7 +37,17 @@ Summary: rtpMIDI library
 %description lib
 Associated library
 %files lib
-%{_libdir}/*
+%{_libdir}/*.so.*
+
+%package devel
+Summary: rtpMIDI library development
+%description devel
+raveloxmidi development package
+%files devel
+%{_includedir}/rvxmidi
+%{_libdir}/*.la
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
 
 %changelog
 * Thu Mar  7 2024 Dave Kelly <github@ravelox.co.uk>

@@ -5,7 +5,7 @@ includedir=@includedir@
 
 Name: raveloxmidi
 Description: Simple rtpMIDI proxy for Note On/Off, Program and Control MIDI events
-Version: @Version@
+Version: @VERSION@
 Requires:
 Libs: -L${libdir} -lraveloxmidi
 Cflags: -I${includedir}
