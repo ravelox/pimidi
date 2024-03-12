@@ -23,7 +23,6 @@
 
 #include "kv_table.h"
 
-int config_init( int argc, char *argv[] );
 void config_teardown( void );
 
 char *config_string_get( char *key );
