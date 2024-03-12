@@ -35,6 +35,8 @@
 #include "utils.h"
 #include "raveloxmidi_config.h"
 
+#include "build_info.h"
+
 #define INSIDE_LOGGING
 #include "logging.h"
 
@@ -164,7 +166,7 @@ void logging_printf(int level, const char *format, ...)
 	logging_unlock();
 }
 
-void logging_init(void)
+static void logging_init(void)
 {
 	char *name = NULL;
 
@@ -200,6 +202,12 @@ void logging_init(void)
 	}
 
 	logging_unlock();
+}
+
+void rvxmidi_logging_init( int argc, char *argv[])
+{
+	logging_init();
+	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
 }
 
 void logging_teardown(void)

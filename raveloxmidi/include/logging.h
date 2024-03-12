@@ -50,7 +50,6 @@ extern int logging_enabled;
 int logging_name_to_value(name_map_t *map, const char *name);
 char *logging_value_to_name(name_map_t *map, int value);
 void logging_printf(int level, const char *format, ...);
-void logging_init(void);
 void logging_teardown(void);
 void logging_prefix_enable(void);
 void logging_prefix_disable(void);

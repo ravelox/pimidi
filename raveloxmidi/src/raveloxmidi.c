@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
 
 	ret = rvxmidi_config_init(argc, argv);
 
-	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
+	rvxmidi_logging_init(argc, argv);
 
 	/* If config should be displayed, do it and then exit */
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
