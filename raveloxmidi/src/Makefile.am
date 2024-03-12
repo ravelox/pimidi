@@ -1,6 +1,7 @@
 lib_LTLIBRARIES = libraveloxmidi.la
 bin_PROGRAMS = raveloxmidi
 
+# CPPFLAGS=-Wall -Werror
 libraveloxmidi_la_CFLAGS=-fPIC @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
 libraveloxmidi_la_CPPFLAGS=-fPIC -I ../include
 libraveloxmidi_la_CXXFLAGS=-fPIC
@@ -41,9 +42,11 @@ libraveloxmidi_la_SOURCES = \
 	dstring.c \
 	data_queue.c \
 	data_context.c \
-	midi_sender.c
+	midi_sender.c \
+	rvxmidi_init.c \
+	rvxmidi_register.c
 
-libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@ rvxmidi/librvxmidi.a
+libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 
 raveloxmidi_SOURCES = \
 	raveloxmidi.c 
@@ -52,7 +55,3 @@ raveloxmidi_LDADD = libraveloxmidi.la
 raveloxmidi_CPPFLAGS = -I ../include
 
 EXTRA_DIST = 
-
-SUBDIRS = rvxmidi
-
-

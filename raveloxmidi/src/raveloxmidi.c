@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <signal.h>
+#include "rvxmidi/rvxmidi.h"
 
 #include "config.h"
 
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
 	utils_mem_tracking_init();
 	utils_init();
 
-	ret = config_init( argc, argv);
+	ret = rvxmidi_config_init(argc, argv);
 
 	logging_init();
 	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
