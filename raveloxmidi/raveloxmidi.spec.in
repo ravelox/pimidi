@@ -44,8 +44,8 @@ Summary: rtpMIDI library development
 %description devel
 raveloxmidi development package
 %files devel
-%{_includedir}/rvxmidi
-%{_libdir}/*.la
+%{_includedir}/rvxmidi/*
+%{_libdir}/*.so.*
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 

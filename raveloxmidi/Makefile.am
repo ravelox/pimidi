@@ -1,4 +1,4 @@
-SUBDIRS = src man
+SUBDIRS = src man pkgconfig include
 
 EXTRA_DIST = include LICENSE DEBIAN/control raveloxmidi.spec* raveloxmidi.service.* pkgscripts/* pkgconfig/*
 

@@ -60,6 +60,9 @@ AC_CONFIG_FILES([
 		Makefile
 		src/Makefile
 		man/Makefile
+		pkgconfig/Makefile
+		include/Makefile
+		include/rvxmidi/Makefile
 		man/raveloxmidi.1
 		raveloxmidi.service
 		raveloxmidi.spec
