@@ -45,9 +45,9 @@ To build a .deb package, from a fresh clone:
 3. ./configure
 4. make deb
 
-A build/ directory will be created containing the .deb package
+A build/ directory will be created containing the 3 .deb packages
 
-To build a .rpm package, from a fresh clone:
+To build the 3 .rpm packages, from a fresh clone:
 
 1. cd raveloxmidi
 2. sh ./autogen.sh
