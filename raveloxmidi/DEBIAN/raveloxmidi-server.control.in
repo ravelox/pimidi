@@ -1,0 +1,9 @@
+Package: @PACKAGE@-server
+Version: @VERSION@-1
+Section: base
+Priority: optional
+Architecture: @DEB_ARCH@
+Depends: raveloxmidi-lib
+Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
+Description: raveloxmidi-server
+ Simple rtpMIDI proxy for NoteOn/NoteOff events

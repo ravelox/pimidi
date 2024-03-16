@@ -46,7 +46,12 @@ if test "$have_dpkg" == "yes"
 then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
-	AC_CONFIG_FILES([DEBIAN/control pkgscripts/build_deb ])
+	AC_CONFIG_FILES([
+			 DEBIAN/raveloxmidi-server.control
+			 DEBIAN/raveloxmidi-lib.control
+			 DEBIAN/raveloxmidi-dev.control
+			 pkgscripts/build_deb
+			 ])
 AC_OUTPUT
 fi
 

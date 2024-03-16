@@ -8,7 +8,7 @@ CLEANFILES = *.tar.gz *spec build/*deb
 
 deb:
 	chmod 700 pkgscripts/build_deb
-	@pkgscripts/build_deb
+	@pkgscripts/build_deb 
 
 rpm:	dist
 	rpmbuild -ta $(distdir).tar.gz

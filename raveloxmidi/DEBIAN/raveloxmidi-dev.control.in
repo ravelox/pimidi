@@ -1,0 +1,8 @@
+Package: @PACKAGE@-dev
+Version: @VERSION@-1
+Section: dev
+Priority: optional
+Architecture: @DEB_ARCH@
+Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
+Description: raveloxmidi-dev
+ Development files for ravexloxmidi lib
