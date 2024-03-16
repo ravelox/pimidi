@@ -1,6 +1,17 @@
 Installation
 ============
 
+Description
+-----------
+These details refer to the library version of raveloxmidi.
+There are now 3 packages which are created: raveloxmidi-server, raveloxmidi-lib and raveloxmidi-dev.
+
+raveloxmidi-lib is a shared library to provide rtpMIDI functions.
+raveloxmidi-server is the daemon using the library.
+raveloxmid-dev is the development files required to build raveloxmidi-server and can be used to develop similar binaries.
+
+NOTE: THIS IS STILL IN AN ALPHA STATE. THIS IS NOT THE FINAL VERSION BUT THE PACKAGES WILL BUILD CORRECTLY AND FUNCTION AS NORMAL.
+
 Building
 --------
 From a fresh git clone, you should do the following:
