@@ -1,8 +1,4 @@
-usr/
-usr/local
-usr/local/share
 usr/local/share/man
 usr/local/share/man/man1
 usr/local/share/man/man1/raveloxmidi.1
-usr/local/bin
 usr/local/bin/raveloxmidi

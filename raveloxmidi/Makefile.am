@@ -4,7 +4,7 @@ EXTRA_DIST = include LICENSE DEBIAN/*.in DEBIAN/*.files raveloxmidi.spec* ravelo
 
 ACLOCAL_AMFLAGS = -I m4
 
-CLEANFILES = *.tar.gz *spec build/*deb
+CLEANFILES = *.tar.gz *spec build/* DEBIAN/*.control pkgscripts/build_deb
 
 deb:
 	chmod 700 pkgscripts/build_deb

@@ -1,6 +1,3 @@
-usr/
-usr/local
-usr/local/lib
 usr/local/lib/libraveloxmidi.so.0.0.0
 usr/local/lib/libraveloxmidi.la
 usr/local/lib/libraveloxmidi.so

@@ -1,3 +1,9 @@
+General
+-------
+autoconf
+automake
+autoconf-archive
+
 Ubuntu/Debian
 -------------
 libavahi-core-dev
