@@ -1,0 +1,6 @@
+@prefix@/include/rvxmidi/rvxmidi.h
+@prefix@/lib/libraveloxmidi.so.0.0.0
+@prefix@/lib/pkgconfig/raveloxmidi.pc
+@prefix@/lib/libraveloxmidi.la
+@prefix@/lib/libraveloxmidi.so
+@prefix@/lib/libraveloxmidi.so.0

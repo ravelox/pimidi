@@ -1,0 +1,4 @@
+@prefix@/share/man
+@prefix@/share/man/man1
+@prefix@/share/man/man1/raveloxmidi.1
+@prefix@/bin/raveloxmidi
