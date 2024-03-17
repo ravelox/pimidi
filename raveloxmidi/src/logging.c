@@ -210,7 +210,7 @@ void rvxmidi_logging_init( int argc, char *argv[])
 	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
 }
 
-void logging_teardown(void)
+static void logging_teardown(void)
 {
 	logging_lock();
 
@@ -225,6 +225,11 @@ void logging_teardown(void)
 	logging_unlock();
 
 	pthread_mutex_destroy( &logging_mutex );
+}
+
+void rvxmidi_logging_teardown(void)
+{
+	logging_teardown();
 }
 
 int logging_get_threshold( void )

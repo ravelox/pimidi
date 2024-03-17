@@ -166,10 +166,9 @@ daemon_stop:
 
 	config_teardown();
 
-	logging_teardown();
+	rvxmidi_logging_teardown();
 
 	utils_teardown();
-
 	utils_mem_tracking_teardown();
 	utils_pthread_tracking_teardown();
 
