@@ -47,8 +47,12 @@ then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
 	AC_CONFIG_FILES([
-			 DEBIAN/*.control
-			 DEBIAN/*.files
+			 DEBIAN/raveloxmidi-server.control
+			 DEBIAN/raveloxmidi-lib.control
+			 DEBIAN/raveloxmidi-dev.control
+			 DEBIAN/raveloxmidi-server.files
+			 DEBIAN/raveloxmidi-lib.files
+			 DEBIAN/raveloxmidi-dev.files
 			 pkgscripts/build_deb
 			 ])
 AC_OUTPUT
