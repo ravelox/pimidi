@@ -94,6 +94,6 @@ net_ctx_t *net_ctx_find_by_index( int index );
 int net_ctx_is_used( net_ctx_t *ctx );
 int net_ctx_get_num_connections( void );
 
-char *net_ctx_connections_to_string( void );
+unsigned char *net_ctx_connections_to_string( void );
 
 #endif

@@ -348,7 +348,7 @@ int net_socket_read( int fd )
 	size_t packet_size = 0;
 	raveloxmidi_socket_t *found_socket = NULL;
 
-	char *read_buffer = NULL;
+	unsigned char *read_buffer = NULL;
 	size_t read_buffer_size = 0;
 
 	midi_sender_context_t *originators = NULL;
@@ -498,10 +498,7 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
 		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on local socket\n");
 
-		net_socket_set_shutdown_lock(1);
-
-		write( shutdown_fd[0] , "X", 1 );
-		write( shutdown_fd[1] , "X", 1 );
+		net_socket_loop_shutdown( 99 );
 
 		midi_state_advance( found_socket->state, 4);
 /*
@@ -509,15 +506,16 @@ int net_socket_read( int fd )
 */
 	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
 	{
-		char *buffer = NULL;
+		unsigned char *buffer = NULL;
 		size_t bytes_written = 0;
 
 		buffer = net_ctx_connections_to_string();
 		if( buffer )
 		{
-			hex_dump( buffer, strlen( buffer ) );
+			size_t buffer_len = strlen( (const char *)buffer );
+			hex_dump( buffer, buffer_len );
 
-			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
+			bytes_written = sendto( fd, (const char *)buffer, buffer_len, MSG_DONTWAIT, (void *)&from_addr, from_len);
 
 			X_FREE( buffer );
 		}
@@ -757,15 +755,20 @@ int net_socket_fd_loop()
 
 void net_socket_loop_shutdown(int signal)
 {
+	int shutdown_result = 0;
 	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: shutdown signal received(%u)\n", signal);
 
 	net_socket_set_shutdown_lock( 1 );
 
-	write( shutdown_fd[0] , "X", 1 );
-	write( shutdown_fd[1] , "X", 1 );
-
-	close( shutdown_fd[0] );
-	close( shutdown_fd[1] );
+	for( int i = 0; i <= 1; i++ )
+	{
+		shutdown_result = write( shutdown_fd[i] , "X", 1 );
+		if( shutdown_result != 1 )
+		{
+			logging_printf( LOGGING_ERROR, "net_socket_loop_shutdown: Unable to write to shutdown socket (%d): %s\n", i, strerror( errno ) );
+		}
+		close( shutdown_fd[i] );
+	}
 }
 
 int net_socket_init( void )

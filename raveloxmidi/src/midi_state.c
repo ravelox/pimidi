@@ -95,7 +95,7 @@ void midi_state_reset( midi_state_t *state )
 	midi_state_unlock( state );
 }
 
-int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len )
+int midi_state_write( midi_state_t *state, unsigned char *in_buffer, size_t in_buffer_len )
 {
 	int ret = 0;
 
@@ -155,9 +155,9 @@ int midi_state_char_compare( midi_state_t *state, char compare, size_t index )
 	return ring_buffer_char_compare( state->ring, compare, index );
 }
 
-char *midi_state_drain( midi_state_t *state, size_t *len)
+unsigned char *midi_state_drain( midi_state_t *state, size_t *len)
 {
-	char *return_buffer = NULL;
+	unsigned char *return_buffer = NULL;
 
 	if( ! state ) return NULL;
 	if( ! len ) return NULL;
@@ -243,7 +243,7 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 {
 	uint8_t byte = 0;
 	unsigned char bytes_needed = 0;
-	char *buffer_value = NULL;
+	unsigned char *buffer_value = NULL;
 	size_t buffer_len = 0;
 	midi_command_t *new_command = NULL;
 	char read_status = 0;

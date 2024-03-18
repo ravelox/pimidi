@@ -1,10 +1,10 @@
 lib_LTLIBRARIES = libraveloxmidi.la
 bin_PROGRAMS = raveloxmidi
 
-# CPPFLAGS=-Wall -Werror
-libraveloxmidi_la_CFLAGS=-fPIC @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
-libraveloxmidi_la_CPPFLAGS=-fPIC -I ../include
-libraveloxmidi_la_CXXFLAGS=-fPIC
+#DEBUG_FLAGS = -Wall -Werror -g -O0
+libraveloxmidi_la_CFLAGS=-fPIC @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@ ${DEBUG_FLAGS}
+libraveloxmidi_la_CPPFLAGS=-fPIC -I ../include  ${DEBUG_FLAGS}
+libraveloxmidi_la_CXXFLAGS=-fPIC -I ../include ${DEBUG_FLAGS}
 libraveloxmidi_la_LDFLAGS= -shared -fPIC
 libraveloxmidi_la_SOURCES = \
 	dns_service_publisher.c \
@@ -47,6 +47,6 @@ raveloxmidi_SOURCES = \
 	raveloxmidi.c 
 
 raveloxmidi_LDADD = libraveloxmidi.la
-raveloxmidi_CPPFLAGS = -I ../include
+raveloxmidi_CPPFLAGS = -I ../include ${DEBUG_FLAGS}
 
 EXTRA_DIST = 

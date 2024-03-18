@@ -38,12 +38,12 @@ void ring_buffer_reset( ring_buffer_t *ring , size_t ring_buffer_size);
 
 size_t ring_buffer_get_size( ring_buffer_t *ring );
 
-size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len );
-char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance);
+size_t ring_buffer_write( ring_buffer_t *ring, unsigned char *data, size_t len );
+unsigned char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance);
 char ring_buffer_read_byte( ring_buffer_t *ring, uint8_t *byte, int advance );
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size );
 int ring_buffer_available( ring_buffer_t *ring, size_t requested );
-char *ring_buffer_drain( ring_buffer_t *ring , size_t *len );
+unsigned char *ring_buffer_drain( ring_buffer_t *ring , size_t *len );
 
 void ring_buffer_lock( ring_buffer_t *ring);
 void ring_buffer_unlock( ring_buffer_t *ring);

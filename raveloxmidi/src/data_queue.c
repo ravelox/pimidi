@@ -282,7 +282,7 @@ static void *data_queue_handler( void *data )
 			X_FREENULL( "data_queue_handler:item", (void **)&item);
 		}
 
-queue_handler_loop_end:
+// queue_handler_loop_end:
 		data_queue_unlock( queue );
 	}
 

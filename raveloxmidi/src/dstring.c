@@ -94,7 +94,7 @@ void dstring_dump( dstring_t *dstring )
 	DEBUG_ONLY;
 
 	if( ! dstring ) return;
-	logging_printf(LOGGING_DEBUG, "dstring: buffer=%p, len=%u, blocks=%u\n", dstring, strlen( dstring->data ), dstring->num_blocks );
+	logging_printf(LOGGING_DEBUG, "dstring: buffer=%p, len=%u, blocks=%u\n", dstring, strlen( (char *)dstring->data ), dstring->num_blocks );
 }
 
 size_t dstring_append( dstring_t *dstring, char *in_string )
@@ -109,18 +109,18 @@ size_t dstring_append( dstring_t *dstring, char *in_string )
 	
 	current_alloc = dstring->num_blocks * dstring->block_size;
 
-	logging_printf( LOGGING_DEBUG, "dstring_append: current_alloc=%zu, data len=%zu, in len=%zu\n", current_alloc, strlen(dstring->data), strlen(in_string) );
+	logging_printf( LOGGING_DEBUG, "dstring_append: current_alloc=%zu, data len=%zu, in len=%zu\n", current_alloc, strlen((char *)dstring->data), strlen(in_string) );
 
-	if( strlen( dstring->data ) + strlen( in_string ) >= current_alloc )
+	if( strlen( (char *)dstring->data) + strlen( in_string ) >= current_alloc )
 	{
-		char *new_dstring_data = NULL;
+		unsigned char *new_dstring_data = NULL;
 		size_t new_block_count = 0;
 		size_t new_alloc = 0;
 
-		new_alloc = strlen( dstring->data ) + strlen( in_string ) + 1;
+		new_alloc = strlen( (char *)dstring->data) + strlen( in_string ) + 1;
 
 		new_block_count = ( new_alloc / dstring->block_size ) + 1;
-		new_dstring_data = (char *)X_REALLOC( dstring->data, new_block_count * dstring->block_size );
+		new_dstring_data = (unsigned char *)X_REALLOC( dstring->data, new_block_count * dstring->block_size );
 
 		if( ! new_dstring_data )
 		{
@@ -129,14 +129,14 @@ size_t dstring_append( dstring_t *dstring, char *in_string )
 		}
 
 		// Initialise the new memory
-		memset( new_dstring_data + strlen(dstring->data), 0, strlen( in_string ) + 1 );
+		memset( new_dstring_data + strlen((char *)dstring->data), 0, strlen( in_string ) + 1 );
 
 		dstring->num_blocks = new_block_count;
 		dstring->data = new_dstring_data;
 	}
 
 
-	strcat( dstring->data, in_string );
+	strcat( (char *)dstring->data, in_string );
 	dstring_dump( dstring );
 
 dstring_write_end:

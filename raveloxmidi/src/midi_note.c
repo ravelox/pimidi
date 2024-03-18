@@ -124,7 +124,7 @@ void midi_note_dump( midi_note_t *midi_note )
 	logging_printf( LOGGING_INFO, "MIDI Note(cmd=%s, c=%d, n=%s (0x%02x), v=%d)\n", 
 		( midi_note->command == 0x9 ? "NoteOn" : "NoteOff" ),
 		midi_note->channel + 1,
-		( (midi_note->note >= 0) && (midi_note->note <= 127) ? midi_note_name[midi_note->note] : "toobig"), midi_note->note,
+		( (midi_note->note >= 0) && (midi_note->note <= 127) ? midi_note_name[(unsigned char)(midi_note->note)] : "toobig"), midi_note->note,
 		midi_note->velocity);
 }
 

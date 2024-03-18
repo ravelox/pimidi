@@ -529,7 +529,7 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 {
 	struct sockaddr_in6 send_address;
 	ssize_t bytes_sent = 0;
-	socklen_t addr_len = 0, socket_addr_len = 0;
+	socklen_t addr_len = 0;
 	int port_number = 0;
 	int family = AF_UNSPEC;
 	int send_socket = 0;
@@ -591,7 +591,7 @@ net_ctx_t *net_ctx_find_by_index( int index )
 	return (net_ctx_t *)data_table_item_get( connections, index );
 }
 
-char *net_ctx_connections_to_string( void )
+unsigned char *net_ctx_connections_to_string( void )
 {
 	dstring_t *dstring = NULL;
 	unsigned char *out_buffer = NULL;
@@ -637,11 +637,11 @@ char *net_ctx_connections_to_string( void )
 
 	net_connections_unlock();
 
-	out_buffer = X_STRDUP( dstring_value( dstring ) );
+	out_buffer = (unsigned char *)X_STRDUP( (char *)dstring_value( dstring ) );
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
 
-	hex_dump( out_buffer, strlen( out_buffer));
+	hex_dump( out_buffer, strlen( (char *)out_buffer));
 
 	dstring_destroy( &dstring );
 

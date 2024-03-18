@@ -39,7 +39,7 @@ typedef enum raveloxmidi_socket_type_t {
 typedef struct raveloxmidi_socket_t {
 	int fd;
 	raveloxmidi_socket_type_t type;
-	char *packet;
+	unsigned char *packet;
 	size_t packet_size;
 	midi_state_t *state;
 	pthread_mutex_t	lock;

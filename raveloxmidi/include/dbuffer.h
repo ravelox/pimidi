@@ -37,8 +37,8 @@ int dbuffer_reset( dbuffer_t *dbuffer );
 void dbuffer_destroy( dbuffer_t **dbuffer );
 void dbuffer_dump( dbuffer_t *dbuffer );
 size_t dbuffer_len( dbuffer_t *dbuffer );
-size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len );
-size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer );
+size_t dbuffer_write( dbuffer_t *dbuffer, unsigned char *in_buffer, size_t in_buffer_len );
+size_t dbuffer_read( dbuffer_t *dbuffer, unsigned char **out_buffer );
 
 #define DBUFFER_DEFAULT_BLOCK_SIZE	512
 
