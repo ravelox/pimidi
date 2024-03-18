@@ -1,6 +1,6 @@
 AC_CONFIG_MACRO_DIRS([m4])
 
-m4_define([VERSION_NUMBER],[0.10.3])
+m4_define([VERSION_NUMBER],[0.50.0])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
 AC_INIT([raveloxmidi],[FULL_VERSION])
