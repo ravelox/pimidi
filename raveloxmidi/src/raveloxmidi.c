@@ -58,13 +58,7 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	int running_as_daemon = 0;
 
-	utils_pthread_tracking_init();
-	utils_mem_tracking_init();
-	utils_init();
-
-	ret = rvxmidi_config_init(argc, argv);
-
-	rvxmidi_logging_init(argc, argv);
+	ret = rvxmidi_init(argc, argv);
 
 	/* If config should be displayed, do it and then exit */
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
@@ -163,14 +157,6 @@ daemon_stop:
 
 	net_socket_teardown();
 	net_ctx_teardown();
-
-	config_teardown();
-
-	rvxmidi_logging_teardown();
-
-	utils_teardown();
-	utils_mem_tracking_teardown();
-	utils_pthread_tracking_teardown();
 
 	return ret;
 }

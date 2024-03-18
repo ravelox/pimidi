@@ -166,7 +166,7 @@ void logging_printf(int level, const char *format, ...)
 	logging_unlock();
 }
 
-static void logging_init(void)
+void logging_init(void)
 {
 	char *name = NULL;
 
@@ -204,13 +204,7 @@ static void logging_init(void)
 	logging_unlock();
 }
 
-void rvxmidi_logging_init( int argc, char *argv[])
-{
-	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
-}
-
-static void logging_teardown(void)
+void logging_teardown(void)
 {
 	logging_lock();
 
@@ -225,11 +219,6 @@ static void logging_teardown(void)
 	logging_unlock();
 
 	pthread_mutex_destroy( &logging_mutex );
-}
-
-void rvxmidi_logging_teardown(void)
-{
-	logging_teardown();
 }
 
 int logging_get_threshold( void )

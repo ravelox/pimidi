@@ -395,12 +395,6 @@ void utils_unlock( void )
 	X_MUTEX_UNLOCK( &utils_thread_lock );
 }
 
-void utils_init( void )
-{
-	pthread_mutex_init( &utils_thread_lock , NULL);
-	random_seed = time(NULL);
-}
-
 void utils_teardown( void )
 {
 	pthread_mutex_destroy( &utils_thread_lock );
@@ -635,3 +629,12 @@ void utils_pthread_mutex_unlock( pthread_mutex_t *mutex, const char *code_file_n
 	}
 #endif
 }
+
+void utils_init( void )
+{
+	utils_pthread_tracking_init();
+        utils_mem_tracking_init();
+	pthread_mutex_init( &utils_thread_lock , NULL);
+	random_seed = time(NULL);
+}
+

@@ -28,7 +28,6 @@ libraveloxmidi_la_SOURCES = \
 	remote_connection.c \
 	rtp_packet.c \
 	raveloxmidi_config.c \
-	daemon.c \
 	logging.c \
 	utils.c \
 	raveloxmidi_alsa.c \
@@ -39,12 +38,12 @@ libraveloxmidi_la_SOURCES = \
 	data_queue.c \
 	data_context.c \
 	midi_sender.c \
-	rvxmidi_init.c \
-	rvxmidi_register.c
+	rvxmidi.c 
 
 libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 
 raveloxmidi_SOURCES = \
+	daemon.c \
 	raveloxmidi.c 
 
 raveloxmidi_LDADD = libraveloxmidi.la

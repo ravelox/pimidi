@@ -134,7 +134,7 @@ static void config_load_file( char *filename )
 	if( config_file) fclose( config_file );
 }
 
-static int config_init( int argc, char *argv[] )
+int config_init( int argc, char *argv[] )
 {
 	int dump_config = 0;
 	static struct option long_options[] = {
@@ -210,11 +210,6 @@ static int config_init( int argc, char *argv[] )
 
 	return dump_config;
 }
-int rvxmidi_config_init( int argc, char *argv[] )
-{
-	return config_init( argc, argv );
-}
-
 
 void config_teardown( void )
 {
