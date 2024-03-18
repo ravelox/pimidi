@@ -30,7 +30,6 @@ typedef struct dns_service_t {
 int dns_discover_services( int use_ipv4, int use_ipv6 );
 void dns_discover_add( const char *name, char *address, int port );
 dns_service_t *dns_discover_by_name( const char *name );
-void dns_discover_free_services( void );
 void dns_discover_init( void );
 void dns_discover_teardown( void );
 

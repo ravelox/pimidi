@@ -9,11 +9,7 @@ libraveloxmidi_la_LDFLAGS= -shared -fPIC
 libraveloxmidi_la_SOURCES = \
 	dns_service_publisher.c \
 	dns_service_discover.c \
-	applemidi_inv.c \
-	applemidi_ok.c \
-	applemidi_by.c \
-	applemidi_feedback.c \
-	applemidi_sync.c \
+	applemidi_responder.c \
 	midi_journal.c \
 	chapter_p.c \
 	chapter_n.c \

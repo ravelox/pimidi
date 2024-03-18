@@ -235,7 +235,7 @@ void dns_discover_add( const char *name, char *address, int port)
 	}
 }
 
-void dns_discover_free_services( void )
+static void dns_discover_free_services( void )
 {
 	int i = 0;
 	if( ! services ) return;

@@ -550,9 +550,7 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 
 	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
 
-	//net_socket_send_lock();
 	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, (struct sockaddr *)&send_address, addr_len);
-	//net_socket_send_unlock();
 
 	if( bytes_sent < 0 )
 	{

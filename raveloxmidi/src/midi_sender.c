@@ -299,16 +299,12 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 
 		if( inbound_midi_fd >= 0 )
 		{       
-			//net_socket_send_lock();
 			bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
-			//net_socket_send_unlock();
 			logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
 		}       
 
 #ifdef HAVE_ALSA
-		//net_socket_send_lock();
 		raveloxmidi_alsa_write( raw_buffer, 1 + command->data_len , alsa_originator_card );
-		//net_socket_send_unlock();
 #endif
 		X_FREE( raw_buffer );
 	}       
