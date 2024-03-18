@@ -2,9 +2,9 @@
 .SH NAME
 raveloxmidi @VERSION@ \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
 .SH SYNOPSIS
-\fBraveloxmidi\fP [-v] [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
+\fBraveloxmidi\fP [-v] [-c \fIfilename\fP] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C] [-b \fIbind_address\fP]
 
-\fBraveloxmidi\fP [\-\-version] [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] 
+\fBraveloxmidi\fP [\-\-version] [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] [\-\-bind \fIbind_address\fP]
 .SH DESCRIPTION
 .BR raveloxmidi
 provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
@@ -38,6 +38,9 @@ Display help information including default values for some parameters.
 .TP
 .B -C
 Display the current config to stderr
+.TP
+.B -b \fIbind_address\fP
+Set the network address to bind to. See \fBnetwork.bind_address\fP
 .SH NOTES
 The available options for the configuration file are listed below. Some parameters are marked as multi-value which means you can either specify them as a single value or with numerical index as a suffix.
 For example, if there is a parameter called \fBalsa.output_device\fP you can use either:

@@ -147,9 +147,10 @@ int config_init( int argc, char *argv[] )
 		{"dumpconfig", no_argument, NULL, 'C'},
 		{"version", no_argument, NULL, 'v'},
 		{"help", no_argument, NULL, 'h'},
+		{"bind", required_argument, NULL, 'b'},
 		{0,0,0,0}
 	};
-	const char *short_options = "c:dihNP:RCv";
+	const char *short_options = "b:c:dihNP:RCv";
 	int c;
 
 	config_items = kv_table_create("config_items");
@@ -171,6 +172,9 @@ int config_init( int argc, char *argv[] )
 			/* If an argument is missing */
 			case '?':
 				exit(0);
+			case 'b':
+				config_add_item("network.bind_address", optarg);
+				break;
 			case 'c':
 				config_add_item("config.file", optarg);
 				break;

@@ -760,15 +760,13 @@ void net_socket_loop_shutdown(int signal)
 
 	net_socket_set_shutdown_lock( 1 );
 
-	for( int i = 0; i <= 1; i++ )
+	shutdown_result = write( shutdown_fd[1] , "X", 1 );
+	if( shutdown_result != 1 )
 	{
-		shutdown_result = write( shutdown_fd[i] , "X", 1 );
-		if( shutdown_result != 1 )
-		{
-			logging_printf( LOGGING_ERROR, "net_socket_loop_shutdown: Unable to write to shutdown socket (%d): %s\n", i, strerror( errno ) );
-		}
-		close( shutdown_fd[i] );
+		logging_printf( LOGGING_ERROR, "net_socket_loop_shutdown: Unable to write to shutdown socket (1): %s\n", strerror( errno ) );
 	}
+	close( shutdown_fd[1] );
+	close( shutdown_fd[0] );
 }
 
 int net_socket_init( void )
