@@ -18,5 +18,5 @@ what:
 	@echo -n "Branch Name: "
 	@git rev-parse --abbrev-ref HEAD
 	@echo -n "Build number: "
-	@git log --pretty=oneline | wc -l
+	@pkgscripts/build_number
 
