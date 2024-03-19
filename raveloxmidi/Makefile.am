@@ -1,6 +1,6 @@
 SUBDIRS = src man pkgconfig include
 
-EXTRA_DIST = include LICENSE DEBIAN/*.in raveloxmidi.spec* raveloxmidi.service.* pkgscripts/* pkgconfig/*
+EXTRA_DIST = include LICENSE DEBIAN/*.in raveloxmidi.spec* raveloxmidi.service.* pkgscripts pkgconfig
 
 ACLOCAL_AMFLAGS = -I m4
 
