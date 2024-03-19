@@ -11,6 +11,10 @@ void rvxmidi_init( void )
 {
 	utils_init();
 	config_init();
+}
+
+void rvxmidi_logging_init( void )
+{
 	logging_init();
 }
 

@@ -137,6 +137,9 @@ int main(int argc, char *argv[])
 
 	ret = process_config_items(argc, argv);
 
+	rvxmidi_logging_init();
+
+	fprintf( stderr, "Logging threshold: %u\n", logging_get_threshold() );
 	/* If config should be displayed, do it and then exit */
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
 	{
