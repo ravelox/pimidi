@@ -7,17 +7,17 @@
 
 #include "rvxmidi/rvxmidi.h"
 
-int rvxmidi_init( int argc, char *argv[] )
+void rvxmidi_init( void )
 {
-	int ret = 0;
-
 	utils_init();
-
-	ret = config_init(argc, argv);
-
+	config_init();
 	logging_init();
+}
 
-	return ret;
+void rvxmidi_config_load( char *filename )
+{
+	if( ! filename ) return;
+	config_load_file( filename );
 }
 
 void rvxmidi_teardown( void )

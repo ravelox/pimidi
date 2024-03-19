@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <getopt.h>
+#include <ctype.h>
 
 #include <signal.h>
 #include "rvxmidi/rvxmidi.h"
@@ -52,13 +54,88 @@
 
 #include "build_info.h"
 
+
+int process_config_items( int argc, char *argv[] )
+{
+	int dump_config = 0;
+	static struct option long_options[] = {
+		{"config",   required_argument, NULL, 'c'},
+		{"debug",    no_argument, NULL, 'd'},
+		{"info",    no_argument, NULL, 'i'},
+		{"nodaemon", no_argument, NULL, 'N'},
+		{"pidfile", required_argument, NULL, 'P'},
+		{"readonly", no_argument, NULL, 'R'},
+		{"dumpconfig", no_argument, NULL, 'C'},
+		{"version", no_argument, NULL, 'v'},
+		{"help", no_argument, NULL, 'h'},
+		{"bind", required_argument, NULL, 'b'},
+		{0,0,0,0}
+	};
+	const char *short_options = "b:c:dihNP:RCv";
+	int c;
+
+	while(1)
+	{
+		c = getopt_long( argc, argv, short_options, long_options, NULL);
+
+		if( c == -1 ) break;
+
+		switch(c) {
+			/* If an argument is missing */
+			case '?':
+				exit(0);
+			case 'b':
+				config_add_item("network.bind_address", optarg);
+				break;
+			case 'c':
+				config_add_item("config.file", optarg);
+				break;
+			case 'i':
+				config_add_item("logging.enabled", "yes");
+				config_add_item("logging.log_level", "info");
+				break;
+			case 'd':
+				config_add_item("logging.enabled", "yes");
+				config_add_item("logging.log_level", "debug");
+				dump_config = CONFIG_DUMP;
+				break;
+			/* This option exits */
+			case 'h':
+				config_usage();
+				exit(0);
+			/* This option exits */
+			case 'v':
+				fprintf(stderr, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
+				exit(0);
+			case 'N':
+				config_add_item("run_as_daemon", "no");
+				break;
+			case 'P':
+				config_add_item("daemon.pid_file", optarg);
+				break;
+			case 'R':
+				config_add_item("readonly", "yes");
+				break;
+			case 'C':
+				dump_config = CONFIG_DUMP_EXIT;
+				break;
+		}
+	} 
+
+	rvxmidi_config_load( config_string_get("config.file") );
+
+	return dump_config;
+}
+
 int main(int argc, char *argv[])
 {
 	dns_service_desc_t service_desc;
 	int ret = 0;
 	int running_as_daemon = 0;
 
-	ret = rvxmidi_init(argc, argv);
+	rvxmidi_init();
+
+	ret = process_config_items(argc, argv);
 
 	/* If config should be displayed, do it and then exit */
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
