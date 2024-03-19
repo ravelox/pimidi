@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libraveloxmidi.la
 bin_PROGRAMS = raveloxmidi
 
-#DEBUG_FLAGS = -Wall -Werror -g -O0
+DEBUG_FLAGS = -Wall -Werror -g -O0
 libraveloxmidi_la_CFLAGS=-fPIC @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@ ${DEBUG_FLAGS}
 libraveloxmidi_la_CPPFLAGS=-fPIC -I ../include  ${DEBUG_FLAGS}
 libraveloxmidi_la_CXXFLAGS=-fPIC -I ../include ${DEBUG_FLAGS}

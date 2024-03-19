@@ -36,7 +36,6 @@
 
 #include "remote_connection.h"
 
-#include "dns_service_publisher.h"
 #include "dns_service_discover.h"
 
 #include "midi_sender.h"
@@ -55,7 +54,7 @@
 #include "build_info.h"
 
 
-int process_config_items( int argc, char *argv[] )
+int process_cmd_options( int argc, char *argv[] )
 {
 	int dump_config = 0;
 	static struct option long_options[] = {
@@ -129,17 +128,13 @@ int process_config_items( int argc, char *argv[] )
 
 int main(int argc, char *argv[])
 {
-	dns_service_desc_t service_desc;
 	int ret = 0;
 	int running_as_daemon = 0;
 
 	rvxmidi_init();
-
-	ret = process_config_items(argc, argv);
-
+	ret = process_cmd_options(argc, argv);
 	rvxmidi_logging_init();
 
-	fprintf( stderr, "Logging threshold: %u\n", logging_get_threshold() );
 	/* If config should be displayed, do it and then exit */
 	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
 	{
@@ -150,6 +145,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* Can't do anything unless we have an address to bind to */
 	if( ! config_is_set("network.bind_address") )
 	{
 		ret = EXIT_FAILURE;
@@ -157,11 +153,6 @@ int main(int argc, char *argv[])
 		goto daemon_stop;
 	}
 
-	service_desc.name = config_string_get("service.name");
-	service_desc.service = "_apple-midi._udp";
-	service_desc.port = config_int_get("network.control.port");
-	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
-	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
 
 	if( is_yes( config_string_get("run_as_daemon") ) )
 	{
@@ -180,24 +171,23 @@ int main(int argc, char *argv[])
 	raveloxmidi_alsa_init( "alsa.input_device" , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
 #endif
 
-	net_ctx_init();
-
-	ret = dns_service_publisher_start( &service_desc );
-	
+	ret = rvxmidi_service_start();
 	if( ret != 0 )
 	{
 		ret = EXIT_FAILURE;
 		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
 		goto daemon_stop;
 	}
+
+
 	net_socket_loop_init();
-
-	midi_sender_init();
-	midi_sender_start();
-
 	signal( SIGINT , net_socket_loop_shutdown);
 	signal( SIGTERM , net_socket_loop_shutdown);
 	signal( SIGUSR2 , net_socket_loop_shutdown);
+
+
+	midi_sender_init();
+	midi_sender_start();
 
 	if( config_string_get("remote.connect") )
 	{
@@ -213,13 +203,14 @@ int main(int argc, char *argv[])
 #endif
 		net_socket_fd_loop();
 	}
+
 #ifdef HAVE_ALSA
 	raveloxmidi_wait_for_alsa();
 	raveloxmidi_alsa_teardown();
 #endif
 	net_socket_loop_teardown();
 
-	dns_service_publisher_stop();
+	rvxmidi_service_stop();
 
 	midi_sender_stop();
 	midi_sender_teardown();

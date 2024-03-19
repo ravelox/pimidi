@@ -320,4 +320,3 @@ void midi_sender_init( void )
 
 	journal_enabled = is_yes( config_string_get("journal.write") ); 
 }
-
