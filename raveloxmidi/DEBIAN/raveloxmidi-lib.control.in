@@ -1,4 +1,4 @@
-Package: @PACKAGE@
+Package: @PACKAGE@-lib
 Version: @VERSION@-1
 Section: library
 Priority: optional
