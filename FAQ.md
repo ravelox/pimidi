@@ -19,7 +19,7 @@ You will need to restart Avahi for those changes to be picked up.
 The autotools configure script will automatically detect the presence of ALSA libraries and will build the code for support.
 raveloxmidi uses the rawmidi interface so the snd-virmidi module must be loaded.
 
-The following steps can be taken to test everything is working:
+The following steps can be taken to test if everything is working:
 
 1. Ensure the snd-virmidi module is loaded.
 
@@ -77,7 +77,7 @@ client 20: 'Virtual Raw MIDI 1-0' [type=kernel,card=1]
 
 This shows that ```hw:1,0,0``` is port ```20:0```
 
-7. Connected the port to timidty:
+7. Connect the port to timidty:
 
 ```aconnect 20:0 128:0```
 
