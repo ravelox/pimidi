@@ -1,31 +1,36 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import sys
 import socket
 import struct
+import sys
 import time
 
-local_port = 5006
+LOCAL_PORT = 5006
 
-if len(sys.argv) == 1:
-	family = socket.AF_INET
-	connect_tuple = ( 'localhost', local_port )
-else:
-	details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
-	family = details[0][0]
-	if family == socket.AF_INET6:
-		connect_tuple = ( sys.argv[1], local_port, 0, 0)
-	else:
-		connect_tuple = ( sys.argv[1], local_port)
+def main():
+    if len(sys.argv) == 1:
+        family = socket.AF_INET
+        connect_tuple = ("localhost", LOCAL_PORT)
+    else:
+        details = socket.getaddrinfo(
+            sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+        )
+        family = details[0][0]
+        if family == socket.AF_INET6:
+            connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+        else:
+            connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.setblocking(0)
-s.connect( connect_tuple )
+    with socket.socket(family, socket.SOCK_DGRAM) as sock:
+        sock.setblocking(False)
+        sock.connect(connect_tuple)
 
-# Control Change
-bytes = struct.pack( "BBB", 0xB6, 0x3c, 0x7f )
-s.send( bytes )
-bytes = struct.pack( "BBB", 0xB6, 0x3e, 0x7f )
-s.send( bytes )
+        # Control Change
+        msg = struct.pack("BBB", 0xB6, 0x3C, 0x7F)
+        sock.send(msg)
+        msg = struct.pack("BBB", 0xB6, 0x3E, 0x7F)
+        sock.send(msg)
 
-s.close()
+
+if __name__ == "__main__":
+    main()

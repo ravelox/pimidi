@@ -1,49 +1,54 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import sys
 import socket
 import struct
+import sys
 import time
 
-local_port = 5006
+LOCAL_PORT = 5006
 
-def note_send():
-	# Note ON
-	bytes = struct.pack( "BBB", 0x96, 0x3c, 0x7f )
-	s.send( bytes )
-	
-	time.sleep( 0.25 );
-	
-	# Note OFF
-	bytes = struct.pack( "BBB", 0x86, 0x3c, 0x7f )
-	s.send( bytes )
-	print "note_send"
+def note_send(sock):
+    # Note ON
+    msg = struct.pack("BBB", 0x96, 0x3C, 0x7F)
+    sock.send(msg)
 
-def control_send():
-	# Control Change
-	bytes = struct.pack( "BBB", 0xB6, 0x3c, 0x7f )
-	s.send( bytes )
-	print "control_send"
+    time.sleep(0.25)
 
-if len(sys.argv) == 1:
+    # Note OFF
+    msg = struct.pack("BBB", 0x86, 0x3C, 0x7F)
+    sock.send(msg)
+    print("note_send")
+
+def control_send(sock):
+    # Control Change
+    msg = struct.pack("BBB", 0xB6, 0x3C, 0x7F)
+    sock.send(msg)
+    print("control_send")
+
+def main():
+    if len(sys.argv) == 1:
         family = socket.AF_INET
-        connect_tuple = ( 'localhost', local_port )
-else:
-        details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
+        connect_tuple = ("localhost", LOCAL_PORT)
+    else:
+        details = socket.getaddrinfo(
+            sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+        )
         family = details[0][0]
         if family == socket.AF_INET6:
-                connect_tuple = ( sys.argv[1], local_port, 0, 0)
-        else:   
-                connect_tuple = ( sys.argv[1], local_port)
+            connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+        else:
+            connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.connect( connect_tuple )
+    with socket.socket(family, socket.SOCK_DGRAM) as sock:
+        sock.connect(connect_tuple)
 
-print "Start"
-for i in range(0,100):
-	print i
-	note_send()
-	control_send()
-print "End"
+        print("Start")
+        for i in range(100):
+            print(i)
+            note_send(sock)
+            control_send(sock)
+        print("End")
 
-s.close()
+
+if __name__ == "__main__":
+    main()
