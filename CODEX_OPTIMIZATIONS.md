@@ -343,6 +343,8 @@ Recommendation:
 
 ### L1. Avoid Allocation In Ring Buffer Reads Where Possible
 
+Status: completed.
+
 Location: `raveloxmidi/src/ring_buffer.c`
 
 `ring_buffer_read()` always allocates a new destination buffer. Some callers only
@@ -353,6 +355,14 @@ Recommendation:
 - Add APIs for peeking bytes or reading into a caller-provided buffer.
 - Use those APIs in parser paths that currently allocate only to compare or
   advance data.
+
+Implemented scope:
+
+- `ring_buffer_compare()` now compares directly against the ring contents.
+- `ring_buffer_char_compare()` now reads the requested byte directly.
+- `ring_buffer_advance()` now moves ring indexes directly instead of reading and
+  freeing discarded data.
+- Existing public function names and signatures were preserved.
 
 ### L2. Gate Debug Dumps Early
 

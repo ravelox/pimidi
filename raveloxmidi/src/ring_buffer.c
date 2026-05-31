@@ -40,6 +40,12 @@ void ring_buffer_unlock( ring_buffer_t *ring )
 	X_MUTEX_UNLOCK( &(ring->lock) );
 }
 
+static size_t ring_buffer_data_index( ring_buffer_t *ring, size_t offset )
+{
+	if( ! ring ) return 0;
+	return ( ring->start + offset ) % ring->size;
+}
+
 size_t ring_buffer_used( ring_buffer_t *ring )
 {
 	size_t ret = 0;
@@ -387,22 +393,44 @@ int ring_buffer_available( ring_buffer_t *ring, size_t requested )
 int ring_buffer_compare( ring_buffer_t *ring, const char *compare, size_t compare_len )
 {
 	int ret = 0;
-	char *data = NULL;
+	size_t i = 0;
+	size_t real_compare_len = 0;
 
 	if( ! ring ) return -1;
+	if( ! compare ) return -1;
 
-	data = ring_buffer_read( ring, ring->used, RING_NO );
+	ring_buffer_lock( ring );
 
-	if( ! data ) return -1;
-
-	if( compare_len > 0 )
+	if( ! ring->data )
 	{
-		ret = strncmp( data, compare , compare_len);
-	} else {
-		ret = strcmp( data, compare );
+		ret = -1;
+		goto ring_buffer_compare_end;
 	}
 
-	X_FREE(data);
+	real_compare_len = ( compare_len > 0 ? compare_len : strlen( compare ) + 1 );
+
+	for( i = 0; i < real_compare_len; i++ )
+	{
+		unsigned char ring_byte = 0;
+		unsigned char compare_byte = 0;
+
+		if( i >= ring->used )
+		{
+			ret = -1;
+			goto ring_buffer_compare_end;
+		}
+
+		ring_byte = ring->data[ ring_buffer_data_index( ring, i ) ];
+		compare_byte = compare[i];
+		if( ring_byte != compare_byte )
+		{
+			ret = ring_byte - compare_byte;
+			goto ring_buffer_compare_end;
+		}
+	}
+
+ring_buffer_compare_end:
+	ring_buffer_unlock( ring );
 	return ret;
 }
 
@@ -414,35 +442,39 @@ char ring_buffer_char( ring_buffer_t *ring, char *status )
 int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )
 {
 	int ret = 0;
-	char *data = NULL;
+	size_t real_index = 0;
 
 	if( ! ring ) return 0;
 
-	if( index > ring->used ) return 0;
+	ring_buffer_lock( ring );
 
-	data = ring_buffer_read( ring, ring->used, RING_NO );
+	if( ! ring->data ) goto ring_buffer_char_compare_end;
+	if( index >= ring->used ) goto ring_buffer_char_compare_end;
 
-	if(! data ) return 0;
+	real_index = ring_buffer_data_index( ring, index );
+	ret = ( ring->data[ real_index ] == compare );
 
-	ret = ( data[index] == compare );
-
-	X_FREE(data);
+ring_buffer_char_compare_end:
+	ring_buffer_unlock( ring );
 
 	return ret;
 }
 
 void ring_buffer_advance( ring_buffer_t *ring, size_t steps )
 {
-	char *data = NULL;
 	size_t real_steps = 0;
 
 	if( ! ring ) return;
 	if( steps == 0 ) return;
 
-	real_steps = MIN( steps, ring->used );
+	ring_buffer_lock( ring );
 
-	data = ring_buffer_read( ring, real_steps, RING_YES );
-	X_FREE(data);
+	real_steps = MIN( steps, ring->used );
+	ring->start = ring_buffer_data_index( ring, real_steps );
+	ring->used -= real_steps;
+	if( ring->used == 0 ) ring->end = ring->start;
+
+	ring_buffer_unlock( ring );
 }
 
 size_t ring_buffer_get_size( ring_buffer_t *ring )
@@ -456,4 +488,3 @@ size_t ring_buffer_get_size( ring_buffer_t *ring )
 	ring_buffer_unlock( ring );
 	return ring_buffer_size;
 }
-
