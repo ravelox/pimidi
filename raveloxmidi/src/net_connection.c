@@ -126,6 +126,10 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->control_port = port;
 	ctx->data_port = port+1;
 	ctx->start = time_in_microseconds();
+	ctx->control_address_len = 0;
+	ctx->data_address_len = 0;
+	memset( &ctx->control_address, 0, sizeof( ctx->control_address ) );
+	memset( &ctx->data_address, 0, sizeof( ctx->data_address ) );
 
 
 	if( ctx->ip_address )
@@ -133,6 +137,12 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 		X_FREE( ctx->ip_address );
 	}
 	ctx->ip_address = ( char *) X_STRDUP( ip_address );
+
+	if( ctx->ip_address )
+	{
+		get_sock_info( ctx->ip_address, ctx->control_port, (struct sockaddr *)&ctx->control_address, &ctx->control_address_len, NULL );
+		get_sock_info( ctx->ip_address, ctx->data_port, (struct sockaddr *)&ctx->data_address, &ctx->data_address_len, NULL );
+	}
 
 	if( ctx->name )
 	{
@@ -234,6 +244,10 @@ void net_ctx_reset( net_ctx_t *ctx )
 	net_ctx_lock( ctx );
 	ctx->seq = 1;
 	ctx->status = NET_CTX_STATUS_UNUSED;
+	ctx->control_address_len = 0;
+	ctx->data_address_len = 0;
+	memset( &ctx->control_address, 0, sizeof( ctx->control_address ) );
+	memset( &ctx->data_address, 0, sizeof( ctx->data_address ) );
 
 	if( ctx->midi_state )
 	{
@@ -527,11 +541,10 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
 {
-	struct sockaddr_in6 send_address;
+	struct sockaddr *send_address = NULL;
 	ssize_t bytes_sent = 0;
-	socklen_t addr_len = 0, socket_addr_len = 0;
+	socklen_t addr_len = 0;
 	int port_number = 0;
-	int family = AF_UNSPEC;
 	int send_socket = 0;
 
 	if( ! buffer ) return;
@@ -543,15 +556,27 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 
 	net_ctx_lock( ctx );
 
-	/* Set up the destination address */
-	memset((char *)&send_address, 0, sizeof( send_address));
 	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
-	get_sock_info( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len, &family);
+	if( use_control == USE_CONTROL_PORT )
+	{
+		send_address = (struct sockaddr *)&ctx->control_address;
+		addr_len = ctx->control_address_len;
+	} else {
+		send_address = (struct sockaddr *)&ctx->data_address;
+		addr_len = ctx->data_address_len;
+	}
+
+	if( ! send_address || addr_len == 0 )
+	{
+		logging_printf( LOGGING_ERROR, "net_ctx_send: No cached destination address for [%s]:%u\n", ctx->ip_address, port_number );
+		net_ctx_unlock( ctx );
+		return;
+	}
 
 	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
 
 	//net_socket_send_lock();
-	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, (struct sockaddr *)&send_address, addr_len);
+	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, send_address, addr_len);
 	//net_socket_send_unlock();
 
 	if( bytes_sent < 0 )

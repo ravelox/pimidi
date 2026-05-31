@@ -17,7 +17,7 @@ Recommended order:
 1. Reduce lock hold time in the MIDI sender queue. Completed.
 2. Reduce allocation/copy churn in RTP-MIDI packet packing. Completed.
 3. Keep the log file open between log calls. Completed.
-4. Cache per-connection socket address data.
+4. Cache per-connection socket address data. Completed.
 5. Clean up descriptor polling and container bounds/capacity issues.
 
 ## Implemented Changes
@@ -69,6 +69,21 @@ Validation:
 
 - `git diff --check`
 - `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/logging.c`
+
+### Cached Connection Socket Addresses
+
+Status: completed.
+
+`net_ctx_t` now stores cached control and data destination socket addresses plus
+their lengths. `net_ctx_set()` populates those cached addresses when a connection
+is registered or reused, and `net_ctx_reset()` clears them. `net_ctx_send()` now
+selects the cached control or data address instead of calling `get_sock_info()`
+for every packet.
+
+Validation:
+
+- `git diff --check`
+- `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/net_connection.c`
 
 ## High-Impact Recommendations
 

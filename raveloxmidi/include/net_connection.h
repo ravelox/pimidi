@@ -22,6 +22,7 @@
 #define NET_CONNECTION_H
 
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
 #include <pthread.h>
 
@@ -53,6 +54,10 @@ typedef struct net_ctx_t {
 	uint32_t	seq;
 	uint16_t	control_port;
 	uint16_t	data_port;
+	struct sockaddr_storage control_address;
+	socklen_t	control_address_len;
+	struct sockaddr_storage data_address;
+	socklen_t	data_address_len;
 	long		start;
 	char * 		ip_address;
 	char *		name;
