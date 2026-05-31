@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -49,6 +50,13 @@ static name_map_t loglevel_map[] = {
 };
 
 static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static volatile sig_atomic_t logging_reopen_requested = 0;
+
+static void logging_sighup_handler(int sig)
+{
+	logging_reopen_requested = 1;
+}
 
 static char *logging_file_name = NULL;
 static FILE *logging_fp = NULL;
@@ -128,7 +136,15 @@ void logging_printf(int level, const char *format, ...)
 	if( logging_enabled == 0 ) return;
 	if( level < logging_threshold ) return;
 
-	logging_lock(); 
+	logging_lock();
+
+	if( logging_reopen_requested && logging_file_name )
+	{
+		logging_reopen_requested = 0;
+		if( logging_fp && logging_fp != stderr ) fclose( logging_fp );
+		logging_fp = fopen( logging_file_name, "a+" );
+		if( !logging_fp ) logging_fp = stderr;
+	}
 
 	current_logging_fp = ( logging_fp ? logging_fp : stderr );
 
@@ -144,7 +160,11 @@ void logging_printf(int level, const char *format, ...)
 
 	va_start(ap, format);
 
-	vfprintf( current_logging_fp, format, ap );
+	if( vfprintf( current_logging_fp, format, ap ) < 0
+	 || fflush( current_logging_fp ) != 0 )
+	{
+	    vfprintf( stderr, format, ap );
+	}
 
 	va_end(ap);
 
@@ -177,6 +197,9 @@ void logging_init(void)
 				logging_file_name = X_STRDUP( name );
 				if( logging_file_name )
 				{
+					// Check to see if the logging_fp already has a value.
+					// If it does, fclose() for safety.
+					if(logging_fp && logging_fp != stderr) fclose( logging_fp );
 					logging_fp = fopen( logging_file_name , "a+" );
 				}
 				if( ! logging_fp ) logging_fp = stderr;
@@ -192,6 +215,8 @@ void logging_init(void)
 		
 		logging_enabled = 1;
 	}
+
+	signal( SIGHUP, logging_sighup_handler );
 
 	if( is_yes( config_string_get("logging.hex_dump") ) )
 	{
