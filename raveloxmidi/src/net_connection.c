@@ -633,7 +633,7 @@ char *net_ctx_connections_to_string( void )
 	net_connections_lock();
 
 	memset(ctx_buffer, 0, sizeof(ctx_buffer) );
-	sprintf( ctx_buffer, "{\"connections\":[");
+	snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"connections\":[");
 	dstring_append( dstring, ctx_buffer );
 
 	for( i=0 ; i < num_connections; i++ )
@@ -646,7 +646,7 @@ char *net_ctx_connections_to_string( void )
 
 		connection_count += 1;
 		memset( ctx_buffer, 0, sizeof(ctx_buffer) );
-		sprintf( ctx_buffer, "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
+		snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
 			i, ( ctx->name ? ctx->name : "unknown"), ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
 		dstring_append( dstring, ctx_buffer );
 
@@ -659,7 +659,7 @@ char *net_ctx_connections_to_string( void )
 	dstring_append( dstring, "]" );
 
 	memset( ctx_buffer, 0, sizeof(ctx_buffer ) );
-	sprintf( ctx_buffer, ",\"count\":%zu}", connection_count );
+	snprintf( ctx_buffer, sizeof(ctx_buffer), ",\"count\":%zu}", connection_count );
 	dstring_append( dstring, ctx_buffer );
 
 	net_connections_unlock();

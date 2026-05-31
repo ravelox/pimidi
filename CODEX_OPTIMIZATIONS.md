@@ -321,6 +321,8 @@ Recommendation:
 
 ### C4. Fixed-Size JSON Formatting Could Overflow
 
+Status: completed.
+
 Location: `raveloxmidi/src/net_connection.c`
 
 `net_ctx_connections_to_string()` uses `sprintf()` into a fixed 1024-byte local
@@ -388,7 +390,7 @@ For a low-risk first optimization pass:
 2. Completed: fix C1, `dbuffer_write()` capacity comparison and return value.
 3. Completed: fix C2, `data_table.c` bounds checks from `>` to `>=`.
 4. Completed: fix C3, move the allocation check before `memset()` in `rtp_packet_pack()`.
-5. Fix C4: switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
+5. Completed: fix C4, switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
 
 These changes are small, easy to review, and improve either latency or safety
 without changing the public behavior of the daemon.
