@@ -341,7 +341,7 @@ Recommendation:
 
 ## Lower-Priority Opportunities
 
-### Avoid Allocation In Ring Buffer Reads Where Possible
+### L1. Avoid Allocation In Ring Buffer Reads Where Possible
 
 Location: `raveloxmidi/src/ring_buffer.c`
 
@@ -354,7 +354,9 @@ Recommendation:
 - Use those APIs in parser paths that currently allocate only to compare or
   advance data.
 
-### Gate Debug Dumps Early
+### L2. Gate Debug Dumps Early
+
+Status: completed.
 
 Locations: multiple files, including `midi_sender.c`, `net_connection.c`,
 `ring_buffer.c`, and `net_socket.c`
@@ -369,7 +371,15 @@ Recommendation:
 - For very hot paths, consider explicit `logging_get_threshold()` checks before
   expensive dump preparation.
 
-### Add A Small Benchmark Or Load Test Harness
+Implemented scope:
+
+- Added lightweight `LOGGING_DEBUG_ENABLED` and `LOGGING_HEX_DUMP_ENABLED`
+  checks.
+- Gated dump/hex-dump calls in hot MIDI sender, socket read, connection send,
+  dbuffer, and dstring paths.
+- Kept existing `DEBUG_ONLY` and `HEX_DUMP_ENABLED` guards inside dump helpers.
+
+### L3. Add A Small Benchmark Or Load Test Harness
 
 The repository includes Python send scripts and debug notes for sanitizers and
 Valgrind, but no automated performance harness.

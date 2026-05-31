@@ -137,7 +137,7 @@ size_t dstring_append( dstring_t *dstring, char *in_string )
 
 
 	strcat( dstring->data, in_string );
-	dstring_dump( dstring );
+	if( LOGGING_DEBUG_ENABLED ) dstring_dump( dstring );
 
 dstring_write_end:
 	dstring_unlock( dstring );

@@ -450,7 +450,7 @@ int net_socket_read( int fd )
 #endif
 	if ( recv_len > 0)
 	{
-		hex_dump( packet, recv_len );
+		if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( packet, recv_len );
 		midi_state_write( found_socket->state, packet, recv_len );
 	} else {
 		goto net_socket_read_clean;
@@ -465,10 +465,10 @@ int net_socket_read( int fd )
 
 		read_buffer = midi_state_drain( found_socket->state, &read_buffer_size );
 
-		hex_dump( read_buffer, read_buffer_size );
+		if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( read_buffer, read_buffer_size );
 
 		ret = net_applemidi_unpack( &command, read_buffer, read_buffer_size );
-		net_applemidi_command_dump( command );
+		if( LOGGING_DEBUG_ENABLED ) net_applemidi_command_dump( command );
 
 		switch( command->command )
 		{
@@ -545,7 +545,7 @@ int net_socket_read( int fd )
 		buffer = net_ctx_connections_to_string();
 		if( buffer )
 		{
-			hex_dump( buffer, strlen( buffer ) );
+			if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( buffer, strlen( buffer ) );
 
 			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
 
@@ -619,7 +619,7 @@ int net_socket_read( int fd )
 */
 		rtp_packet = rtp_packet_create();
 		rtp_packet_unpack( read_buffer, read_buffer_size, rtp_packet );
-		rtp_packet_dump( rtp_packet );
+		if( LOGGING_DEBUG_ENABLED ) rtp_packet_dump( rtp_packet );
 
 		if( rtp_packet->header.v != RTP_VERSION )
 		{

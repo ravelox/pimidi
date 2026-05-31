@@ -151,7 +151,7 @@ size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len 
 	memcpy( dbuffer->data + dbuffer->len, in_buffer, in_buffer_len );
 	dbuffer->len += in_buffer_len;
 	ret = in_buffer_len;
-	dbuffer_dump( dbuffer );
+	if( LOGGING_DEBUG_ENABLED ) dbuffer_dump( dbuffer );
 dbuffer_write_end:
 	dbuffer_unlock( dbuffer );
 
@@ -167,7 +167,7 @@ size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
 
 	dbuffer_lock( dbuffer );
 
-	dbuffer_dump( dbuffer );
+	if( LOGGING_DEBUG_ENABLED ) dbuffer_dump( dbuffer );
 
 	*out_buffer = ( char * ) X_MALLOC( dbuffer->len );
 	memset( *out_buffer, 0, dbuffer->len );

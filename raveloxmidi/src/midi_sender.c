@@ -150,21 +150,21 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	if( ! single_midi_payload ) return;
 
 	midi_command_map( command, NULL, &message_type );
-	midi_command_dump( command );
+	if( LOGGING_DEBUG_ENABLED ) midi_command_dump( command );
 	switch( message_type )
 	{
 		case MIDI_NOTE_OFF:
 		case MIDI_NOTE_ON:
 			midi_note_from_command( command, &midi_note);
-			midi_note_dump( midi_note );
+			if( LOGGING_DEBUG_ENABLED ) midi_note_dump( midi_note );
 			break;
 		case MIDI_CONTROL_CHANGE:	
 			midi_control_from_command( command, &midi_control);
-			midi_control_dump( midi_control );
+			if( LOGGING_DEBUG_ENABLED ) midi_control_dump( midi_control );
 			break;
 		case MIDI_PROGRAM_CHANGE:
 			midi_program_from_command( command, &midi_program);
-			midi_program_dump( midi_program );
+			if( LOGGING_DEBUG_ENABLED ) midi_program_dump( midi_program );
 			break;
 		default:
 			break;
@@ -234,7 +234,7 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		// Add the MIDI data to the RTP packet
 		rtp_packet.payload_len = packed_payload_len + packed_journal_len;
 		rtp_packet.payload = single_midi_payload->buffer;
-		rtp_packet_dump( &rtp_packet );
+		if( LOGGING_DEBUG_ENABLED ) rtp_packet_dump( &rtp_packet );
 
 		p = packed_rtp_buffer;
 		packed_rtp_buffer_len = 0;

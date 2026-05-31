@@ -448,7 +448,7 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	}
 
 register_end:
-	net_ctx_dump_all();
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_dump_all();
 
 	return new_ctx;
 }
@@ -460,7 +460,7 @@ void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
 	net_ctx_lock( ctx );
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
@@ -470,7 +470,7 @@ void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
 	net_ctx_lock( ctx );
 	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
@@ -480,7 +480,7 @@ void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
 	net_ctx_lock( ctx );
 	midi_journal_add_program( ctx->journal, ctx->seq, midi_program );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_journal_dump( net_ctx_t *ctx )
@@ -551,8 +551,11 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 	if( buffer_len <= 0 ) return;
 	if( ! ctx ) return;
 
-	net_ctx_dump( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED )
+	{
+		net_ctx_dump( ctx );
+		net_ctx_journal_dump( ctx );
+	}
 
 	net_ctx_lock( ctx );
 
@@ -668,7 +671,7 @@ char *net_ctx_connections_to_string( void )
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
 
-	hex_dump( out_buffer, strlen( out_buffer));
+	if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( out_buffer, strlen( out_buffer));
 
 	dstring_destroy( &dstring );
 
