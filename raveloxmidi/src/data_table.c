@@ -254,7 +254,7 @@ int data_table_item_is_unused( data_table_t *table, size_t index )
 	if( ! table ) return ret;
 	if( ! table->items ) return ret;
 	if( table->count == 0 ) return ret;
-	if( index > table->count ) return ret;
+	if( index >= table->count ) return ret;
 	if( ! table->items[index] ) return ret;
 
 	if( table->items[index]->used == 0 ) ret = 1;
@@ -271,7 +271,7 @@ void *data_table_item_get( data_table_t *table, size_t index )
 
 	if( ! table->items ) return NULL;
 	if( table->count == 0 ) return NULL;
-	if( index > table->count ) return NULL;
+	if( index >= table->count ) return NULL;
 	if( ! table->items[ index ] ) return NULL;
 
 	ret  = table->items[index]->data;
@@ -287,7 +287,7 @@ void data_table_delete_item( data_table_t *table, size_t index )
 
 	if( ! table->items ) goto delete_item_end;
 	if( table->count == 0 ) goto delete_item_end;
-	if( index > table->count ) goto delete_item_end;
+	if( index >= table->count ) goto delete_item_end;
 	if( ! table->items[ index ] ) goto delete_item_end;
 
 	if( table->item_destructor )

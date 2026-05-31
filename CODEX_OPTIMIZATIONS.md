@@ -285,6 +285,8 @@ Recommendation:
 
 ### C2. Bounds Checks Use `>` Instead Of `>=`
 
+Status: completed.
+
 Location: `raveloxmidi/src/data_table.c`
 
 Several index checks use `index > table->count`, which allows
@@ -382,7 +384,7 @@ For a low-risk first optimization pass:
 
 1. Completed: move `queue->action()` outside `data_queue_handler()`'s lock.
 2. Completed: fix C1, `dbuffer_write()` capacity comparison and return value.
-3. Fix C2: `data_table.c` bounds checks from `>` to `>=`.
+3. Completed: fix C2, `data_table.c` bounds checks from `>` to `>=`.
 4. Fix C3: move the allocation check before `memset()` in `rtp_packet_pack()`.
 5. Fix C4: switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
 
