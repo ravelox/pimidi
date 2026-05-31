@@ -1,36 +1,39 @@
-#!/usr/bin/env python
-import time
+#!/usr/bin/env python3
 import os
-import RPi.GPIO as GPIO
 import socket
 import struct
+import sys
+import time
+import RPi.GPIO as GPIO
  
 GPIO.setmode(GPIO.BCM)
 DEBUG = 0
  
-local_port = 5006
+LOCAL_PORT = 5006
 
 if len(sys.argv) == 1:
-	family = socket.AF_INET
-	connect_tuple = ( 'localhost', local_port )
+    family = socket.AF_INET
+    connect_tuple = ("localhost", LOCAL_PORT)
 else:
-	details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
-	family = details[0][0]
-	if family == socket.AF_INET6:
-		connect_tuple = ( sys.argv[1], local_port, 0, 0)
-	else:
-		connect_tuple = ( sys.argv[1], local_port)
+    details = socket.getaddrinfo(
+        sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+    )
+    family = details[0][0]
+    if family == socket.AF_INET6:
+        connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+    else:
+        connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.connect( connect_tuple )
+s = socket.socket(family, socket.SOCK_DGRAM)
+s.connect(connect_tuple)
 
 def send_note( velocity):
-	# Note ON
-	bytes = struct.pack( "BBB", 0x96, 0x1f, velocity )
-	s.send( bytes )
-	# Note OFF
-	bytes = struct.pack( "BBB", 0x86, 0x1f, velocity )
-	s.send( bytes )
+        # Note ON
+        msg = struct.pack("BBB", 0x96, 0x1F, velocity)
+        s.send(msg)
+        # Note OFF
+        msg = struct.pack("BBB", 0x86, 0x1F, velocity)
+        s.send(msg)
 
 # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
 def readadc(adcnum, clockpin, mosipin, misopin, cspin):
@@ -96,22 +99,22 @@ while True:
         drum_vel_adjust = abs(adc_reading - last_read)
  
         if DEBUG:
-                print "adc_reading:", adc_reading
-                print "drum_vel_adjust:", drum_vel_adjust
-                print "last_read", last_read
+                print("adc_reading:", adc_reading)
+                print("drum_vel_adjust:", drum_vel_adjust)
+                print("last_read", last_read)
  
         if ( drum_vel_adjust > tolerance ):
                drum_hit = True
  
         if DEBUG:
-                print "drum_hit", drum_hit
+                print("drum_hit", drum_hit)
 
-	if ( drum_hit ):
-		# Range should be 0 - 127
-		velocity = int( 127 * (adc_reading/1024.00)  )
-		if velocity > 10:
-			print velocity
-			send_note( velocity )
+        if ( drum_hit ):
+                # Range should be 0 - 127
+                velocity = int( 127 * (adc_reading/1024.00)  )
+                if velocity > 10:
+                        print(velocity)
+                        send_note( velocity )
  
                 # save the drum reading for the next loop
                 last_read = adc_reading
