@@ -259,6 +259,8 @@ Expected benefit:
 
 ### C1. `dbuffer_write()` Appears To Reallocate On Every Write
 
+Status: completed.
+
 Location: `raveloxmidi/src/dbuffer.c`
 
 The condition:
@@ -379,7 +381,7 @@ Recommendation:
 For a low-risk first optimization pass:
 
 1. Completed: move `queue->action()` outside `data_queue_handler()`'s lock.
-2. Fix C1: `dbuffer_write()` capacity comparison and return value.
+2. Completed: fix C1, `dbuffer_write()` capacity comparison and return value.
 3. Fix C2: `data_table.c` bounds checks from `>` to `>=`.
 4. Fix C3: move the allocation check before `memset()` in `rtp_packet_pack()`.
 5. Fix C4: switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
