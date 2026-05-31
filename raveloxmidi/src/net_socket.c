@@ -25,6 +25,7 @@
 
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <poll.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -75,8 +76,9 @@ static int shutdown_fd[2] = {0,0};
 
 int inbound_midi_fd = -1;
 
-static fd_set read_fds;
-static int max_fd = 0;
+static struct pollfd *poll_fds = NULL;
+static nfds_t poll_fds_count = 0;
+static nfds_t poll_fds_capacity = 0;
 
 static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t send_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -84,6 +86,34 @@ static pthread_mutex_t poll_fds_lock = PTHREAD_MUTEX_INITIALIZER;
 int socket_timeout = 0;
 
 static void net_socket_set_shutdown_lock( int i );
+
+static int net_socket_poll_fds_add( int fd )
+{
+	if( fd <= 0 ) return 0;
+
+	if( poll_fds_count >= poll_fds_capacity )
+	{
+		nfds_t new_capacity = poll_fds_capacity + 8;
+		struct pollfd *new_poll_fds = NULL;
+
+		new_poll_fds = (struct pollfd *)X_REALLOC( poll_fds, new_capacity * sizeof( struct pollfd ) );
+		if( ! new_poll_fds )
+		{
+			logging_printf( LOGGING_ERROR, "net_socket_poll_fds_add: Unable to extend poll fd table\n" );
+			return 0;
+		}
+
+		poll_fds = new_poll_fds;
+		poll_fds_capacity = new_capacity;
+	}
+
+	poll_fds[poll_fds_count].fd = fd;
+	poll_fds[poll_fds_count].events = POLLIN | POLLERR | POLLHUP | POLLNVAL;
+	poll_fds[poll_fds_count].revents = 0;
+	poll_fds_count++;
+
+	return 1;
+}
 
 void net_socket_poll_fds_lock( void )
 {
@@ -700,10 +730,6 @@ void net_socket_loop_init()
 		logging_printf( LOGGING_ERROR, "net_socket_loop_init: pipe error: %s\n", strerror(errno));
 	} else {
 		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", shutdown_fd[0], shutdown_fd[1]);
-
-		net_socket_poll_fds_lock();
-		FD_SET( shutdown_fd[1], &read_fds );
-		net_socket_poll_fds_unlock();
 	}
 	fcntl(shutdown_fd[0], F_SETFL, O_NONBLOCK);
 	fcntl(shutdown_fd[1], F_SETFL, O_NONBLOCK);
@@ -711,6 +737,10 @@ void net_socket_loop_init()
 
 void net_socket_loop_teardown()
 {
+	X_FREENULL( "poll_fds", (void **)&poll_fds );
+	poll_fds_count = 0;
+	poll_fds_capacity = 0;
+
 	pthread_mutex_destroy( &poll_fds_lock );
 	pthread_mutex_destroy( &shutdown_lock );
 	pthread_mutex_destroy( &send_lock );
@@ -719,35 +749,49 @@ void net_socket_loop_teardown()
 int net_socket_fd_loop()
 {
         int ret = 0;
-	struct timeval tv; 
-	int fd = 0;
+	int timeout = 0;
+	nfds_t i = 0;
 
 
         do {
 		net_socket_set_fds();
 
-		memset( &tv, 0, sizeof( struct timeval ) );
-		tv.tv_sec = socket_timeout; 
+		timeout = socket_timeout * 1000;
 
 		net_socket_poll_fds_lock();
-                ret = select( max_fd + 1 , &read_fds, NULL , NULL , &tv );
+		ret = poll( poll_fds, poll_fds_count, timeout );
 		net_socket_poll_fds_unlock();
 
 		if( ret > 0 )
 		{
-			for( fd = 0; fd <= max_fd; fd++ )
+			for( i = 0; i < poll_fds_count; i++ )
 			{
-				int read_fd = 0;
+				int fd = 0;
+				short revents = 0;
 
 				net_socket_poll_fds_lock();
-				read_fd = FD_ISSET( fd, &read_fds );
+				fd = poll_fds[i].fd;
+				revents = poll_fds[i].revents;
 				net_socket_poll_fds_unlock();
 
-				if( read_fd )
+				if( revents == 0 ) continue;
+
+				if( fd == shutdown_fd[0] )
+				{
+					char shutdown_buffer[32];
+					read( shutdown_fd[0], shutdown_buffer, sizeof( shutdown_buffer ) );
+					continue;
+				}
+
+				if( revents & POLLIN )
 				{
 					net_socket_read(fd);
+				} else if( revents & ( POLLERR | POLLHUP | POLLNVAL ) ) {
+					logging_printf( LOGGING_WARN, "net_socket_fd_loop: poll event on fd=%d revents=%d\n", fd, revents );
 				}
 			}
+		} else if( ( ret < 0 ) && ( errno != EINTR ) ) {
+			logging_printf( LOGGING_WARN, "net_socket_fd_loop: poll error: %s\n", strerror( errno ) );
 		}
 	} while( net_socket_get_shutdown_status() == OK );
 
@@ -780,8 +824,8 @@ int net_socket_init( void )
 	pthread_mutex_init( &poll_fds_lock, NULL);
 	
 	net_socket_poll_fds_lock();
-	max_fd = 0;
-	FD_ZERO( &read_fds );
+	poll_fds_count = 0;
+	poll_fds_capacity = 0;
 	net_socket_poll_fds_unlock();
 
 	sockets = data_table_create("sockets", net_socket_destroy, net_socket_dump );
@@ -846,15 +890,12 @@ void net_socket_set_fds(void)
 	int i = 0;
 	size_t num_sockets = 0;
 
-	max_fd = 0;
-
 	num_sockets = data_table_item_count( sockets );
 
-	if( num_sockets == 0 ) return;
-
 	net_socket_poll_fds_lock();
-	FD_ZERO( &read_fds );
-	net_socket_poll_fds_unlock();
+	poll_fds_count = 0;
+
+	net_socket_poll_fds_add( shutdown_fd[0] );
 
 	for( i = 0; i < num_sockets; i++ )
 	{
@@ -867,12 +908,11 @@ void net_socket_set_fds(void)
 		if( ! socket ) continue;
 		if( socket->fd > 0 )
 		{
-			net_socket_poll_fds_lock();
-			FD_SET( socket->fd, &read_fds );
-			net_socket_poll_fds_unlock();
-			max_fd = MAX( max_fd, socket->fd );
+			net_socket_poll_fds_add( socket->fd );
 		}
 	}
+
+	net_socket_poll_fds_unlock();
 }
 
 int net_socket_get_data_socket( void )

@@ -18,7 +18,7 @@ Recommended order:
 2. Reduce allocation/copy churn in RTP-MIDI packet packing. Completed.
 3. Keep the log file open between log calls. Completed.
 4. Cache per-connection socket address data. Completed.
-5. Clean up descriptor polling and container bounds/capacity issues.
+5. Replace `select()` descriptor scanning with `poll()`. Completed.
 
 ## Implemented Changes
 
@@ -84,6 +84,27 @@ Validation:
 
 - `git diff --check`
 - `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/net_connection.c`
+
+### Network Socket Poll Loop
+
+Status: completed.
+
+`net_socket_fd_loop()` now uses a `pollfd` table for the network sockets and the
+shutdown pipe. `net_socket_set_fds()` rebuilds the table from active socket
+entries without scanning every descriptor up to `max_fd`, and the event loop
+handles only descriptors returned by `poll()`.
+
+Scope:
+
+- Applies only to `raveloxmidi/src/net_socket.c`.
+- Does not create a shared polling abstraction at this time.
+- Leaves ALSA polling in `raveloxmidi_alsa.c` unchanged.
+- Leaves remote connection sync polling unchanged.
+
+Validation:
+
+- `git diff --check`
+- `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/net_socket.c`
 
 ## High-Impact Recommendations
 
@@ -216,8 +237,17 @@ Recommendation:
 
 - Use a `pollfd` array for network sockets, similar to the ALSA path.
 - Track only active descriptors.
-- Consider a single polling abstraction for network sockets, shutdown pipe, and
-  ALSA descriptors if that does not overcomplicate the code.
+
+Implementation scope:
+
+- Replace only the network socket `select()` loop in `net_socket_fd_loop()`.
+- Build a local `pollfd` table in `net_socket_set_fds()` from the active socket
+  table entries.
+- Include the shutdown pipe read fd in the network `pollfd` table so shutdown can
+  wake the network loop promptly.
+- Keep ALSA polling and remote connection sync polling separate for now.
+- Do not introduce a single polling abstraction until the behavior of the
+  independent polling loops is better covered by runtime tests.
 
 Expected benefit:
 
@@ -227,7 +257,7 @@ Expected benefit:
 
 ## Correctness Issues With Performance Impact
 
-### `dbuffer_write()` Appears To Reallocate On Every Write
+### C1. `dbuffer_write()` Appears To Reallocate On Every Write
 
 Location: `raveloxmidi/src/dbuffer.c`
 
@@ -251,7 +281,7 @@ Recommendation:
 - Return the number of bytes written; the function currently returns `0` even
   after successful writes.
 
-### Bounds Checks Use `>` Instead Of `>=`
+### C2. Bounds Checks Use `>` Instead Of `>=`
 
 Location: `raveloxmidi/src/data_table.c`
 
@@ -268,7 +298,7 @@ Recommendation:
 - Change these checks to `index >= table->count`.
 - Add focused tests or assertions for empty, last valid, and first invalid index.
 
-### Allocation Check Happens After `memset()`
+### C3. Allocation Check Happens After `memset()`
 
 Location: `raveloxmidi/src/rtp_packet.c`
 
@@ -283,7 +313,7 @@ Recommendation:
 
 - Check `*out_buffer` immediately after allocation and before `memset()`.
 
-### Fixed-Size JSON Formatting Could Overflow
+### C4. Fixed-Size JSON Formatting Could Overflow
 
 Location: `raveloxmidi/src/net_connection.c`
 
@@ -349,10 +379,10 @@ Recommendation:
 For a low-risk first optimization pass:
 
 1. Completed: move `queue->action()` outside `data_queue_handler()`'s lock.
-2. Fix `dbuffer_write()` capacity comparison and return value.
-3. Fix `data_table.c` bounds checks from `>` to `>=`.
-4. Move the allocation check before `memset()` in `rtp_packet_pack()`.
-5. Switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
+2. Fix C1: `dbuffer_write()` capacity comparison and return value.
+3. Fix C2: `data_table.c` bounds checks from `>` to `>=`.
+4. Fix C3: move the allocation check before `memset()` in `rtp_packet_pack()`.
+5. Fix C4: switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
 
 These changes are small, easy to review, and improve either latency or safety
 without changing the public behavior of the daemon.
