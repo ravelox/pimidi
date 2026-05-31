@@ -304,6 +304,8 @@ Recommendation:
 
 ### C3. Allocation Check Happens After `memset()`
 
+Status: completed.
+
 Location: `raveloxmidi/src/rtp_packet.c`
 
 `rtp_packet_pack()` calls `memset()` on `*out_buffer` before checking whether the
@@ -385,7 +387,7 @@ For a low-risk first optimization pass:
 1. Completed: move `queue->action()` outside `data_queue_handler()`'s lock.
 2. Completed: fix C1, `dbuffer_write()` capacity comparison and return value.
 3. Completed: fix C2, `data_table.c` bounds checks from `>` to `>=`.
-4. Fix C3: move the allocation check before `memset()` in `rtp_packet_pack()`.
+4. Completed: fix C3, move the allocation check before `memset()` in `rtp_packet_pack()`.
 5. Fix C4: switch `net_ctx_connections_to_string()` from `sprintf()` to `snprintf()`.
 
 These changes are small, easy to review, and improve either latency or safety

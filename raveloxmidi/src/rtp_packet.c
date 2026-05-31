@@ -87,12 +87,11 @@ int rtp_packet_pack( rtp_packet_t *packet, unsigned char **out_buffer, size_t *o
 
 	packed_header_buffer_size = ( sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint32_t) + sizeof(uint32_t) );
 	*out_buffer = (unsigned char *)X_MALLOC( packed_header_buffer_size );
-	memset( *out_buffer, 0, packed_header_buffer_size );
-
 	if( ! *out_buffer )
 	{
 		return 1;
 	}
+	memset( *out_buffer, 0, packed_header_buffer_size );
 	
 	p = *out_buffer;
 
