@@ -1,8 +1,8 @@
 # Codex Optimization Review
 
 This document captures optimization recommendations from a read-only review of the
-`pimidi` / `raveloxmidi` codebase. No code changes were made as part of the
-review.
+`pimidi` / `raveloxmidi` codebase, along with implementation status as changes
+are made on the `ai-optimize` branch.
 
 ## Summary
 
@@ -14,11 +14,27 @@ latency and jitter in hot paths rather than broad architectural rewrites.
 
 Recommended order:
 
-1. Reduce lock hold time in the MIDI sender queue.
+1. Reduce lock hold time in the MIDI sender queue. Completed.
 2. Reduce allocation/copy churn in RTP-MIDI packet packing.
 3. Keep the log file open between log calls.
 4. Cache per-connection socket address data.
 5. Clean up descriptor polling and container bounds/capacity issues.
+
+## Implemented Changes
+
+### Queue Handler Lock Scope
+
+Status: completed.
+
+`data_queue_handler()` now removes a queue item while holding `queue->lock`, then
+copies the action pointer and item payload/context before unlocking. The handler
+callback runs after the queue lock is released, and the queue item is freed after
+the callback returns.
+
+Validation:
+
+- `git diff --check`
+- `gcc -fsyntax-only -I raveloxmidi/include raveloxmidi/src/data_queue.c`
 
 ## High-Impact Recommendations
 
@@ -283,7 +299,7 @@ Recommendation:
 
 For a low-risk first optimization pass:
 
-1. Move `queue->action()` outside `data_queue_handler()`'s lock.
+1. Completed: move `queue->action()` outside `data_queue_handler()`'s lock.
 2. Fix `dbuffer_write()` capacity comparison and return value.
 3. Fix `data_table.c` bounds checks from `>` to `>=`.
 4. Move the allocation check before `memset()` in `rtp_packet_pack()`.
