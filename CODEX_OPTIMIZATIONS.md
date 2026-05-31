@@ -15,7 +15,7 @@ latency and jitter in hot paths rather than broad architectural rewrites.
 Recommended order:
 
 1. Reduce lock hold time in the MIDI sender queue. Completed.
-2. Reduce allocation/copy churn in RTP-MIDI packet packing.
+2. Reduce allocation/copy churn in RTP-MIDI packet packing. Completed.
 3. Keep the log file open between log calls.
 4. Cache per-connection socket address data.
 5. Clean up descriptor polling and container bounds/capacity issues.
@@ -35,6 +35,24 @@ Validation:
 
 - `git diff --check`
 - `gcc -fsyntax-only -I raveloxmidi/include raveloxmidi/src/data_queue.c`
+
+### RTP-MIDI Send Buffer Packing
+
+Status: completed.
+
+`midi_sender_send_single()` now computes the final RTP packet size after journal
+packing, allocates one RTP packet buffer, and writes the RTP header, MIDI payload
+header, MIDI payload data, and optional journal directly into that buffer.
+
+This removes the previous intermediate combined RTP payload buffer, avoids
+allocating `rtp_packet->payload`, avoids the `rtp_packet_pack()` header allocation
+plus `realloc()` path for outbound MIDI sends, and keeps per-destination packed
+buffers scoped to each loop iteration.
+
+Validation:
+
+- `git diff --check`
+- `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/midi_sender.c`
 
 ## High-Impact Recommendations
 
