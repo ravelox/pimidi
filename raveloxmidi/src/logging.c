@@ -51,6 +51,7 @@ static name_map_t loglevel_map[] = {
 static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static char *logging_file_name = NULL;
+static FILE *logging_fp = NULL;
 static unsigned char prefix_disabled = 0;
 
 void logging_lock( void )
@@ -121,7 +122,7 @@ void logging_prefix_enable( void )
 
 void logging_printf(int level, const char *format, ...)
 {
-	FILE *logging_fp = NULL;
+	FILE *current_logging_fp = NULL;
 	va_list ap;
 
 	if( logging_enabled == 0 ) return;
@@ -129,16 +130,7 @@ void logging_printf(int level, const char *format, ...)
 
 	logging_lock(); 
 
-	if( logging_file_name )
-	{
-		logging_fp = fopen( logging_file_name , "a+" );
-		if( !logging_fp )
-		{
-			logging_fp = stderr;
-		}
-	} else {
-		logging_fp = stderr;
-	}
+	current_logging_fp = ( logging_fp ? logging_fp : stderr );
 
 	if( ! prefix_disabled )
 	{
@@ -147,18 +139,18 @@ void logging_printf(int level, const char *format, ...)
 
 		gettimeofday( &tv, &tz);
 
-		fprintf( logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
+		fprintf( current_logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
 	va_start(ap, format);
 
-	vfprintf( logging_fp, format, ap );
+	vfprintf( current_logging_fp, format, ap );
 
 	va_end(ap);
 
-	if( logging_fp && logging_fp != stderr )
+	if( current_logging_fp && current_logging_fp != stderr )
 	{
-		fclose( logging_fp );
+		fflush( current_logging_fp );
 	}
 
 	logging_unlock();
@@ -183,11 +175,18 @@ void logging_init(void)
 			if( name )
 			{
 				logging_file_name = X_STRDUP( name );
+				if( logging_file_name )
+				{
+					logging_fp = fopen( logging_file_name , "a+" );
+				}
+				if( ! logging_fp ) logging_fp = stderr;
 			} else {
 				logging_file_name = NULL;
+				logging_fp = stderr;
 			}
 		} else {
 			logging_file_name = NULL;
+			logging_fp = stderr;
 		}
 		
 		
@@ -205,6 +204,12 @@ void logging_init(void)
 void logging_teardown(void)
 {
 	logging_lock();
+
+	if( logging_fp && logging_fp != stderr )
+	{
+		fclose( logging_fp );
+	}
+	logging_fp = NULL;
 
 	if( logging_file_name )
 	{

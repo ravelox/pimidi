@@ -16,7 +16,7 @@ Recommended order:
 
 1. Reduce lock hold time in the MIDI sender queue. Completed.
 2. Reduce allocation/copy churn in RTP-MIDI packet packing. Completed.
-3. Keep the log file open between log calls.
+3. Keep the log file open between log calls. Completed.
 4. Cache per-connection socket address data.
 5. Clean up descriptor polling and container bounds/capacity issues.
 
@@ -53,6 +53,22 @@ Validation:
 
 - `git diff --check`
 - `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/midi_sender.c`
+
+### Persistent Log File Handle
+
+Status: completed.
+
+`logging_init()` now opens the configured log file once and stores the stream for
+reuse by `logging_printf()`. `logging_printf()` writes through the cached stream,
+falling back to `stderr` when no log file is configured or opening the configured
+file fails. File-backed logs are flushed after each message to preserve the old
+close-after-each-write visibility behavior without repeated open/close overhead.
+`logging_teardown()` closes the cached file stream.
+
+Validation:
+
+- `git diff --check`
+- `gcc -fsyntax-only -I /tmp/pimidi-codex-include -I raveloxmidi/include raveloxmidi/src/logging.c`
 
 ## High-Impact Recommendations
 
