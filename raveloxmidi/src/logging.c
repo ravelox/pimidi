@@ -134,14 +134,19 @@ void logging_printf(int level, const char *format, ...)
 	va_list ap;
 
 	if( logging_enabled == 0 ) return;
-	if( level < logging_threshold ) return;
 
 	logging_lock();
+
+	if( level < logging_threshold )
+	{
+		logging_unlock();
+		return;
+	}
 
 	if( logging_reopen_requested && logging_file_name )
 	{
 		logging_reopen_requested = 0;
-		if( logging_fp && logging_fp != stderr ) fclose( logging_fp );
+		if( logging_fp != stderr ) fclose( logging_fp );
 		logging_fp = fopen( logging_file_name, "a+" );
 		if( !logging_fp ) logging_fp = stderr;
 	}
