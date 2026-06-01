@@ -206,11 +206,11 @@ void logging_init(void)
 					logging_fp = fopen( logging_file_name , "a+" );
 				}
 				if( ! logging_fp ) logging_fp = stderr;
-			} else {
-				logging_file_name = NULL;
-				logging_fp = stderr;
 			}
-		} else {
+		}
+
+		if( ! logging_fp )
+		{
 			logging_file_name = NULL;
 			logging_fp = stderr;
 		}
