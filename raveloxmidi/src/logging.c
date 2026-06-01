@@ -163,14 +163,17 @@ void logging_printf(int level, const char *format, ...)
 		fprintf( current_logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
+	va_list ap_copy;
 	va_start(ap, format);
+	va_copy(ap_copy, ap);
 
 	if( vfprintf( current_logging_fp, format, ap ) < 0
 	 || fflush( current_logging_fp ) != 0 )
 	{
-	    vfprintf( stderr, format, ap );
+	    vfprintf( stderr, format, ap_copy );
 	}
 
+	va_end(ap_copy);
 	va_end(ap);
 
 	logging_unlock();
