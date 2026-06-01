@@ -173,11 +173,6 @@ void logging_printf(int level, const char *format, ...)
 
 	va_end(ap);
 
-	if( current_logging_fp && current_logging_fp != stderr )
-	{
-		fflush( current_logging_fp );
-	}
-
 	logging_unlock();
 }
 
