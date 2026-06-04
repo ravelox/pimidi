@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
 import socket
@@ -17,13 +17,13 @@ def note_send():
 	# Note OFF
 	bytes = struct.pack( "BBB", 0x86, 0x3c, 0x7f )
 	s.send( bytes )
-	print "note_send"
+	print("note_send")
 
 def control_send():
 	# Control Change
 	bytes = struct.pack( "BBB", 0xB6, 0x3c, 0x7f )
 	s.send( bytes )
-	print "control_send"
+	print("control_send")
 
 if len(sys.argv) == 1:
         family = socket.AF_INET
@@ -39,11 +39,11 @@ else:
 s = socket.socket( family, socket.SOCK_DGRAM )
 s.connect( connect_tuple )
 
-print "Start"
+print("Start")
 for i in range(0,100):
-	print i
+	print(i)
 	note_send()
 	control_send()
-print "End"
+print("End")
 
 s.close()

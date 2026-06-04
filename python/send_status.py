@@ -22,18 +22,17 @@ else:
 		connect_tuple = ( sys.argv[1], local_port)
 
 s = socket.socket( family, socket.SOCK_DGRAM )
-s.setblocking(0)
+s.settimeout(2.0)
 s.connect( connect_tuple )
 s.sendall( send_bytes )
 
 data = ''
-while True:
-	try:
-		data,addr = s.recvfrom(2)
-	except:
-		pass
-	if data:
-		break
+try:
+	data,addr = s.recvfrom(2)
+except socket.timeout:
+	sys.stderr.write("Timed out waiting for raveloxmidi status response\n")
+	s.close()
+	sys.exit(1)
 
 print(data)
 s.close()

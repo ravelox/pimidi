@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import time
 import os
 import RPi.GPIO as GPIO
 import socket
 import struct
+import sys
  
 GPIO.setmode(GPIO.BCM)
 DEBUG = 0
@@ -96,22 +97,22 @@ while True:
         drum_vel_adjust = abs(adc_reading - last_read)
  
         if DEBUG:
-                print "adc_reading:", adc_reading
-                print "drum_vel_adjust:", drum_vel_adjust
-                print "last_read", last_read
+                print("adc_reading:", adc_reading)
+                print("drum_vel_adjust:", drum_vel_adjust)
+                print("last_read", last_read)
  
         if ( drum_vel_adjust > tolerance ):
                drum_hit = True
  
         if DEBUG:
-                print "drum_hit", drum_hit
+                print("drum_hit", drum_hit)
 
-	if ( drum_hit ):
-		# Range should be 0 - 127
-		velocity = int( 127 * (adc_reading/1024.00)  )
-		if velocity > 10:
-			print velocity
-			send_note( velocity )
+        if ( drum_hit ):
+                # Range should be 0 - 127
+                velocity = int( 127 * (adc_reading/1024.00)  )
+                if velocity > 10:
+                        print(velocity)
+                        send_note( velocity )
  
                 # save the drum reading for the next loop
                 last_read = adc_reading
