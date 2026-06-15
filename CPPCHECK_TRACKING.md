@@ -16,7 +16,7 @@ may be stale; this checklist is the durable record.
 - [x] **CPPCHECK-002 resourceLeak**: `raveloxmidi/src/daemon.c:101` reports a second resource leak in the same daemon stdio redirection path. Addressed by the same inline `freopen()` check.
 - [x] **CPPCHECK-003 nullPointerOutOfMemory**: `raveloxmidi/src/utils.c:480` may dereference `utils_timestamp_string` if `malloc(100)` fails in `utils_timestamp()`. Addressed by checking allocation, returning a fallback timestamp string, and using bounded formatting.
 - [x] **CPPCHECK-004 knownConditionTrueFalse**: `raveloxmidi/src/raveloxmidi_alsa.c:298` reports `!rawmidi` is always false. Addressed by removing the redundant null check after `data` has already been checked.
-- [ ] **CPPCHECK-005 redundantCondition**: `raveloxmidi/src/raveloxmidi_config.c:117` reports `*p1` is redundant when checking `*p1 == '#'`.
+- [x] **CPPCHECK-005 redundantCondition**: `raveloxmidi/src/raveloxmidi_config.c:117` reports `*p1` is redundant when checking `*p1 == '#'`. Addressed by simplifying the comment check to `*p1 == '#'`.
 
 ## Unsigned Comparisons
 

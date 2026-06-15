@@ -114,7 +114,7 @@ static void config_load_file( char *filename )
 		while( *p1 && isspace( *p1 ) ) p1++;
 
 		/* Ignore any line that's marked as a comment */
-		if( *p1 && *p1=='#' ) continue;
+		if( *p1=='#' ) continue;
 
 		key = p1;
 		p2 = p1;
