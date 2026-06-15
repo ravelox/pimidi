@@ -434,11 +434,6 @@ ring_buffer_compare_end:
 	return ret;
 }
 
-char ring_buffer_char( ring_buffer_t *ring, char *status )
-{
-	if( ! status ) return 0;
-}
-
 int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )
 {
 	int ret = 0;
