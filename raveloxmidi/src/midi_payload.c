@@ -341,7 +341,7 @@ void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload 
 	if( ! new_payload_buffer )
 	{
 		logging_printf(LOGGING_ERROR,"midi_command_to_payload: Unable to allocate memory for new payload buffer\n");
-		midi_payload_destroy( &(*payload) );
+		midi_payload_destroy( payload );
 		return;
 	}
 

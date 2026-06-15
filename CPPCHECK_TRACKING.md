@@ -28,7 +28,7 @@ may be stale; this checklist is the durable record.
 ## Redundant Pointer Operations
 
 - [x] **CPPCHECK-010 redundantPointerOp**: `raveloxmidi/src/chapter_c.c:197` uses redundant `&(*chapter_c)`. Addressed by passing `chapter_c` directly to `X_FREENULL()`.
-- [ ] **CPPCHECK-011 redundantPointerOp**: `raveloxmidi/src/midi_payload.c:344` uses redundant pointer operation on `payload`.
+- [x] **CPPCHECK-011 redundantPointerOp**: `raveloxmidi/src/midi_payload.c:344` uses redundant pointer operation on `payload`. Addressed by passing `payload` directly to `midi_payload_destroy()`.
 
 ## Unread Variables
 
