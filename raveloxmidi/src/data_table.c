@@ -146,7 +146,7 @@ void data_table_set_item_destructor( data_table_t *table, data_item_destructor_t
 
 int data_table_add_item( data_table_t *table, void *data )
 {
-	size_t i = 0;
+	size_t i;
 	data_item_t *new_item = NULL;
 
 	if(! table ) return 0;

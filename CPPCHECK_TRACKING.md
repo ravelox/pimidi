@@ -37,7 +37,7 @@ may be stale; this checklist is the durable record.
 - [ ] **CPPCHECK-014 unreadVariable**: `raveloxmidi/src/data_queue.c:240` variable `action` is assigned but never used.
 - [ ] **CPPCHECK-015 unreadVariable**: `raveloxmidi/src/data_table.c:43` variable `index` is assigned but never used.
 - [ ] **CPPCHECK-016 unreadVariable**: `raveloxmidi/src/data_table.c:44` variable `count` is assigned but never used.
-- [ ] **CPPCHECK-017 unreadVariable**: `raveloxmidi/src/data_table.c:149` variable `i` is assigned but never used.
+- [x] **CPPCHECK-017 unreadVariable**: `raveloxmidi/src/data_table.c:149` variable `i` is assigned but never used. Addressed by removing the redundant initializer before the `for` loop assigns `i`.
 - [ ] **CPPCHECK-018 unreadVariable**: `raveloxmidi/src/midi_journal.c:205` variable `p` is assigned but never used.
 - [ ] **CPPCHECK-019 unreadVariable**: `raveloxmidi/src/midi_sender.c:342` variable `bytes_written` is assigned but never used.
 - [ ] **CPPCHECK-020 unreadVariable**: `raveloxmidi/src/midi_state.c:249` variable `read_status` is assigned but never used.
