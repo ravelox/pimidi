@@ -295,7 +295,6 @@ void raveloxmidi_alsa_dump_rawmidi( void *data )
 	if( ! data ) return;
 
 	rawmidi = (snd_rawmidi_t *)data;
-	if( ! rawmidi ) return;
 
 	snd_rawmidi_info_malloc( &info );
 	snd_rawmidi_info( rawmidi, info );
