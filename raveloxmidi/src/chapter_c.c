@@ -194,7 +194,7 @@ void chapter_c_destroy( chapter_c_t **chapter_c )
 	if( ! chapter_c ) return;
 	if( ! *chapter_c ) return;
 
-	X_FREENULL( "chapter_c",(void **) &(*chapter_c) );
+	X_FREENULL( "chapter_c",(void **)chapter_c );
 }
 
 void chapter_c_reset( chapter_c_t *chapter_c )
