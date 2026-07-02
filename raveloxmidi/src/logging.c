@@ -181,7 +181,7 @@ void logging_printf(int level, const char *format, ...)
 
 void logging_init(void)
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	pthread_mutex_init( &logging_mutex, NULL );
 

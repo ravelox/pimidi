@@ -54,7 +54,7 @@ may be stale; this checklist is the durable record.
 ## Bulk Style Buckets
 
 - [x] **CPPCHECK-028 constParameterPointer**: 35 parameters can be declared as pointers to const. Addressed by adding `const` qualifiers to read-only pointer parameters in the affected headers and implementations.
-- [ ] **CPPCHECK-029 constVariablePointer**: 22 variables can be declared as pointers to const.
+- [x] **CPPCHECK-029 constVariablePointer**: 24 variables can be declared as pointers to const. Addressed by adding `const` qualifiers to local pointers that only read referenced data.
 - [x] **CPPCHECK-030 variableScope**: 10 variables can have narrower scope. Addressed by narrowing the remaining reported variable declarations; the fresh cppcheck run reports no `variableScope` findings.
 - [~] **CPPCHECK-031 unusedFunction**: 35 functions are reported unused. Reviewed as intentional public library/API surface; suppress `unusedFunction` in cppcheck instead of removing exported functions.
 - [~] **CPPCHECK-032 staticFunction**: 96 functions are reported as candidates for internal linkage. Reviewed as intentional public library/API surface; suppress `staticFunction` in cppcheck instead of changing linkage.

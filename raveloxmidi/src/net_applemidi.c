@@ -406,7 +406,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 		command_buffer->command == NET_APPLEMIDI_CMD_END )
 	{
 
-		net_applemidi_inv *inv = ( net_applemidi_inv *) command_buffer->data;
+		const net_applemidi_inv *inv = ( const net_applemidi_inv *) command_buffer->data;
 
 		if( ! inv )
 		{
@@ -445,7 +445,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 	if( command_buffer->command ==  NET_APPLEMIDI_CMD_FEEDBACK )
 	{
 
-		net_applemidi_feedback *feedback = ( net_applemidi_feedback *) command_buffer->data;
+		const net_applemidi_feedback *feedback = ( const net_applemidi_feedback *) command_buffer->data;
 
 		if( ! feedback )
 		{
@@ -465,7 +465,7 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 	if( command_buffer->command ==  NET_APPLEMIDI_CMD_BITRATE )
 	{
 
-		net_applemidi_bitrate *bitrate = ( net_applemidi_bitrate *) command_buffer->data;
+		const net_applemidi_bitrate *bitrate = ( const net_applemidi_bitrate *) command_buffer->data;
 
 		if( ! bitrate )
 		{
@@ -484,9 +484,9 @@ int net_applemidi_pack( net_applemidi_command *command_buffer, unsigned char **o
 
 	if( command_buffer->command == NET_APPLEMIDI_CMD_SYNC )
 	{
-		net_applemidi_sync *sync;
+		const net_applemidi_sync *sync;
 
-		sync = (net_applemidi_sync *)command_buffer->data;
+		sync = (const net_applemidi_sync *)command_buffer->data;
 
 		*out_buffer = ( unsigned char * ) X_REALLOC( *out_buffer, NET_APPLEMIDI_COMMAND_SIZE + NET_APPLEMIDI_SYNC_SIZE );
 

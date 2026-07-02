@@ -255,7 +255,7 @@ void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t 
 
 void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_len )
 {
-	unsigned char *p;
+	const unsigned char *p;
 	uint16_t temp_len;
 	size_t current_len;
 

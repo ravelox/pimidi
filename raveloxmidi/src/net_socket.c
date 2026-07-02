@@ -899,10 +899,10 @@ void net_socket_set_fds(void)
 
 	for( i = 0; i < num_sockets; i++ )
 	{
-		raveloxmidi_socket_t *socket = NULL;
+		const raveloxmidi_socket_t *socket = NULL;
 
 		data_table_lock( sockets );
-		socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, i );
+		socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, i );
 		data_table_unlock( sockets );
 
 		if( ! socket ) continue;
@@ -918,10 +918,10 @@ void net_socket_set_fds(void)
 int net_socket_get_data_socket( void )
 {
 	int fd = -1;
-	raveloxmidi_socket_t *socket = NULL;
+	const raveloxmidi_socket_t *socket = NULL;
 
 	data_table_lock( sockets );
-	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_DATA_PORT);
+	socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_DATA_PORT);
 	data_table_unlock( sockets );
 
 	if( socket )
@@ -935,10 +935,10 @@ int net_socket_get_data_socket( void )
 int net_socket_get_control_socket( void )
 {
 	int fd = -1;
-	raveloxmidi_socket_t *socket = NULL;
+	const raveloxmidi_socket_t *socket = NULL;
 
 	data_table_lock( sockets );
-	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_CONTROL_PORT);
+	socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_CONTROL_PORT);
 	data_table_unlock( sockets );
 
 	if( socket )
@@ -952,10 +952,10 @@ int net_socket_get_control_socket( void )
 int net_socket_get_local_socket( void )
 {
 	int fd = -1;
-	raveloxmidi_socket_t *socket = NULL;
+	const raveloxmidi_socket_t *socket = NULL;
 
 	data_table_lock( sockets );
-	socket = (raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_LOCAL_PORT);
+	socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_LOCAL_PORT);
 	data_table_unlock( sockets );
 
 	if( socket )

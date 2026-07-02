@@ -108,7 +108,7 @@ void midi_sender_teardown( void )
 void midi_sender_handler( void *data, void *context )
 {
 	data_context_t *data_context = NULL;
-	midi_sender_context_t *sender_context = NULL;
+	const midi_sender_context_t *sender_context = NULL;
 	midi_command_t *command = NULL;
 
 	uint32_t originator_ssrc = 0;

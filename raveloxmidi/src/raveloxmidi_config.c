@@ -76,7 +76,8 @@ static void config_load_file( const char *filename )
 	FILE *config_file = NULL;
 	char config_line[ MAX_CONFIG_LINE + 1 ];
 	char *p1,*p2;
-	char *key, *value;
+	char *key;
+	const char *value;
 
 	if( ! filename ) return;
 
@@ -90,7 +91,7 @@ static void config_load_file( const char *filename )
 
 	while( 1 )
 	{
-		char *return_value = NULL;
+		const char *return_value = NULL;
 		return_value = fgets( config_line , MAX_CONFIG_LINE, config_file );
 
 		if( feof( config_file) && ! return_value ) break;
@@ -229,7 +230,7 @@ char *config_string_get( char *key )
 
 int config_int_get( char *key )
 {
-	char *item_string = NULL;
+	const char *item_string = NULL;
 
 	item_string = config_string_get( key );
 	if(! item_string ) return 0;
@@ -239,7 +240,7 @@ int config_int_get( char *key )
 	
 long config_long_get( char *key )
 {
-	char *item_string = NULL;
+	const char *item_string = NULL;
 
 	item_string = config_string_get( key );
 	if( ! item_string ) return 0;
@@ -249,7 +250,7 @@ long config_long_get( char *key )
 
 int config_is_set( char *key )
 {
-	kv_item_t *item = NULL;
+	const kv_item_t *item = NULL;
 
 	item  = kv_find_item( config_items, key );
 	return ( ( item != NULL ) && ( item->value != NULL ) && ( strlen(item->value) > 0 ) );

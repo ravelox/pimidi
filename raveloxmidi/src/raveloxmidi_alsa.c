@@ -157,7 +157,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		input_key = config_iter_create( input_name );
 		while(1)
 		{
-			char *full_input_name = NULL;
+			const char *full_input_name = NULL;
 			if( ! config_iter_is_set( input_key ) ) break;
 
 			full_input_name = config_iter_string_get( input_key );
@@ -186,7 +186,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		output_key = config_iter_create( output_name );
 		while(1)
 		{
-			char *full_output_name = NULL;
+			const char *full_output_name = NULL;
 			if( ! config_iter_is_set( output_key ) ) break;
 
 			full_output_name = config_iter_string_get( output_key );

@@ -154,7 +154,7 @@ kv_item_t *kv_find_item( kv_table_t *table, char *key )
 
 char *kv_get_value( kv_table_t *table, char *key )
 {
-	kv_item_t *item = NULL;
+	const kv_item_t *item = NULL;
 
 	item = kv_find_item( table, key );
 	if( ! item ) return NULL;

@@ -36,13 +36,13 @@ extern int errno;
 
 void applemidi_by_responder( void *data )
 {
-	net_applemidi_inv *inv = NULL;
+	const net_applemidi_inv *inv = NULL;
 	net_ctx_t *ctx = NULL;
 
 	logging_printf( LOGGING_DEBUG, "applemidi_by_responder: data=%p\n", data );
 	if( ! data ) return;
 
-	inv = ( net_applemidi_inv *) data;
+	inv = ( const net_applemidi_inv *) data;
 
 	ctx = net_ctx_find_by_ssrc( inv->ssrc );
 

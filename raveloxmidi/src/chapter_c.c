@@ -55,7 +55,7 @@ chapter_c_t *chapter_c_create( void )
 
 void chapter_c_unpack( unsigned char *packed, size_t size, chapter_c_t **chapter_c )
 {
-	unsigned char *p = NULL;
+	const unsigned char *p = NULL;
 	uint8_t index = 0;
 	size_t current_size;
 

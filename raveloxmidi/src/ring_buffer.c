@@ -228,7 +228,7 @@ ring_buffer_write_end:
 char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 {
 	char *dest = NULL;
-	char *src = NULL;
+	const char *src = NULL;
 	size_t first_part = 0;
 	size_t second_part = 0;
 
