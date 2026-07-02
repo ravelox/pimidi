@@ -748,12 +748,13 @@ void net_socket_loop_teardown()
 
 int net_socket_fd_loop()
 {
-        int ret = 0;
-	int timeout = 0;
+	int ret = 0;
 	nfds_t i = 0;
 
 
-        do {
+	do {
+		int timeout = 0;
+
 		net_socket_set_fds();
 
 		timeout = socket_timeout * 1000;

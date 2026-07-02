@@ -101,19 +101,15 @@ void daemon_teardown(void)
 {
 	
 	struct stat filestat;
-	int ret = 0;
 	char *pid_file_name = NULL;
 
 	pid_file_name = config_string_get("daemon.pid_file");
 
 	if( pid_file_name )
 	{
-		ret = stat( pid_file_name, &filestat );
-
-		if( ret == 0 )
+		if( stat( pid_file_name, &filestat ) == 0 )
 		{
-			ret = unlink( pid_file_name );
-			if( ret != 0 )
+			if( unlink( pid_file_name ) != 0 )
 			{
 				logging_printf( LOGGING_ERROR, "daemon_teardown: Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
 			}

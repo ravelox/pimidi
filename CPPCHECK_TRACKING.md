@@ -32,28 +32,28 @@ may be stale; this checklist is the durable record.
 
 ## Unread Variables
 
-- [ ] **CPPCHECK-012 unreadVariable**: `raveloxmidi/src/chapter_n.c:182` variable `i` is assigned but never used.
-- [ ] **CPPCHECK-013 unreadVariable**: `raveloxmidi/src/daemon.c:107` variable `ret` is assigned but never used.
+- [x] **CPPCHECK-012 unreadVariable**: `raveloxmidi/src/chapter_n.c:182` variable `i` is assigned but never used. Addressed by moving `i` into the block where it initializes `chapter_n->notes`.
+- [x] **CPPCHECK-013 unreadVariable**: `raveloxmidi/src/daemon.c:107` variable `ret` is assigned but never used. Addressed by checking `stat()` and `unlink()` results inline.
 - [ ] **CPPCHECK-014 unreadVariable**: `raveloxmidi/src/data_queue.c:240` variable `action` is assigned but never used.
-- [ ] **CPPCHECK-015 unreadVariable**: `raveloxmidi/src/data_table.c:43` variable `index` is assigned but never used.
-- [ ] **CPPCHECK-016 unreadVariable**: `raveloxmidi/src/data_table.c:44` variable `count` is assigned but never used.
+- [x] **CPPCHECK-015 unreadVariable**: `raveloxmidi/src/data_table.c:43` variable `index` is assigned but never used. Addressed by moving `index` into the debug dump block where it is used.
+- [x] **CPPCHECK-016 unreadVariable**: `raveloxmidi/src/data_table.c:44` variable `count` is assigned but never used. Addressed by initializing `count` inside the debug dump block where it is used.
 - [x] **CPPCHECK-017 unreadVariable**: `raveloxmidi/src/data_table.c:149` variable `i` is assigned but never used. Addressed by removing the redundant initializer before the `for` loop assigns `i`.
 - [ ] **CPPCHECK-018 unreadVariable**: `raveloxmidi/src/midi_journal.c:205` variable `p` is assigned but never used.
 - [ ] **CPPCHECK-019 unreadVariable**: `raveloxmidi/src/midi_sender.c:342` variable `bytes_written` is assigned but never used.
 - [ ] **CPPCHECK-020 unreadVariable**: `raveloxmidi/src/midi_state.c:249` variable `read_status` is assigned but never used.
 - [ ] **CPPCHECK-021 unreadVariable**: `raveloxmidi/src/net_socket.c:243` variable `ring_buffer_size` is assigned but never used.
-- [ ] **CPPCHECK-022 unreadVariable**: `raveloxmidi/src/net_socket.c:752` variable `timeout` is assigned but never used.
+- [x] **CPPCHECK-022 unreadVariable**: `raveloxmidi/src/net_socket.c:752` variable `timeout` is assigned but never used. Addressed by moving `timeout` into the polling loop where it is assigned and used.
 - [ ] **CPPCHECK-023 unreadVariable**: `raveloxmidi/src/net_socket.c:753` variable `i` is assigned but never used.
-- [ ] **CPPCHECK-024 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:576` variable `i` is assigned but never used.
-- [ ] **CPPCHECK-025 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:610` variable `poll_result` is assigned but never used.
-- [ ] **CPPCHECK-026 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:611` variable `i` is assigned but never used.
-- [ ] **CPPCHECK-027 unreadVariable**: `raveloxmidi/src/utils.c:210` variable `c` is assigned but never used.
+- [x] **CPPCHECK-024 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:576` variable `i` is assigned but never used. Addressed by moving `i` into the poll-descriptor loop block.
+- [x] **CPPCHECK-025 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:610` variable `poll_result` is assigned but never used. Addressed by moving `poll_result` into the listener polling loop.
+- [x] **CPPCHECK-026 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:611` variable `i` is assigned but never used. Addressed by moving `i` into the descriptor-processing block.
+- [x] **CPPCHECK-027 unreadVariable**: `raveloxmidi/src/utils.c:210` variable `c` is assigned but never used. Addressed by moving `c` into the hex dump loop.
 
 ## Bulk Style Buckets
 
 - [ ] **CPPCHECK-028 constParameterPointer**: 28 parameters can be declared as pointers to const.
 - [ ] **CPPCHECK-029 constVariablePointer**: 17 variables can be declared as pointers to const.
-- [ ] **CPPCHECK-030 variableScope**: 10 variables can have narrower scope.
+- [x] **CPPCHECK-030 variableScope**: 10 variables can have narrower scope. Addressed by narrowing the remaining reported variable declarations; the fresh cppcheck run reports no `variableScope` findings.
 - [ ] **CPPCHECK-031 unusedFunction**: 43 functions are reported unused.
 - [ ] **CPPCHECK-032 staticFunction**: 96 functions are reported as candidates for internal linkage.
 

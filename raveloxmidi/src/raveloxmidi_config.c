@@ -150,7 +150,6 @@ int config_init( int argc, char *argv[] )
 		{0,0,0,0}
 	};
 	const char *short_options = "c:dihNP:RCv";
-	int c;
 
 	config_items = kv_table_create("config_items");
 	if( ! config_items )
@@ -163,6 +162,8 @@ int config_init( int argc, char *argv[] )
 
 	while(1)
 	{
+		int c;
+
 		c = getopt_long( argc, argv, short_options, long_options, NULL);
 
 		if( c == -1 ) break;

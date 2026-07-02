@@ -207,7 +207,6 @@ void get_uint64( void *dest, unsigned char **src, size_t *len )
 void hex_dump( unsigned char *buffer, size_t len )
 {
 	size_t i = 0 ;
-	unsigned char c = 0 ;
 
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
@@ -226,6 +225,8 @@ void hex_dump( unsigned char *buffer, size_t len )
 
 	for( i = 0 ; i < len ; i++ )
 	{
+		unsigned char c = 0 ;
+
 		if( i % 8 == 0 )
 		{
 			logging_printf( LOGGING_DEBUG, "\n");
@@ -469,7 +470,6 @@ void utils_mem_tracking_teardown( void )
 char *utils_timestamp( void )
 {
 	const size_t timestamp_len = 100;
-	static char timestamp_fallback[] = "0.0:0";
 	struct timeval tv;
 	struct timezone tz;
 	gettimeofday( &tv, &tz);
@@ -479,6 +479,8 @@ char *utils_timestamp( void )
 		utils_timestamp_string = (char *)malloc( timestamp_len );
 		if( ! utils_timestamp_string )
 		{
+			static char timestamp_fallback[] = "0.0:0";
+
 			return timestamp_fallback;
 		}
 	}

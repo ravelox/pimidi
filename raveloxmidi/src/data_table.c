@@ -40,8 +40,6 @@ void data_table_unlock( data_table_t *table )
 
 void data_table_dump( data_table_t *table )
 {
-	size_t index = 0;
-	size_t count = 0;
 	DEBUG_ONLY;
 
 	if( ! table ) return;
@@ -51,7 +49,9 @@ void data_table_dump( data_table_t *table )
 
 	if( table->item_dump )
 	{
-		count = table->count;
+		size_t index = 0;
+		size_t count = table->count;
+
 		for( index = 0; index < count; index++ )
 		{
 			table->item_dump( table->items[ index ]->data );
@@ -146,7 +146,6 @@ void data_table_set_item_destructor( data_table_t *table, data_item_destructor_t
 
 int data_table_add_item( data_table_t *table, void *data )
 {
-	size_t i;
 	data_item_t *new_item = NULL;
 
 	if(! table ) return 0;
@@ -159,6 +158,8 @@ int data_table_add_item( data_table_t *table, void *data )
 	/* Find an unused data item slot */
 	if( table->items )
 	{
+		size_t i;
+
 		for( i = 0; i < table->count; i++ )
 		{
 			if( ! table->items[i] ) continue;
