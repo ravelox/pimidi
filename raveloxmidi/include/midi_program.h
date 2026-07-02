@@ -39,8 +39,8 @@ typedef struct midi_program_t {
 
 midi_program_t * midi_program_create( void );
 void midi_program_destroy( midi_program_t **midi_program );
-int midi_program_unpack( midi_program_t **midi_program, unsigned char *packet, size_t packet_len );
-int midi_program_pack( midi_program_t *midi_program, unsigned char **packet, size_t *packet_len );
+int midi_program_unpack( midi_program_t **midi_program, const unsigned char *packet, size_t packet_len );
+int midi_program_pack( const midi_program_t *midi_program, unsigned char **packet, size_t *packet_len );
 void midi_program_dump( midi_program_t *midi_program );
 int midi_program_from_command( midi_command_t *command , midi_program_t **midi_program );
 

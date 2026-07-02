@@ -74,14 +74,14 @@ typedef struct journal_t {
 #define JOURNAL_HEADER_A_FLAG	0x02
 #define JOURNAL_HEADER_H_FLAG	0x01
 
-void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size );
+void channel_header_pack( const channel_header_t *header , unsigned char **packed , size_t *size );
 void channel_header_destroy( channel_header_t **header );
 channel_header_t * channel_header_create( void );
 void channel_pack( channel_t *channel, char **packed, size_t *size );
 void channel_destroy( channel_t **channel );
 channel_t * channel_create( void );
 
-void journal_header_pack( journal_header_t *header , char **packed , size_t *size );
+void journal_header_pack( const journal_header_t *header , char **packed , size_t *size );
 journal_header_t * journal_header_create( void );
 void journal_header_destroy( journal_header_t **header );
 void journal_pack( journal_t *journal, char **packed, size_t *size );
@@ -97,8 +97,8 @@ void journal_header_reset( journal_header_t *header );
 void journal_dump( journal_t *journal );
 void journal_reset( journal_t *journal );
 
-void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_note );
-void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t *midi_control );
-void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t *midi_program );
+void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t *midi_note );
+void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_control_t *midi_control );
+void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_program_t *midi_program );
 
 #endif

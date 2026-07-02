@@ -299,7 +299,7 @@ void chapter_n_reset( chapter_n_t *chapter_n )
 	chapter_n_header_reset( chapter_n->header );
 }
 
-void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size_t *size )
+void chapter_n_note_pack( const chapter_n_note_t *note , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 

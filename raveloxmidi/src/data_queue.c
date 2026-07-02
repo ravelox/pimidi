@@ -65,7 +65,7 @@ data_queue_item_t *data_queue_item_create( void )
 	return new_item;
 }
 
-data_queue_t *data_queue_create( char *name, data_queue_action_func_t action )
+data_queue_t *data_queue_create( const char *name, data_queue_action_func_t action )
 {
 	data_queue_t *new_queue = NULL;
 

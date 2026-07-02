@@ -31,8 +31,8 @@ typedef struct chapter_p_t {
 } chapter_p_t;
 #define CHAPTER_P_PACKED_SIZE	3
 
-void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *size );
-void chapter_p_unpack( unsigned char *packed, size_t size, chapter_p_t **chapter_p );
+void chapter_p_pack( const chapter_p_t *chapter_p, unsigned char **packed, size_t *size );
+void chapter_p_unpack( const unsigned char *packed, size_t size, chapter_p_t **chapter_p );
 chapter_p_t *chapter_p_create( void );
 void chapter_p_destroy( chapter_p_t **chapter_p );
 void chapter_p_dump( chapter_p_t *chapter_p );

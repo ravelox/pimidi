@@ -40,7 +40,7 @@ void ring_buffer_unlock( ring_buffer_t *ring )
 	X_MUTEX_UNLOCK( &(ring->lock) );
 }
 
-static size_t ring_buffer_data_index( ring_buffer_t *ring, size_t offset )
+static size_t ring_buffer_data_index( const ring_buffer_t *ring, size_t offset )
 {
 	if( ! ring ) return 0;
 	return ( ring->start + offset ) % ring->size;
@@ -150,7 +150,7 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 	X_FREENULL("ring", (void **)ring);
 }
 
-size_t ring_buffer_write( ring_buffer_t *ring, char *data, size_t len )
+size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 {
 	size_t return_val = 0;
 
@@ -382,7 +382,7 @@ char *ring_buffer_drain( ring_buffer_t *ring , size_t *len)
 	return data;
 }
 
-int ring_buffer_available( ring_buffer_t *ring, size_t requested )
+int ring_buffer_available( const ring_buffer_t *ring, size_t requested )
 {
 	if( ! ring ) return 0;
 	if( requested == 0 ) return 0;

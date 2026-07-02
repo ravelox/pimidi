@@ -76,12 +76,12 @@ typedef struct midi_command_t {
 midi_command_t *midi_command_create(void);
 void midi_command_destroy( void **data );
 void midi_command_reset( midi_command_t *command );
-void midi_command_map( midi_command_t *command , char **description, enum midi_message_type_t *message_type );
+void midi_command_map( const midi_command_t *command , char **description, enum midi_message_type_t *message_type );
 unsigned char midi_command_bytes_needed( unsigned char command );
 
 void midi_command_dump( void *data );
 int midi_note_from_command( midi_command_t *command , midi_note_t **midi_note );
 
-void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, uint8_t *data, size_t data_len );
+void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, const uint8_t *data, size_t data_len );
 
 #endif

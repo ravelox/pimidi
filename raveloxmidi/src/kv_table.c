@@ -41,7 +41,7 @@ void kv_table_unlock( kv_table_t *table )
 	X_MUTEX_UNLOCK( &(table->lock) );
 }
 
-kv_table_t *kv_table_create( char *name )
+kv_table_t *kv_table_create( const char *name )
 {
 	kv_table_t *new_table = NULL;
 
@@ -162,7 +162,7 @@ char *kv_get_value( kv_table_t *table, char *key )
 	return item->value;
 }
 
-void kv_add_item( kv_table_t *table, char *key, char *value )
+void kv_add_item( kv_table_t *table, char *key, const char *value )
 {
 	kv_item_t *new_item = NULL;
 	kv_item_t **new_item_list = NULL;

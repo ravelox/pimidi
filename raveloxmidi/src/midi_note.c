@@ -64,7 +64,7 @@ void midi_note_destroy( midi_note_t **midi_note )
 	X_FREENULL( "midi_note", (void **)midi_note );
 }
 
-int midi_note_unpack( midi_note_t **midi_note, unsigned char *buffer, size_t buffer_len )
+int midi_note_unpack( midi_note_t **midi_note, const unsigned char *buffer, size_t buffer_len )
 {
 	int ret = 0;
 
@@ -91,7 +91,7 @@ int midi_note_unpack( midi_note_t **midi_note, unsigned char *buffer, size_t buf
 	return ret;
 }
 
-int midi_note_pack( midi_note_t *midi_note, unsigned char **buffer, size_t *buffer_len )
+int midi_note_pack( const midi_note_t *midi_note, unsigned char **buffer, size_t *buffer_len )
 {
 	int ret = 0;
 
@@ -148,4 +148,3 @@ int midi_note_from_command( midi_command_t *command , midi_note_t **midi_note )
 
 	return ret;
 }
-

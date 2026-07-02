@@ -97,7 +97,7 @@ void dstring_dump( dstring_t *dstring )
 	logging_printf(LOGGING_DEBUG, "dstring: buffer=%p, len=%u, blocks=%u\n", dstring, strlen( dstring->data ), dstring->num_blocks );
 }
 
-size_t dstring_append( dstring_t *dstring, char *in_string )
+size_t dstring_append( dstring_t *dstring, const char *in_string )
 {
 	size_t ret = 0;
 	size_t current_alloc = 0;

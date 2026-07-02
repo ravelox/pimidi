@@ -64,5 +64,5 @@ void midi_payload_set_buffer( midi_payload_t *payload, unsigned char *buffer , s
 void midi_payload_header_dump( midi_payload_header_t *header );
 void midi_payload_pack( midi_payload_t *payload, unsigned char **buffer, size_t *buffer_size);
 void midi_payload_unpack( midi_payload_t **payload, unsigned char *buffer, size_t buffer_size);
-void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload );
+void midi_command_to_payload( const midi_command_t *command, midi_payload_t **payload );
 #endif

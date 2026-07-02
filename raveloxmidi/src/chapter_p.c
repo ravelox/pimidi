@@ -47,7 +47,7 @@ chapter_p_t *chapter_p_create( void )
 	return new_chapter_p;
 }
 
-void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *size )
+void chapter_p_pack( const chapter_p_t *chapter_p, unsigned char **packed, size_t *size )
 {
 	if( ! chapter_p ) return;
 	*size = 0;
@@ -69,7 +69,7 @@ void chapter_p_pack( chapter_p_t *chapter_p, unsigned char **packed, size_t *siz
 	(*packed)[2] = ( (chapter_p->X & 0x01) << 7 ) | (chapter_p->bank_lsb & 0x7f);
 }
 
-void chapter_p_unpack( unsigned char *packed, size_t size, chapter_p_t **chapter_p)
+void chapter_p_unpack( const unsigned char *packed, size_t size, chapter_p_t **chapter_p)
 {
 	*chapter_p = NULL;
 	if( !packed ) return;

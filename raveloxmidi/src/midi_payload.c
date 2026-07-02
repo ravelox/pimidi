@@ -318,7 +318,7 @@ midi_payload_unpack_success:
 	return;
 }
 
-void midi_command_to_payload( midi_command_t *command, midi_payload_t **payload )
+void midi_command_to_payload( const midi_command_t *command, midi_payload_t **payload )
 {
 	size_t new_payload_size = 0;
 	unsigned char *new_payload_buffer = NULL;

@@ -61,7 +61,7 @@ void data_table_dump( data_table_t *table )
 	data_table_unlock( table );
 }
 
-data_table_t *data_table_create( char *name, data_item_destructor_t destructor , data_item_dump_t dump)
+data_table_t *data_table_create( const char *name, data_item_destructor_t destructor , data_item_dump_t dump)
 {
 	data_table_t *new_table = NULL;
 	
@@ -248,7 +248,7 @@ data_table_unused_count_end:
 	return ret;
 }
 
-int data_table_item_is_unused( data_table_t *table, size_t index )
+int data_table_item_is_unused( const data_table_t *table, size_t index )
 {
 	int ret = 0;
 

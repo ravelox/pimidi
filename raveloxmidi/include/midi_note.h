@@ -35,8 +35,8 @@ typedef struct midi_note_t {
 
 midi_note_t * midi_note_create( void );
 void midi_note_destroy( midi_note_t **midi_note );
-int midi_note_unpack( midi_note_t **midi_note, unsigned char *packet, size_t packet_len );
-int midi_note_pack( midi_note_t *midi_note, unsigned char **packet, size_t *packet_len );
+int midi_note_unpack( midi_note_t **midi_note, const unsigned char *packet, size_t packet_len );
+int midi_note_pack( const midi_note_t *midi_note, unsigned char **packet, size_t *packet_len );
 void midi_note_dump( midi_note_t *midi_note );
 
 #endif

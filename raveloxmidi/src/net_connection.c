@@ -115,7 +115,7 @@ void net_ctx_dump_all( void )
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: end\n");
 }
 
-static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint16_t port, char *ip_address , char *name)
+static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint16_t port, const char *ip_address , const char *name)
 {
 	if( ! ctx ) return;
 
@@ -400,7 +400,7 @@ void net_ctx_add( net_ctx_t *ctx )
 	data_table_add_item( connections, ctx );
 }
 
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port, char *name )
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, const char *ip_address, uint16_t port, const char *name )
 {
 	net_ctx_t *new_ctx = NULL;
 	uint32_t send_ssrc = 0;
@@ -453,7 +453,7 @@ register_end:
 	return new_ctx;
 }
 
-void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
+void net_ctx_add_journal_note( net_ctx_t *ctx, const midi_note_t *midi_note )
 {
 	if( ! midi_note ) return;
 	if( ! ctx) return;
@@ -463,7 +463,7 @@ void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
 	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
-void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
+void net_ctx_add_journal_control( net_ctx_t *ctx, const midi_control_t *midi_control )
 {
 	if( ! midi_control ) return;
 	if( !ctx ) return;
@@ -473,7 +473,7 @@ void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
 	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
-void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
+void net_ctx_add_journal_program( net_ctx_t *ctx, const midi_program_t *midi_program )
 {
 	if( !midi_program ) return;
 	if( !ctx ) return;
@@ -520,7 +520,7 @@ void net_ctx_journal_reset( net_ctx_t *ctx )
 	net_ctx_unlock( ctx );
 }
 
-void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet)
+void net_ctx_update_rtp_fields( const net_ctx_t *ctx, rtp_packet_t *rtp_packet)
 {
 	if( ! rtp_packet ) return;
 	if( ! ctx ) return;
@@ -610,7 +610,7 @@ int net_ctx_get_num_connections( void )
 	return data_table_item_count( connections );
 }
 
-int net_ctx_is_used( net_ctx_t *ctx )
+int net_ctx_is_used( const net_ctx_t *ctx )
 {
 	if( ! ctx ) return 0;
 	return ctx->status != NET_CTX_STATUS_UNUSED;

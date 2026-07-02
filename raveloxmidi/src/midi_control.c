@@ -49,7 +49,7 @@ void midi_control_destroy( midi_control_t **midi_control )
 	X_FREENULL( "midi_control", (void **)midi_control );
 }
 
-int midi_control_unpack( midi_control_t **midi_control, unsigned char *buffer, size_t buffer_len )
+int midi_control_unpack( midi_control_t **midi_control, const unsigned char *buffer, size_t buffer_len )
 {
 	int ret = 0;
 
@@ -76,7 +76,7 @@ int midi_control_unpack( midi_control_t **midi_control, unsigned char *buffer, s
 	return ret;
 }
 
-int midi_control_pack( midi_control_t *midi_control, unsigned char **buffer, size_t *buffer_len )
+int midi_control_pack( const midi_control_t *midi_control, unsigned char **buffer, size_t *buffer_len )
 {
 	int ret = 0;
 
@@ -130,4 +130,3 @@ int midi_control_from_command( midi_command_t *command , midi_control_t **midi_c
 
 	return ret;
 }
-

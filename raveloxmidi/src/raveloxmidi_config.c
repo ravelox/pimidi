@@ -70,7 +70,7 @@ static void config_set_defaults( void )
 
 }
 
-static void config_load_file( char *filename )
+static void config_load_file( const char *filename )
 {
 
 	FILE *config_file = NULL;
@@ -255,7 +255,7 @@ int config_is_set( char *key )
 	return ( ( item != NULL ) && ( item->value != NULL ) && ( strlen(item->value) > 0 ) );
 }
 
-raveloxmidi_config_iter_t *config_iter_create( char *prefix )
+raveloxmidi_config_iter_t *config_iter_create( const char *prefix )
 {
 	raveloxmidi_config_iter_t *new_iter = NULL;
 	if( ! prefix ) return NULL;
@@ -294,7 +294,7 @@ void config_iter_next( raveloxmidi_config_iter_t *iter )
 	if( iter->index < MAX_ITER_INDEX ) iter->index += 1;
 }
 
-static char *config_make_key( char *prefix , int index )
+static char *config_make_key( const char *prefix , int index )
 {
 	size_t key_len = 0;
 	char *key = NULL;
@@ -306,7 +306,7 @@ static char *config_make_key( char *prefix , int index )
 	return key;
 }
 
-char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
+char *config_iter_string_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	char *result = NULL;
@@ -319,7 +319,7 @@ char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-int config_iter_int_get( raveloxmidi_config_iter_t *iter )
+int config_iter_int_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	int result = 0;
@@ -332,7 +332,7 @@ int config_iter_int_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-long config_iter_long_get( raveloxmidi_config_iter_t *iter )
+long config_iter_long_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	long result = 0;
@@ -345,7 +345,7 @@ long config_iter_long_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-int config_iter_is_set( raveloxmidi_config_iter_t *iter )
+int config_iter_is_set( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	int result = 0;
@@ -358,7 +358,7 @@ int config_iter_is_set( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-void config_add_item(char *key, char *value )
+void config_add_item(char *key, const char *value )
 {
 	kv_add_item( config_items, key, value );
 }

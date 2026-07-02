@@ -81,22 +81,22 @@ net_ctx_t * net_ctx_find_by_id( uint8_t id );
 net_ctx_t * net_ctx_find_by_ssrc( uint32_t ssrc);
 net_ctx_t * net_ctx_find_by_initiator( uint32_t initiator);
 net_ctx_t * net_ctx_find_by_name( char *name );
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port , char *name);
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, const char *ip_address, uint16_t port , const char *name);
 const char *net_ctx_status_to_string( net_ctx_status_t status );
 
-void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note );
-void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control );
-void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program );
+void net_ctx_add_journal_note( net_ctx_t *ctx, const midi_note_t *midi_note );
+void net_ctx_add_journal_control( net_ctx_t *ctx, const midi_control_t *midi_control );
+void net_ctx_add_journal_program( net_ctx_t *ctx, const midi_program_t *midi_program );
 
 void net_ctx_journal_dump( net_ctx_t *ctx);
 void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size);
 void net_ctx_journal_reset( net_ctx_t *ctx );
-void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet);
+void net_ctx_update_rtp_fields( const net_ctx_t *ctx, rtp_packet_t *rtp_packet);
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control );
 void net_ctx_increment_seq( net_ctx_t *ctx );
 
 net_ctx_t *net_ctx_find_by_index( int index );
-int net_ctx_is_used( net_ctx_t *ctx );
+int net_ctx_is_used( const net_ctx_t *ctx );
 int net_ctx_get_num_connections( void );
 
 char *net_ctx_connections_to_string( void );

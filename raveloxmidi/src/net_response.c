@@ -70,7 +70,7 @@ void net_response_destroy( net_response_t **response )
 	*response = NULL;
 }
 
-net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, char *name )
+net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, const char *name )
 {
 	net_applemidi_inv *inv = NULL;
 	net_response_t *response = NULL;

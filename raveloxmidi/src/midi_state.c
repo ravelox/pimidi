@@ -95,7 +95,7 @@ void midi_state_reset( midi_state_t *state )
 	midi_state_unlock( state );
 }
 
-int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len )
+int midi_state_write( midi_state_t *state, const char *in_buffer, size_t in_buffer_len )
 {
 	int ret = 0;
 

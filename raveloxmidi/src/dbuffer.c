@@ -110,7 +110,7 @@ void dbuffer_dump( dbuffer_t *dbuffer )
 	logging_printf(LOGGING_DEBUG, "dbuffer: buffer=%p, len=%u, blocks=%u\n", dbuffer, dbuffer->len, dbuffer->num_blocks );
 }
 
-size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len )
+size_t dbuffer_write( dbuffer_t *dbuffer, const char *in_buffer, size_t in_buffer_len )
 {
 	size_t ret = 0;
 	size_t required_len = 0;
