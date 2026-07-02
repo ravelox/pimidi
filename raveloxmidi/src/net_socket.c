@@ -86,6 +86,8 @@ static pthread_mutex_t poll_fds_lock = PTHREAD_MUTEX_INITIALIZER;
 int socket_timeout = 0;
 
 static void net_socket_set_shutdown_lock( int i );
+static void net_socket_signal_shutdown( const char *caller );
+static void net_socket_drain_shutdown_signal( void );
 
 static int net_socket_poll_fds_add( int fd )
 {
@@ -530,8 +532,7 @@ int net_socket_read( int fd )
 
 		net_socket_set_shutdown_lock(1);
 
-		write( shutdown_fd[0] , "X", 1 );
-		write( shutdown_fd[1] , "X", 1 );
+		net_socket_signal_shutdown( "net_socket_read" );
 
 		midi_state_advance( found_socket->state, 4);
 /*
@@ -704,6 +705,42 @@ static void net_socket_set_shutdown_lock( int i )
 	X_MUTEX_UNLOCK( &shutdown_lock );
 }
 
+static void net_socket_signal_shutdown( const char *caller )
+{
+	ssize_t bytes_written = 0;
+
+	bytes_written = write( shutdown_fd[1], "X", 1 );
+	if( bytes_written < 0 )
+	{
+		if( errno != EAGAIN && errno != EWOULDBLOCK )
+		{
+			logging_printf( LOGGING_WARN, "%s: shutdown pipe write failed: %s\n", caller, strerror( errno ) );
+		}
+	} else if( bytes_written != 1 ) {
+		logging_printf( LOGGING_WARN, "%s: shutdown pipe write incomplete: %ld\n", caller, bytes_written );
+	}
+}
+
+static void net_socket_drain_shutdown_signal( void )
+{
+	char shutdown_buffer[32];
+
+	while( 1 )
+	{
+		ssize_t bytes_read = 0;
+
+		bytes_read = read( shutdown_fd[0], shutdown_buffer, sizeof( shutdown_buffer ) );
+		if( bytes_read > 0 ) continue;
+		if( bytes_read == 0 ) return;
+		if( errno == EINTR ) continue;
+		if( errno != EAGAIN && errno != EWOULDBLOCK )
+		{
+			logging_printf( LOGGING_WARN, "net_socket_drain_shutdown_signal: shutdown pipe read failed: %s\n", strerror( errno ) );
+		}
+		return;
+	}
+}
+
 int net_socket_get_shutdown_status( void )
 {
 	int i = OK;
@@ -778,8 +815,7 @@ int net_socket_fd_loop()
 
 				if( fd == shutdown_fd[0] )
 				{
-					char shutdown_buffer[32];
-					read( shutdown_fd[0], shutdown_buffer, sizeof( shutdown_buffer ) );
+					net_socket_drain_shutdown_signal();
 					continue;
 				}
 
@@ -805,8 +841,7 @@ void net_socket_loop_shutdown(int signal)
 
 	net_socket_set_shutdown_lock( 1 );
 
-	write( shutdown_fd[0] , "X", 1 );
-	write( shutdown_fd[1] , "X", 1 );
+	net_socket_signal_shutdown( "net_socket_loop_shutdown" );
 
 	close( shutdown_fd[0] );
 	close( shutdown_fd[1] );
