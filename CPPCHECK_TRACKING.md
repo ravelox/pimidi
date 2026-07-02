@@ -20,12 +20,12 @@ may be stale; this checklist is the durable record.
 
 ## Unsigned Comparisons
 
-- [ ] **CPPCHECK-006 unsignedLessThanZero**: `raveloxmidi/src/ring_buffer.c:102` checks unsigned `size` against zero with `size <= 0`.
-- [ ] **CPPCHECK-007 unsignedLessThanZero**: `raveloxmidi/src/net_connection.c:551` checks unsigned `buffer_len` against zero.
-- [ ] **CPPCHECK-008 unsignedLessThanZero**: `raveloxmidi/src/raveloxmidi_alsa.c:392` checks unsigned `buffer_size` against zero.
-- [ ] **CPPCHECK-009 unsignedLessThanZero**: `raveloxmidi/src/utils.c:220` checks unsigned `len` against zero.
-- [ ] **CPPCHECK-037 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:98` checks unsigned `(*table)->count` against zero.
-- [ ] **CPPCHECK-038 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:142` checks unsigned `table->count` against zero.
+- [x] **CPPCHECK-006 unsignedLessThanZero**: `raveloxmidi/src/ring_buffer.c:102` checks unsigned `size` against zero with `size <= 0`. Addressed by using `size == 0`.
+- [x] **CPPCHECK-007 unsignedLessThanZero**: `raveloxmidi/src/net_connection.c:551` checks unsigned `buffer_len` against zero. Addressed by using `buffer_len == 0`.
+- [x] **CPPCHECK-008 unsignedLessThanZero**: `raveloxmidi/src/raveloxmidi_alsa.c:392` checks unsigned `buffer_size` against zero. Addressed by using `buffer_size == 0`.
+- [x] **CPPCHECK-009 unsignedLessThanZero**: `raveloxmidi/src/utils.c:220` checks unsigned `len` against zero. Addressed by using `len == 0`.
+- [x] **CPPCHECK-037 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:98` checks unsigned `(*table)->count` against zero. Addressed by using `(*table)->count == 0`.
+- [x] **CPPCHECK-038 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:142` checks unsigned `table->count` against zero. Addressed by using `table->count == 0`.
 
 ## Redundant Pointer Operations
 

@@ -217,7 +217,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
-	if( !buffer || len <= 0)
+	if( !buffer || len == 0)
 	{
 		utils_unlock();
 		return;

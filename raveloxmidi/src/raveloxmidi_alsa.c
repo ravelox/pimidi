@@ -389,7 +389,7 @@ int raveloxmidi_alsa_read( int fd, snd_rawmidi_t *handle, unsigned char *buffer,
 		return -1;
 	}
 
-	if( buffer_size <= 0 )
+	if( buffer_size == 0 )
 	{
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_read: Buffer size is <= 0\n");
  		return -1;

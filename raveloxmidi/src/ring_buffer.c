@@ -99,7 +99,7 @@ ring_buffer_t *ring_buffer_create( size_t size )
 {
 	ring_buffer_t *new_buffer;
 
-	if( size <= 0 )
+	if( size == 0 )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_create: invalid size specified: %d\n", size );
 		return NULL;

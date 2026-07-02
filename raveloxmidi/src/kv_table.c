@@ -95,7 +95,7 @@ void kv_table_destroy( kv_table_t **table )
 	kv_table_lock( *table );
 
 	if( ! (*table)->items) goto kv_table_destroy_end;
-	if( (*table)->count <= 0 ) goto kv_table_destroy_end;
+	if( (*table)->count == 0 ) goto kv_table_destroy_end;
 	
 	for(i=0; i < (*table)->count; i++)
 	{
@@ -139,7 +139,7 @@ kv_item_t *kv_find_item( kv_table_t *table, char *key )
 	if( ! table ) return NULL;
 	if( ! key ) return NULL;
 	if( ! table->items ) return NULL;
-	if( table->count <= 0 ) return NULL;
+	if( table->count == 0 ) return NULL;
 
 	for( i = 0; i < table->count; i++ )
 	{

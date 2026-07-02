@@ -548,7 +548,7 @@ void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , in
 	int send_socket = 0;
 
 	if( ! buffer ) return;
-	if( buffer_len <= 0 ) return;
+	if( buffer_len == 0 ) return;
 	if( ! ctx ) return;
 
 	if( LOGGING_DEBUG_ENABLED )
