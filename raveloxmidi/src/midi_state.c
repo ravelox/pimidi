@@ -147,7 +147,7 @@ int midi_state_compare( midi_state_t *state, const char *compare, size_t compare
 	return ring_buffer_compare( state->ring, compare, compare_len );
 }
 
-int midi_state_char_compare( midi_state_t *state, char compare, size_t index )
+int midi_state_char_compare( midi_state_t *state, uint8_t compare, size_t index )
 {
 	if(! state ) return -1;
 	if( ! state->ring ) return -1;

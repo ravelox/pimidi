@@ -434,7 +434,7 @@ ring_buffer_compare_end:
 	return ret;
 }
 
-int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index )
+int ring_buffer_char_compare( ring_buffer_t *ring, uint8_t compare, size_t index )
 {
 	int ret = 0;
 	size_t real_index = 0;

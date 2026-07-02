@@ -22,6 +22,7 @@
 #define RING_BUFFER_H
 
 #include <pthread.h>
+#include <stdint.h>
 
 typedef struct ring_buffer_t
 {
@@ -51,7 +52,7 @@ void ring_buffer_unlock( ring_buffer_t *ring);
 void ring_buffer_dump( ring_buffer_t *ring );
 
 int ring_buffer_compare( ring_buffer_t *ring, const char *compare , size_t compare_len);
-int ring_buffer_char_compare( ring_buffer_t *ring, char compare, size_t index );
+int ring_buffer_char_compare( ring_buffer_t *ring, uint8_t compare, size_t index );
 
 void ring_buffer_advance( ring_buffer_t *ring, size_t steps );
 

@@ -55,7 +55,7 @@ void midi_state_lock( midi_state_t *state );
 void midi_state_unlock( midi_state_t *state );
 int midi_state_write( midi_state_t *state, const char *buffer, size_t buffer_len);
 int midi_state_compare( midi_state_t *state, const char *compare, size_t compare_len );
-int midi_state_char_compare( midi_state_t *state, char compare, size_t index );
+int midi_state_char_compare( midi_state_t *state, uint8_t compare, size_t index );
 char *midi_state_drain( midi_state_t *state, size_t *len);
 void midi_state_advance( midi_state_t *state, size_t steps );
 
