@@ -339,8 +339,6 @@ midi_sender_send_single_clean:
 	raw_buffer = (unsigned char *)X_MALLOC( 2 + command->data_len );
 	if( raw_buffer )
 	{       
-		size_t bytes_written = 0;
-
 		memset( raw_buffer, 0, 2 + command->data_len );
 
 		raw_buffer[0]=command->status;
@@ -352,10 +350,12 @@ midi_sender_send_single_clean:
 
 		if( inbound_midi_fd >= 0 )
 		{       
+			ssize_t bytes_written;
+
 			//net_socket_send_lock();
 			bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
 			//net_socket_send_unlock();
-			logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
+			logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%zd)\n", bytes_written );
 		}       
 
 #ifdef HAVE_ALSA

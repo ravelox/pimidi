@@ -202,7 +202,6 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	{
 		memcpy( p, packed_chapter_n, packed_chapter_n_size );
 		*size += packed_chapter_n_size;
-		p += packed_chapter_n_size;
 	}
 
 channel_pack_cleanup:
