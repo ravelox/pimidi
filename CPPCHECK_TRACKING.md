@@ -43,7 +43,7 @@ may be stale; this checklist is the durable record.
 - [x] **CPPCHECK-018 unreadVariable**: `raveloxmidi/src/midi_journal.c:205` variable `p` is assigned but never used. Addressed by removing the final pointer advance after the last copied chapter.
 - [x] **CPPCHECK-019 unreadVariable**: `raveloxmidi/src/midi_sender.c:342` variable `bytes_written` is assigned but never used. Addressed by moving `bytes_written` into the `inbound_midi_fd` block and using `ssize_t` for the `write()` result.
 - [x] **CPPCHECK-020 unreadVariable**: `raveloxmidi/src/midi_state.c:249` variable `read_status` is assigned but never used. Addressed by moving `read_status` into the read loop without a redundant initializer.
-- [ ] **CPPCHECK-021 unreadVariable**: `raveloxmidi/src/net_socket.c:243` variable `ring_buffer_size` is assigned but never used.
+- [x] **CPPCHECK-021 unreadVariable**: `raveloxmidi/src/net_socket.c:243` variable `ring_buffer_size` is assigned but never used. Addressed by moving `ring_buffer_size` into the socket-buffer allocation success branch where it is assigned and used.
 - [x] **CPPCHECK-022 unreadVariable**: `raveloxmidi/src/net_socket.c:752` variable `timeout` is assigned but never used. Addressed by moving `timeout` into the polling loop where it is assigned and used.
 - [x] **CPPCHECK-023 unreadVariable**: `raveloxmidi/src/net_socket.c:753` variable `i` is assigned but never used. Addressed by moving `i` into the polling result block.
 - [x] **CPPCHECK-024 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:576` variable `i` is assigned but never used. Addressed by moving `i` into the poll-descriptor loop block.

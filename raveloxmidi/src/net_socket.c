@@ -240,7 +240,6 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 #ifdef HAVE_ALSA
 	size_t alsa_buffer_size = 0;
 #endif
-	size_t ring_buffer_size = 0;
 
 	new_socket = (raveloxmidi_socket_t *)X_MALLOC( sizeof(raveloxmidi_socket_t) );
 
@@ -271,6 +270,7 @@ static raveloxmidi_socket_t *net_socket_create_item( void )
 		X_FREE( new_socket );
 		new_socket = NULL;
 	} else {
+		size_t ring_buffer_size = 0;
 		ring_buffer_size = config_int_get("read.ring_buffer_size");
 		ring_buffer_size = MAX( NET_SOCKET_DEFAULT_RING_BUFFER, ring_buffer_size );
 
