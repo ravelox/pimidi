@@ -45,7 +45,7 @@ may be stale; this checklist is the durable record.
 - [x] **CPPCHECK-020 unreadVariable**: `raveloxmidi/src/midi_state.c:249` variable `read_status` is assigned but never used. Addressed by moving `read_status` into the read loop without a redundant initializer.
 - [ ] **CPPCHECK-021 unreadVariable**: `raveloxmidi/src/net_socket.c:243` variable `ring_buffer_size` is assigned but never used.
 - [x] **CPPCHECK-022 unreadVariable**: `raveloxmidi/src/net_socket.c:752` variable `timeout` is assigned but never used. Addressed by moving `timeout` into the polling loop where it is assigned and used.
-- [ ] **CPPCHECK-023 unreadVariable**: `raveloxmidi/src/net_socket.c:753` variable `i` is assigned but never used.
+- [x] **CPPCHECK-023 unreadVariable**: `raveloxmidi/src/net_socket.c:753` variable `i` is assigned but never used. Addressed by moving `i` into the polling result block.
 - [x] **CPPCHECK-024 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:576` variable `i` is assigned but never used. Addressed by moving `i` into the poll-descriptor loop block.
 - [x] **CPPCHECK-025 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:610` variable `poll_result` is assigned but never used. Addressed by moving `poll_result` into the listener polling loop.
 - [x] **CPPCHECK-026 unreadVariable**: `raveloxmidi/src/raveloxmidi_alsa.c:611` variable `i` is assigned but never used. Addressed by moving `i` into the descriptor-processing block.

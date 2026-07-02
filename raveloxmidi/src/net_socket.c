@@ -749,8 +749,6 @@ void net_socket_loop_teardown()
 int net_socket_fd_loop()
 {
 	int ret = 0;
-	nfds_t i = 0;
-
 
 	do {
 		int timeout = 0;
@@ -765,6 +763,7 @@ int net_socket_fd_loop()
 
 		if( ret > 0 )
 		{
+			nfds_t i = 0;
 			for( i = 0; i < poll_fds_count; i++ )
 			{
 				int fd = 0;
