@@ -1,37 +1,41 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import socket
 import struct
 import sys
 
-local_port = 5006
+LOCAL_PORT = 5006
 
 # Request status
-send_bytes = b"LIST"
+SEND_BYTES = b"LIST"
 
-if len(sys.argv) == 1:
-	family = socket.AF_INET
-	connect_tuple = ( 'localhost', local_port )
-else:
-	details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
-	family = details[0][0]
-	if family == socket.AF_INET6:
-		connect_tuple = ( sys.argv[1], local_port, 0, 0)
-	else:
-		connect_tuple = ( sys.argv[1], local_port)
+def main():
+    if len(sys.argv) == 1:
+        family = socket.AF_INET
+        connect_tuple = ("localhost", LOCAL_PORT)
+    else:
+        details = socket.getaddrinfo(
+            sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+        )
+        family = details[0][0]
+        if family == socket.AF_INET6:
+            connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+        else:
+            connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.settimeout(2.0)
-s.connect( connect_tuple )
-s.sendall( send_bytes )
+    with socket.socket(family, socket.SOCK_DGRAM) as sock:
+        sock.settimeout(2.0)
+        sock.connect(connect_tuple)
+        sock.sendall(SEND_BYTES)
 
-data = ''
-try:
-	data,addr = s.recvfrom(8192)
-except socket.timeout:
-	sys.stderr.write("Timed out waiting for raveloxmidi list response\n")
-	s.close()
-	sys.exit(1)
+        try:
+            data, _ = sock.recvfrom(8192)
+        except socket.timeout:
+            sys.stderr.write("Timed out waiting for raveloxmidi list response\n")
+            sys.exit(1)
 
-print(data)
-s.close()
+    print(data.decode(errors="ignore"))
+
+
+if __name__ == "__main__":
+    main()

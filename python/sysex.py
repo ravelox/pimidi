@@ -1,51 +1,53 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
-import sys
 import socket
 import struct
+import sys
 import time
 
-local_port = 5006
+LOCAL_PORT = 5006
 
-if len(sys.argv) == 1:
+def main():
+    if len(sys.argv) == 1:
         family = socket.AF_INET
-        connect_tuple = ( 'localhost', local_port )
-else:
-        details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
+        connect_tuple = ("localhost", LOCAL_PORT)
+    else:
+        details = socket.getaddrinfo(
+            sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+        )
         family = details[0][0]
         if family == socket.AF_INET6:
-                connect_tuple = ( sys.argv[1], local_port, 0, 0)
-        else:   
-                connect_tuple = ( sys.argv[1], local_port)
+            connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+        else:
+            connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.connect( connect_tuple )
+    with socket.socket(family, socket.SOCK_DGRAM) as sock:
+        sock.connect(connect_tuple)
 
-# Complete SysEx
-bytes = struct.pack( "BBBBBB", 0xf0, 0x1, 0x2, 0x3, 0x04, 0xf7 )
-s.send( bytes )
+        # Complete SysEx
+        msg = struct.pack("BBBBBB", 0xF0, 0x01, 0x02, 0x03, 0x04, 0xF7)
+        sock.send(msg)
 
+        # Partial SysEx start
+        msg = struct.pack("BBBBBB", 0xF0, 0x01, 0x02, 0x03, 0x04, 0xF0)
+        sock.send(msg)
 
-# Partial SysEx start
-bytes = struct.pack( "BBBBBB", 0xf0, 0x1, 0x2, 0x3, 0x04, 0xf0 )
-s.send( bytes )
+        # Partial SysEx middle
+        msg = struct.pack("BBBBBB", 0xF7, 0x01, 0x02, 0x03, 0x04, 0xF0)
+        sock.send(msg)
 
-# Partial SysEx middle
-bytes = struct.pack( "BBBBBB", 0xf7, 0x1, 0x2, 0x3, 0x04, 0xf0 )
-s.send( bytes )
+        # Partial SysEx middle
+        msg = struct.pack("BBBBBB", 0xF7, 0x01, 0x02, 0x03, 0x04, 0xF0)
+        sock.send(msg)
 
-# Partial SysEx middle
-bytes = struct.pack( "BBBBBB", 0xf7, 0x1, 0x2, 0x3, 0x04, 0xf0 )
-s.send( bytes )
+        # Partial SysEx end
+        msg = struct.pack("BBBBBB", 0xF7, 0x01, 0x02, 0x03, 0x04, 0xF7)
+        sock.send(msg)
 
-# Partial SysEx end
-bytes = struct.pack( "BBBBBB", 0xf7, 0x1, 0x2, 0x3, 0x04, 0xf7 )
-s.send( bytes )
-
-
-# Complete SysEx with interleaved TimingClock
-bytes = struct.pack( "BBBBBBB", 0xf0, 0x1, 0x2, 0xf8, 0x3, 0x04, 0xf7 )
-s.send( bytes )
+        # Complete SysEx with interleaved TimingClock
+        msg = struct.pack("BBBBBBB", 0xF0, 0x01, 0x02, 0xF8, 0x03, 0x04, 0xF7)
+        sock.send(msg)
 
 
-s.close()
+if __name__ == "__main__":
+    main()

@@ -1,37 +1,39 @@
 #!/usr/bin/env python3
-import time
 import os
-import RPi.GPIO as GPIO
 import socket
 import struct
 import sys
+import time
+import RPi.GPIO as GPIO
  
 GPIO.setmode(GPIO.BCM)
 DEBUG = 0
  
-local_port = 5006
+LOCAL_PORT = 5006
 
 if len(sys.argv) == 1:
-	family = socket.AF_INET
-	connect_tuple = ( 'localhost', local_port )
+    family = socket.AF_INET
+    connect_tuple = ("localhost", LOCAL_PORT)
 else:
-	details = socket.getaddrinfo( sys.argv[1], local_port, socket.AF_UNSPEC, socket.SOCK_DGRAM)
-	family = details[0][0]
-	if family == socket.AF_INET6:
-		connect_tuple = ( sys.argv[1], local_port, 0, 0)
-	else:
-		connect_tuple = ( sys.argv[1], local_port)
+    details = socket.getaddrinfo(
+        sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+    )
+    family = details[0][0]
+    if family == socket.AF_INET6:
+        connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+    else:
+        connect_tuple = (sys.argv[1], LOCAL_PORT)
 
-s = socket.socket( family, socket.SOCK_DGRAM )
-s.connect( connect_tuple )
+s = socket.socket(family, socket.SOCK_DGRAM)
+s.connect(connect_tuple)
 
 def send_note( velocity):
-	# Note ON
-	bytes = struct.pack( "BBB", 0x96, 0x1f, velocity )
-	s.send( bytes )
-	# Note OFF
-	bytes = struct.pack( "BBB", 0x86, 0x1f, velocity )
-	s.send( bytes )
+        # Note ON
+        msg = struct.pack("BBB", 0x96, 0x1F, velocity)
+        s.send(msg)
+        # Note OFF
+        msg = struct.pack("BBB", 0x86, 0x1F, velocity)
+        s.send(msg)
 
 # read SPI data from MCP3008 chip, 8 possible adc's (0 thru 7)
 def readadc(adcnum, clockpin, mosipin, misopin, cspin):
