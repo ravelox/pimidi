@@ -59,9 +59,9 @@ may be stale; this checklist is the durable record.
 
 ## Run Configuration Noise
 
-- [ ] **CPPCHECK-033 missingInclude**: 245 project include lookup warnings. Re-run cppcheck with the project include paths and generated config header.
-- [ ] **CPPCHECK-034 missingIncludeSystem**: 208 system include lookup warnings. Suppress or configure cppcheck include handling.
-- [ ] **CPPCHECK-035 normalCheckLevelMaxBranches**: 19 branch-limit notices. Re-run with `--check-level=exhaustive` if deeper analysis is needed.
+- [x] **CPPCHECK-033 missingInclude**: 245 project include lookup warnings. Addressed by updating the cppcheck command to run after `./configure` and pass `-I include -I .`.
+- [x] **CPPCHECK-034 missingIncludeSystem**: 208 system include lookup warnings. Addressed by adding `--suppress=missingIncludeSystem` to the cppcheck command.
+- [x] **CPPCHECK-035 normalCheckLevelMaxBranches**: 19 branch-limit notices. Addressed by adding `--check-level=exhaustive` to the cppcheck command.
 
 ## Addressed
 
