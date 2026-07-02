@@ -22,8 +22,10 @@ may be stale; this checklist is the durable record.
 
 - [ ] **CPPCHECK-006 unsignedLessThanZero**: `raveloxmidi/src/ring_buffer.c:102` checks unsigned `size` against zero with `size <= 0`.
 - [ ] **CPPCHECK-007 unsignedLessThanZero**: `raveloxmidi/src/net_connection.c:551` checks unsigned `buffer_len` against zero.
-- [ ] **CPPCHECK-008 unsignedLessThanZero**: `raveloxmidi/src/raveloxmidi_alsa.c:393` checks unsigned `buffer_size` against zero.
-- [ ] **CPPCHECK-009 unsignedLessThanZero**: `raveloxmidi/src/utils.c:221` checks unsigned `len` against zero.
+- [ ] **CPPCHECK-008 unsignedLessThanZero**: `raveloxmidi/src/raveloxmidi_alsa.c:392` checks unsigned `buffer_size` against zero.
+- [ ] **CPPCHECK-009 unsignedLessThanZero**: `raveloxmidi/src/utils.c:220` checks unsigned `len` against zero.
+- [ ] **CPPCHECK-037 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:98` checks unsigned `(*table)->count` against zero.
+- [ ] **CPPCHECK-038 unsignedLessThanZero**: `raveloxmidi/src/kv_table.c:142` checks unsigned `table->count` against zero.
 
 ## Redundant Pointer Operations
 
@@ -34,7 +36,7 @@ may be stale; this checklist is the durable record.
 
 - [x] **CPPCHECK-012 unreadVariable**: `raveloxmidi/src/chapter_n.c:182` variable `i` is assigned but never used. Addressed by moving `i` into the block where it initializes `chapter_n->notes`.
 - [x] **CPPCHECK-013 unreadVariable**: `raveloxmidi/src/daemon.c:107` variable `ret` is assigned but never used. Addressed by checking `stat()` and `unlink()` results inline.
-- [ ] **CPPCHECK-014 unreadVariable**: `raveloxmidi/src/data_queue.c:240` variable `action` is assigned but never used.
+- [x] **CPPCHECK-014 unreadVariable**: `raveloxmidi/src/data_queue.c:240` variable `action` is assigned but never used. No longer reported by the fresh cppcheck run with the documented invocation.
 - [x] **CPPCHECK-015 unreadVariable**: `raveloxmidi/src/data_table.c:43` variable `index` is assigned but never used. Addressed by moving `index` into the debug dump block where it is used.
 - [x] **CPPCHECK-016 unreadVariable**: `raveloxmidi/src/data_table.c:44` variable `count` is assigned but never used. Addressed by initializing `count` inside the debug dump block where it is used.
 - [x] **CPPCHECK-017 unreadVariable**: `raveloxmidi/src/data_table.c:149` variable `i` is assigned but never used. Addressed by removing the redundant initializer before the `for` loop assigns `i`.
@@ -51,11 +53,11 @@ may be stale; this checklist is the durable record.
 
 ## Bulk Style Buckets
 
-- [ ] **CPPCHECK-028 constParameterPointer**: 28 parameters can be declared as pointers to const.
-- [ ] **CPPCHECK-029 constVariablePointer**: 17 variables can be declared as pointers to const.
+- [ ] **CPPCHECK-028 constParameterPointer**: 35 parameters can be declared as pointers to const.
+- [ ] **CPPCHECK-029 constVariablePointer**: 22 variables can be declared as pointers to const.
 - [x] **CPPCHECK-030 variableScope**: 10 variables can have narrower scope. Addressed by narrowing the remaining reported variable declarations; the fresh cppcheck run reports no `variableScope` findings.
-- [ ] **CPPCHECK-031 unusedFunction**: 43 functions are reported unused.
-- [ ] **CPPCHECK-032 staticFunction**: 96 functions are reported as candidates for internal linkage.
+- [ ] **CPPCHECK-031 unusedFunction**: 35 functions are reported unused.
+- [~] **CPPCHECK-032 staticFunction**: 96 functions are reported as candidates for internal linkage. Reviewed as intentional public library/API surface; suppress `staticFunction` in cppcheck instead of changing linkage.
 
 ## Run Configuration Noise
 
