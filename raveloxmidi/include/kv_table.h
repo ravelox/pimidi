@@ -33,12 +33,12 @@ typedef struct kv_table_t {
 	pthread_mutex_t lock;
 } kv_table_t;
 
-kv_table_t *kv_table_create( char *name );
+kv_table_t *kv_table_create( const char *name );
 void kv_table_dump( kv_table_t *table );
 void kv_table_destroy( kv_table_t **table );
 kv_item_t *kv_find_item( kv_table_t *table, char *key );
 char *kv_get_value( kv_table_t *table, char *key );
-void kv_add_item( kv_table_t *table, char *key, char *value );
+void kv_add_item( kv_table_t *table, char *key, const char *value );
 void kv_get_item_by_index( kv_table_t *table, size_t index, char **key, char **value );
 size_t kv_item_count( kv_table_t *table );
 

@@ -35,8 +35,8 @@ typedef struct midi_control_t {
 
 midi_control_t * midi_control_create( void );
 void midi_control_destroy( midi_control_t **midi_control );
-int midi_control_unpack( midi_control_t **midi_control, unsigned char *packet, size_t packet_len );
-int midi_control_pack( midi_control_t *midi_control, unsigned char **packet, size_t *packet_len );
+int midi_control_unpack( midi_control_t **midi_control, const unsigned char *packet, size_t packet_len );
+int midi_control_pack( const midi_control_t *midi_control, unsigned char **packet, size_t *packet_len );
 void midi_control_dump( midi_control_t *midi_control );
 int midi_control_from_command( midi_command_t *command , midi_control_t **midi_control );
 

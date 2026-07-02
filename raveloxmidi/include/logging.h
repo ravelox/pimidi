@@ -42,6 +42,8 @@ int logging_enabled = 0;
 extern int logging_threshold;
 extern int logging_hex_dump;
 extern int logging_enabled;
+#define LOGGING_DEBUG_ENABLED	((logging_enabled!=0) && (logging_threshold==LOGGING_DEBUG))
+#define LOGGING_HEX_DUMP_ENABLED	(LOGGING_DEBUG_ENABLED && (logging_hex_dump!=0))
 #define DEBUG_ONLY	if( (logging_enabled==0) || (logging_threshold!=LOGGING_DEBUG)) return;
 #define INFO_ONLY	if( (logging_enabled==0) || (logging_threshold>LOGGING_INFO)) return;
 #define HEX_DUMP_ENABLED	if(logging_hex_dump==0) return;

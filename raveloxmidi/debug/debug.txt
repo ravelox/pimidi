@@ -2,7 +2,8 @@ Some useful code analysis and debugging commands
 ================================================
 
 cppcheck:
-	cppcheck src/*.c
+	./configure
+	cppcheck --enable=all --std=c11 --check-level=exhaustive --suppress=missingIncludeSystem --suppress=staticFunction --suppress=unusedFunction -I include -I . src/*.c 2> ../cppcheck.results
 
 splint:
 	splint  -I../include -I .. -I /usr/include/alsa -warnposix -mustfreefresh *c 2>&1

@@ -96,7 +96,7 @@ void midi_command_reset( midi_command_t *command )
 	command->data = NULL;
 }
 
-void midi_command_map( midi_command_t *command, char **description, enum midi_message_type_t *message_type)
+void midi_command_map( const midi_command_t *command, char **description, enum midi_message_type_t *message_type)
 {
 	uint32_t i;
 	uint8_t status = 0;
@@ -148,7 +148,7 @@ unsigned char midi_command_bytes_needed( unsigned char command )
 	return 0;
 }
 
-void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, uint8_t *data, size_t data_len )
+void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, const uint8_t *data, size_t data_len )
 {
 	if( ! command ) return;
 

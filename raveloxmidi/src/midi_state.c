@@ -95,7 +95,7 @@ void midi_state_reset( midi_state_t *state )
 	midi_state_unlock( state );
 }
 
-int midi_state_write( midi_state_t *state, char *in_buffer, size_t in_buffer_len )
+int midi_state_write( midi_state_t *state, const char *in_buffer, size_t in_buffer_len )
 {
 	int ret = 0;
 
@@ -246,7 +246,6 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 	char *buffer_value = NULL;
 	size_t buffer_len = 0;
 	midi_command_t *new_command = NULL;
-	char read_status = 0;
 	char get_delta = 0;
 
 	if( ! state ) return;
@@ -256,6 +255,7 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 	logging_printf( LOGGING_DEBUG, "midi_state_send: state=%p, context=%p, mode=%s, z=%d\n", state, context, (mode==MIDI_PARSE_MODE_SIMPLE ? "simple" : "RTP"), z_flag );
 	while( 1 )
 	{
+		char read_status;
 		read_status = midi_state_read_byte( state, &byte );
 
 		// If no bytes are available...return

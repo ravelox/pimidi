@@ -24,18 +24,15 @@ def main():
             connect_tuple = (sys.argv[1], LOCAL_PORT)
 
     with socket.socket(family, socket.SOCK_DGRAM) as sock:
-        sock.setblocking(False)
+        sock.settimeout(2.0)
         sock.connect(connect_tuple)
         sock.sendall(SEND_BYTES)
 
-        data = b""
-        while True:
-            try:
-                data, _ = sock.recvfrom(8192)
-            except Exception:
-                pass
-            if data:
-                break
+        try:
+            data, _ = sock.recvfrom(8192)
+        except socket.timeout:
+            sys.stderr.write("Timed out waiting for raveloxmidi list response\n")
+            sys.exit(1)
 
     print(data.decode(errors="ignore"))
 

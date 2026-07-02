@@ -55,7 +55,7 @@ void remote_connect_init( void )
 {
 	dns_service_t *found_service = NULL;
 	char *remote_service_name = NULL;
-	char *client_name = NULL;
+	const char *client_name = NULL;
 	net_response_t *response = NULL;
 	net_ctx_t *ctx;
 	int use_ipv4, use_ipv6;

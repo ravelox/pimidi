@@ -69,6 +69,8 @@ extern int inbound_midi_fd;
 data_queue_t *midi_queue = NULL;
 static unsigned int journal_enabled = 0;
 
+#define RTP_PACKET_HEADER_SIZE 12
+
 void midi_sender_start( void )
 {
 	if( ! midi_queue )
@@ -106,7 +108,7 @@ void midi_sender_teardown( void )
 void midi_sender_handler( void *data, void *context )
 {
 	data_context_t *data_context = NULL;
-	midi_sender_context_t *sender_context = NULL;
+	const midi_sender_context_t *sender_context = NULL;
 	midi_command_t *command = NULL;
 
 	uint32_t originator_ssrc = 0;
@@ -135,8 +137,6 @@ void midi_sender_handler( void *data, void *context )
 void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc , int alsa_originator_card )
 {
 	midi_payload_t *single_midi_payload = NULL;
-	unsigned char *packed_payload = NULL;
-	size_t packed_payload_len = 0;
 	enum midi_message_type_t message_type = 0;
 	midi_note_t *midi_note = NULL;
 	midi_control_t *midi_control = NULL;
@@ -150,21 +150,21 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	if( ! single_midi_payload ) return;
 
 	midi_command_map( command, NULL, &message_type );
-	midi_command_dump( command );
+	if( LOGGING_DEBUG_ENABLED ) midi_command_dump( command );
 	switch( message_type )
 	{
 		case MIDI_NOTE_OFF:
 		case MIDI_NOTE_ON:
 			midi_note_from_command( command, &midi_note);
-			midi_note_dump( midi_note );
+			if( LOGGING_DEBUG_ENABLED ) midi_note_dump( midi_note );
 			break;
 		case MIDI_CONTROL_CHANGE:	
 			midi_control_from_command( command, &midi_control);
-			midi_control_dump( midi_control );
+			if( LOGGING_DEBUG_ENABLED ) midi_control_dump( midi_control );
 			break;
 		case MIDI_PROGRAM_CHANGE:
 			midi_program_from_command( command, &midi_program);
-			midi_program_dump( midi_program );
+			if( LOGGING_DEBUG_ENABLED ) midi_program_dump( midi_program );
 			break;
 		default:
 			break;
@@ -178,10 +178,16 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		size_t packed_journal_len = 0;
 		unsigned char *packed_rtp_buffer = NULL;
 		size_t packed_rtp_buffer_len = 0;
-		unsigned char *packed_rtp_payload = NULL;
-		rtp_packet_t *rtp_packet = NULL;
+		unsigned char *p = NULL;
+		size_t packed_payload_len = 0;
+		uint16_t temp_header = 0;
+		uint8_t temp_payload_header = 0;
+		int packet_ready = 0;
+		rtp_packet_t rtp_packet;
 
 		net_ctx_t *current_ctx = net_ctx_find_by_index( i );
+
+		memset( &rtp_packet, 0, sizeof( rtp_packet_t ) );
 
 		logging_printf( LOGGING_DEBUG, "midi_sender_send_single: current_ctx=%p\n", current_ctx );
 		if(! current_ctx ) continue;
@@ -202,40 +208,88 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 
 		// We have to pack the payload again each time because some connections may not have a journal
 		// and the flag to indicate the journal being present is in the payload
-		midi_payload_pack( single_midi_payload, &packed_payload, &packed_payload_len );
-		logging_printf(LOGGING_DEBUG, "midi_sender_send_single: packed_payload: buffer=%p,packed_payload_len=%u packed_journal_len=%u\n", packed_payload, packed_payload_len, packed_journal_len);
+		packed_payload_len = 1 + single_midi_payload->header->len + ( single_midi_payload->header->len > 15 ? 1 : 0 );
+		logging_printf(LOGGING_DEBUG, "midi_sender_send_single: packed_payload_len=%u packed_journal_len=%u\n", packed_payload_len, packed_journal_len);
 
-		// Join the packed MIDI payload and the journal together
-		packed_rtp_payload = (unsigned char *)X_MALLOC( packed_payload_len + packed_journal_len );
-		memset( packed_rtp_payload, 0, packed_payload_len + packed_journal_len );
-		memcpy( packed_rtp_payload, packed_payload , packed_payload_len );
-		memcpy( packed_rtp_payload + packed_payload_len , packed_journal, packed_journal_len );
+		packed_rtp_buffer_len = RTP_PACKET_HEADER_SIZE + packed_payload_len + packed_journal_len;
+		packed_rtp_buffer = (unsigned char *)X_MALLOC( packed_rtp_buffer_len );
+		if( ! packed_rtp_buffer )
+		{
+			logging_printf( LOGGING_ERROR, "midi_sender_send_single: Unable to allocate RTP packet buffer\n" );
+			goto midi_sender_send_single_clean;
+		}
 
-		rtp_packet = rtp_packet_create();
+		rtp_packet.header.v = RTP_VERSION;
+		rtp_packet.header.p = 0;
+		rtp_packet.header.x = 0;
+		rtp_packet.header.cc = 0;
+		rtp_packet.header.m = 0;
+		rtp_packet.header.pt = RTP_DYNAMIC_PAYLOAD_97;
+
 		net_ctx_increment_seq( current_ctx );
 
 		// Transfer the connection details to the RTP packet
-		net_ctx_update_rtp_fields( current_ctx , rtp_packet );
+		net_ctx_update_rtp_fields( current_ctx , &rtp_packet );
 
 		// Add the MIDI data to the RTP packet
-		rtp_packet->payload_len = packed_payload_len + packed_journal_len;
+		rtp_packet.payload_len = packed_payload_len + packed_journal_len;
+		rtp_packet.payload = single_midi_payload->buffer;
+		if( LOGGING_DEBUG_ENABLED ) rtp_packet_dump( &rtp_packet );
 
-		rtp_packet->payload = (unsigned char *)X_MALLOC( rtp_packet->payload_len );
-		memcpy( rtp_packet->payload, packed_rtp_payload, rtp_packet->payload_len );
-		rtp_packet_dump( rtp_packet );
+		p = packed_rtp_buffer;
+		packed_rtp_buffer_len = 0;
 
-		// Pack the RTP data
-		rtp_packet_pack( rtp_packet, &packed_rtp_buffer, &packed_rtp_buffer_len );
+		temp_header |= ( rtp_packet.header.v << 6 ) << 8;
+		temp_header |= ( rtp_packet.header.p << 5 ) << 8;
+		temp_header |= ( rtp_packet.header.x << 4 ) << 8;
+		temp_header |= ( rtp_packet.header.cc & 0x0f ) << 8;
+		temp_header |= ( rtp_packet.header.m << 7 );
+		temp_header |= ( rtp_packet.header.pt & 0x7f );
+
+		put_uint16( &p , temp_header,  &packed_rtp_buffer_len );
+		put_uint16( &p , rtp_packet.header.seq, &packed_rtp_buffer_len );
+		put_uint32( &p , rtp_packet.header.timestamp, &packed_rtp_buffer_len );
+		put_uint32( &p , rtp_packet.header.ssrc, &packed_rtp_buffer_len );
+
+		if( single_midi_payload->header->B ) temp_payload_header |= PAYLOAD_HEADER_B;
+		if( single_midi_payload->header->J ) temp_payload_header |= PAYLOAD_HEADER_J;
+		if( single_midi_payload->header->Z ) temp_payload_header |= PAYLOAD_HEADER_Z;
+		if( single_midi_payload->header->P ) temp_payload_header |= PAYLOAD_HEADER_P;
+
+		*p = temp_payload_header;
+
+		if( single_midi_payload->header->len <= 15 )
+		{
+			*p |= ( single_midi_payload->header->len & 0x0f );
+			p++;
+			packed_rtp_buffer_len++;
+		} else {
+			temp_payload_header |= ( single_midi_payload->header->len & 0x0f00 ) >> 8;
+			*p = temp_payload_header;
+			p++;
+			*p = ( single_midi_payload->header->len & 0x00ff );
+			p++;
+			packed_rtp_buffer_len += 2;
+		}
+
+		memcpy( p, single_midi_payload->buffer, single_midi_payload->header->len );
+		p += single_midi_payload->header->len;
+		packed_rtp_buffer_len += single_midi_payload->header->len;
+
+		if( packed_journal_len > 0 )
+		{
+			memcpy( p, packed_journal, packed_journal_len );
+			packed_rtp_buffer_len += packed_journal_len;
+		}
 
 		net_ctx_send( current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
+		packet_ready = 1;
 
+midi_sender_send_single_clean:
 		X_FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
-		rtp_packet_destroy( &rtp_packet );
-
-		X_FREENULL( "packed_rtp_payload", (void **)&packed_rtp_payload );
 		X_FREENULL( "packed_journal", (void **)&packed_journal );
 
-		if( ! journal_enabled )
+		if( ! packet_ready || ! journal_enabled )
 		{
 			continue;
 		}
@@ -258,7 +312,6 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	}
 
 	// Clean up
-	X_FREENULL( "packed_payload", (void **)&packed_payload );
 	midi_payload_destroy( &single_midi_payload );
 	switch( message_type )
 	{
@@ -286,8 +339,6 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	raw_buffer = (unsigned char *)X_MALLOC( 2 + command->data_len );
 	if( raw_buffer )
 	{       
-		size_t bytes_written = 0;
-
 		memset( raw_buffer, 0, 2 + command->data_len );
 
 		raw_buffer[0]=command->status;
@@ -299,10 +350,12 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 
 		if( inbound_midi_fd >= 0 )
 		{       
+			ssize_t bytes_written;
+
 			//net_socket_send_lock();
 			bytes_written = write( inbound_midi_fd, raw_buffer, 1 + command->data_len );
 			//net_socket_send_unlock();
-			logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%u)\n", bytes_written );
+			logging_printf( LOGGING_DEBUG, "net_socket_read: inbound MIDI write(bytes=%zd)\n", bytes_written );
 		}       
 
 #ifdef HAVE_ALSA
@@ -324,4 +377,3 @@ void midi_sender_init( void )
 
 	journal_enabled = is_yes( config_string_get("journal.write") ); 
 }
-

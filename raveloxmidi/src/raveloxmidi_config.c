@@ -70,13 +70,14 @@ static void config_set_defaults( void )
 
 }
 
-static void config_load_file( char *filename )
+static void config_load_file( const char *filename )
 {
 
 	FILE *config_file = NULL;
 	char config_line[ MAX_CONFIG_LINE + 1 ];
 	char *p1,*p2;
-	char *key, *value;
+	char *key;
+	const char *value;
 
 	if( ! filename ) return;
 
@@ -90,7 +91,7 @@ static void config_load_file( char *filename )
 
 	while( 1 )
 	{
-		char *return_value = NULL;
+		const char *return_value = NULL;
 		return_value = fgets( config_line , MAX_CONFIG_LINE, config_file );
 
 		if( feof( config_file) && ! return_value ) break;
@@ -114,7 +115,7 @@ static void config_load_file( char *filename )
 		while( *p1 && isspace( *p1 ) ) p1++;
 
 		/* Ignore any line that's marked as a comment */
-		if( *p1 && *p1=='#' ) continue;
+		if( *p1=='#' ) continue;
 
 		key = p1;
 		p2 = p1;
@@ -150,7 +151,6 @@ int config_init( int argc, char *argv[] )
 		{0,0,0,0}
 	};
 	const char *short_options = "c:dihNP:RCv";
-	int c;
 
 	config_items = kv_table_create("config_items");
 	if( ! config_items )
@@ -163,6 +163,8 @@ int config_init( int argc, char *argv[] )
 
 	while(1)
 	{
+		int c;
+
 		c = getopt_long( argc, argv, short_options, long_options, NULL);
 
 		if( c == -1 ) break;
@@ -228,7 +230,7 @@ char *config_string_get( char *key )
 
 int config_int_get( char *key )
 {
-	char *item_string = NULL;
+	const char *item_string = NULL;
 
 	item_string = config_string_get( key );
 	if(! item_string ) return 0;
@@ -238,7 +240,7 @@ int config_int_get( char *key )
 	
 long config_long_get( char *key )
 {
-	char *item_string = NULL;
+	const char *item_string = NULL;
 
 	item_string = config_string_get( key );
 	if( ! item_string ) return 0;
@@ -248,13 +250,13 @@ long config_long_get( char *key )
 
 int config_is_set( char *key )
 {
-	kv_item_t *item = NULL;
+	const kv_item_t *item = NULL;
 
 	item  = kv_find_item( config_items, key );
 	return ( ( item != NULL ) && ( item->value != NULL ) && ( strlen(item->value) > 0 ) );
 }
 
-raveloxmidi_config_iter_t *config_iter_create( char *prefix )
+raveloxmidi_config_iter_t *config_iter_create( const char *prefix )
 {
 	raveloxmidi_config_iter_t *new_iter = NULL;
 	if( ! prefix ) return NULL;
@@ -293,7 +295,7 @@ void config_iter_next( raveloxmidi_config_iter_t *iter )
 	if( iter->index < MAX_ITER_INDEX ) iter->index += 1;
 }
 
-static char *config_make_key( char *prefix , int index )
+static char *config_make_key( const char *prefix , int index )
 {
 	size_t key_len = 0;
 	char *key = NULL;
@@ -305,7 +307,7 @@ static char *config_make_key( char *prefix , int index )
 	return key;
 }
 
-char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
+char *config_iter_string_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	char *result = NULL;
@@ -318,7 +320,7 @@ char *config_iter_string_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-int config_iter_int_get( raveloxmidi_config_iter_t *iter )
+int config_iter_int_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	int result = 0;
@@ -331,7 +333,7 @@ int config_iter_int_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-long config_iter_long_get( raveloxmidi_config_iter_t *iter )
+long config_iter_long_get( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	long result = 0;
@@ -344,7 +346,7 @@ long config_iter_long_get( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-int config_iter_is_set( raveloxmidi_config_iter_t *iter )
+int config_iter_is_set( const raveloxmidi_config_iter_t *iter )
 {
 	char *key = NULL;
 	int result = 0;
@@ -357,7 +359,7 @@ int config_iter_is_set( raveloxmidi_config_iter_t *iter )
 	return result;
 }
 
-void config_add_item(char *key, char *value )
+void config_add_item(char *key, const char *value )
 {
 	kv_add_item( config_items, key, value );
 }

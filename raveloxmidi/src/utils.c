@@ -207,7 +207,6 @@ void get_uint64( void *dest, unsigned char **src, size_t *len )
 void hex_dump( unsigned char *buffer, size_t len )
 {
 	size_t i = 0 ;
-	unsigned char c = 0 ;
 
 /* Only do a hex dump at debug level */
 	DEBUG_ONLY;
@@ -218,7 +217,7 @@ void hex_dump( unsigned char *buffer, size_t len )
 	logging_prefix_disable();
 
 	logging_printf(LOGGING_DEBUG, "hex_dump(%p , %u)\n", buffer, len );
-	if( !buffer || len <= 0)
+	if( !buffer || len == 0)
 	{
 		utils_unlock();
 		return;
@@ -226,6 +225,8 @@ void hex_dump( unsigned char *buffer, size_t len )
 
 	for( i = 0 ; i < len ; i++ )
 	{
+		unsigned char c = 0 ;
+
 		if( i % 8 == 0 )
 		{
 			logging_printf( LOGGING_DEBUG, "\n");
@@ -468,17 +469,31 @@ void utils_mem_tracking_teardown( void )
 
 char *utils_timestamp( void )
 {
+	const size_t timestamp_len = 100;
 	struct timeval tv;
 	struct timezone tz;
 	gettimeofday( &tv, &tz);
 
 	if( ! utils_timestamp_string )
 	{
-		utils_timestamp_string = (char *)malloc( 100 );
+		utils_timestamp_string = (char *)malloc( timestamp_len );
+		if( ! utils_timestamp_string )
+		{
+			static char timestamp_fallback[] = "0.0:0";
+
+			return timestamp_fallback;
+		}
 	}
 
-	memset( utils_timestamp_string, 0, 100 );
-	sprintf( utils_timestamp_string , "%lu.%lu:%lu", tv.tv_sec, tv.tv_usec, pthread_self());
+	memset( utils_timestamp_string, 0, timestamp_len );
+	snprintf(
+		utils_timestamp_string,
+		timestamp_len,
+		"%lu.%lu:%lu",
+		(unsigned long)tv.tv_sec,
+		(unsigned long)tv.tv_usec,
+		(unsigned long)pthread_self()
+	);
 	return utils_timestamp_string;
 }
 

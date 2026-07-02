@@ -110,22 +110,29 @@ void dbuffer_dump( dbuffer_t *dbuffer )
 	logging_printf(LOGGING_DEBUG, "dbuffer: buffer=%p, len=%u, blocks=%u\n", dbuffer, dbuffer->len, dbuffer->num_blocks );
 }
 
-size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len )
+size_t dbuffer_write( dbuffer_t *dbuffer, const char *in_buffer, size_t in_buffer_len )
 {
 	size_t ret = 0;
+	size_t required_len = 0;
+	size_t allocated_len = 0;
 
 	if( ! dbuffer ) return ret;
 	if( ! in_buffer ) return ret;
 
 	dbuffer_lock( dbuffer );
 	
-	if( dbuffer->len < ( dbuffer->len + in_buffer_len + 1) )
+	required_len = dbuffer->len + in_buffer_len + 1;
+	allocated_len = dbuffer->num_blocks * dbuffer->block_size;
+
+	if( allocated_len < required_len )
 	{
 		char *new_dbuffer_data = NULL;
 		size_t new_block_count = 0;
+		size_t new_allocated_len = 0;
 
-		new_block_count = ( ( dbuffer->len + in_buffer_len + 1 ) / dbuffer->block_size ) + 1 ;
-		new_dbuffer_data = (char *)X_REALLOC( dbuffer->data, new_block_count * dbuffer->block_size );
+		new_block_count = ( required_len / dbuffer->block_size ) + 1 ;
+		new_allocated_len = new_block_count * dbuffer->block_size;
+		new_dbuffer_data = (char *)X_REALLOC( dbuffer->data, new_allocated_len );
 
 		if( ! new_dbuffer_data )
 		{
@@ -137,13 +144,14 @@ size_t dbuffer_write( dbuffer_t *dbuffer, char *in_buffer, size_t in_buffer_len 
 		dbuffer->data = new_dbuffer_data;
 
 		// Initialise the new memory
-		memset( dbuffer->data + dbuffer->len, 0, in_buffer_len + 1 );
+		memset( dbuffer->data + allocated_len, 0, new_allocated_len - allocated_len );
 
 	}
 
 	memcpy( dbuffer->data + dbuffer->len, in_buffer, in_buffer_len );
 	dbuffer->len += in_buffer_len;
-	dbuffer_dump( dbuffer );
+	ret = in_buffer_len;
+	if( LOGGING_DEBUG_ENABLED ) dbuffer_dump( dbuffer );
 dbuffer_write_end:
 	dbuffer_unlock( dbuffer );
 
@@ -159,7 +167,7 @@ size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
 
 	dbuffer_lock( dbuffer );
 
-	dbuffer_dump( dbuffer );
+	if( LOGGING_DEBUG_ENABLED ) dbuffer_dump( dbuffer );
 
 	*out_buffer = ( char * ) X_MALLOC( dbuffer->len );
 	memset( *out_buffer, 0, dbuffer->len );

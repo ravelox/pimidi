@@ -179,13 +179,13 @@ chapter_n_pack_cleanup:
 chapter_n_t * chapter_n_create( void )
 {
 	chapter_n_t *chapter_n = NULL;
-	unsigned int i = 0;
 
 	chapter_n = ( chapter_n_t * ) X_MALLOC( sizeof( chapter_n_t ) );
 
 	if( chapter_n )
 	{
 		chapter_n_header_t *header = chapter_n_header_create();
+		unsigned int i;
 
 		memset( chapter_n, 0, sizeof( chapter_n_t ) );
 		if( ! header )
@@ -299,7 +299,7 @@ void chapter_n_reset( chapter_n_t *chapter_n )
 	chapter_n_header_reset( chapter_n->header );
 }
 
-void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size_t *size )
+void chapter_n_note_pack( const chapter_n_note_t *note , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 

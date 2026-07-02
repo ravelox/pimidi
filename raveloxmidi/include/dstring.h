@@ -36,7 +36,7 @@ int dstring_reset( dstring_t *dstring );
 void dstring_destroy( dstring_t **dstring );
 void dstring_dump( dstring_t *dstring );
 size_t dstring_len( dstring_t *dstring );
-size_t dstring_append( dstring_t *dstring, char *in_string );
+size_t dstring_append( dstring_t *dstring, const char *in_string );
 unsigned char *dstring_value( dstring_t *dstring );
 
 #define DSTRING_DEFAULT_BLOCK_SIZE	512

@@ -65,7 +65,7 @@ data_queue_item_t *data_queue_item_create( void )
 	return new_item;
 }
 
-data_queue_t *data_queue_create( char *name, data_queue_action_func_t action )
+data_queue_t *data_queue_create( const char *name, data_queue_action_func_t action )
 {
 	data_queue_t *new_queue = NULL;
 
@@ -237,6 +237,9 @@ static void *data_queue_handler( void *data )
 {
 	data_queue_t *queue = NULL;
 	data_queue_item_t *item = NULL;
+	data_queue_action_func_t action = NULL;
+	void *item_data = NULL;
+	void *item_context = NULL;
 
 	if( ! data )
 	{
@@ -251,6 +254,11 @@ static void *data_queue_handler( void *data )
 	// Eternal loop until told to shut down
 	while( 1 )
 	{
+		item = NULL;
+		action = NULL;
+		item_data = NULL;
+		item_context = NULL;
+
 		data_queue_lock( queue );
 	
 		while( ( queue->state == DATA_QUEUE_EMPTY ) && ( queue->shutdown == DATA_QUEUE_CONTINUE ) )
@@ -268,22 +276,27 @@ static void *data_queue_handler( void *data )
 
 		if( item )
 		{
-			/* Do something with the item */
 			logging_printf( LOGGING_DEBUG, "data_queue_handler: [%s] got item=%p\n", (queue->name ? queue->name : "unknown") , item );
+			action = queue->action;
+			item_data = item->data;
+			item_context = item->context;
+		}
 
-			if( queue->action )
+		data_queue_unlock( queue );
+
+		if( item )
+		{
+			if( action )
 			{
-				queue->action( item->data, item->context );
+				action( item_data, item_context );
 			}
 
 			item->data = NULL;
+			item->context = NULL;
 			item->next = NULL;
 
 			X_FREENULL( "data_queue_handler:item", (void **)&item);
 		}
-
-queue_handler_loop_end:
-		data_queue_unlock( queue );
 	}
 
 	logging_printf( LOGGING_DEBUG, "data_queue_handler: [%s] stopped\n", ( queue->name ? queue->name : "unknown") );

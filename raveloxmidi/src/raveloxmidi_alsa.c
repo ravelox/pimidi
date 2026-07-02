@@ -157,7 +157,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		input_key = config_iter_create( input_name );
 		while(1)
 		{
-			char *full_input_name = NULL;
+			const char *full_input_name = NULL;
 			if( ! config_iter_is_set( input_key ) ) break;
 
 			full_input_name = config_iter_string_get( input_key );
@@ -186,7 +186,7 @@ void raveloxmidi_alsa_init( char *input_name , char *output_name , size_t buffer
 		output_key = config_iter_create( output_name );
 		while(1)
 		{
-			char *full_output_name = NULL;
+			const char *full_output_name = NULL;
 			if( ! config_iter_is_set( output_key ) ) break;
 
 			full_output_name = config_iter_string_get( output_key );
@@ -295,7 +295,6 @@ void raveloxmidi_alsa_dump_rawmidi( void *data )
 	if( ! data ) return;
 
 	rawmidi = (snd_rawmidi_t *)data;
-	if( ! rawmidi ) return;
 
 	snd_rawmidi_info_malloc( &info );
 	snd_rawmidi_info( rawmidi, info );
@@ -390,7 +389,7 @@ int raveloxmidi_alsa_read( int fd, snd_rawmidi_t *handle, unsigned char *buffer,
 		return -1;
 	}
 
-	if( buffer_size <= 0 )
+	if( buffer_size == 0 )
 	{
 		logging_printf(LOGGING_DEBUG,"raveloxmidi_alsa_read: Buffer size is <= 0\n");
  		return -1;
@@ -573,7 +572,6 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
 {
 	struct pollfd *current_fds = NULL;
 	int num_current_fds = 0;
-	int i = 0;
 
 	if( ! handle ) return;
 
@@ -593,6 +591,8 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
 
 	if(snd_rawmidi_poll_descriptors( handle, current_fds, num_current_fds ) == num_current_fds )
 	{
+		int i = 0;
+
 		for( i = 0 ; i < num_current_fds; i++ )
 		{
 			logging_printf( LOGGING_DEBUG, "raveloxmidi_alsa_set_poll_fds: current_fd[%u]=%u\n", i, current_fds[i].fd);
@@ -607,8 +607,6 @@ void raveloxmidi_alsa_set_poll_fds( snd_rawmidi_t *handle )
 static void * raveloxmidi_alsa_listener( void *data )
 {
 	long socket_timeout = 0;
-	int poll_result = 0;
-	int i = 0;
 
 	logging_printf(LOGGING_DEBUG, "raveloxmidi_alsa_listener: Thread started\n");
 	raveloxmidi_alsa_add_poll_fd( NULL, net_socket_get_shutdown_fd() );
@@ -624,6 +622,8 @@ static void * raveloxmidi_alsa_listener( void *data )
 	socket_timeout *= 1000;
 
 	do {
+		int poll_result = 0;
+
 		poll_result = raveloxmidi_alsa_poll( socket_timeout );
 
 		poll_descriptors_lock();
@@ -637,6 +637,8 @@ static void * raveloxmidi_alsa_listener( void *data )
 
 		if( poll_result == 1 )
 		{
+			int i = 0;
+
 			poll_descriptors_lock();
 			for( i = 0; i < num_poll_descriptors; i++ )
 			{

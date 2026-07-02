@@ -41,7 +41,7 @@ void kv_table_unlock( kv_table_t *table )
 	X_MUTEX_UNLOCK( &(table->lock) );
 }
 
-kv_table_t *kv_table_create( char *name )
+kv_table_t *kv_table_create( const char *name )
 {
 	kv_table_t *new_table = NULL;
 
@@ -95,7 +95,7 @@ void kv_table_destroy( kv_table_t **table )
 	kv_table_lock( *table );
 
 	if( ! (*table)->items) goto kv_table_destroy_end;
-	if( (*table)->count <= 0 ) goto kv_table_destroy_end;
+	if( (*table)->count == 0 ) goto kv_table_destroy_end;
 	
 	for(i=0; i < (*table)->count; i++)
 	{
@@ -139,7 +139,7 @@ kv_item_t *kv_find_item( kv_table_t *table, char *key )
 	if( ! table ) return NULL;
 	if( ! key ) return NULL;
 	if( ! table->items ) return NULL;
-	if( table->count <= 0 ) return NULL;
+	if( table->count == 0 ) return NULL;
 
 	for( i = 0; i < table->count; i++ )
 	{
@@ -154,7 +154,7 @@ kv_item_t *kv_find_item( kv_table_t *table, char *key )
 
 char *kv_get_value( kv_table_t *table, char *key )
 {
-	kv_item_t *item = NULL;
+	const kv_item_t *item = NULL;
 
 	item = kv_find_item( table, key );
 	if( ! item ) return NULL;
@@ -162,7 +162,7 @@ char *kv_get_value( kv_table_t *table, char *key )
 	return item->value;
 }
 
-void kv_add_item( kv_table_t *table, char *key, char *value )
+void kv_add_item( kv_table_t *table, char *key, const char *value )
 {
 	kv_item_t *new_item = NULL;
 	kv_item_t **new_item_list = NULL;

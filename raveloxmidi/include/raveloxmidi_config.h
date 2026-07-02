@@ -31,7 +31,7 @@ int config_int_get( char *key );
 long config_long_get( char *key );
 int config_is_set( char *key );
 
-void config_add_item(char *key, char *value);
+void config_add_item(char *key, const char *value);
 void config_dump( void );
 
 void config_usage( void );
@@ -41,14 +41,14 @@ typedef struct raveloxmidi_config_iter_t {
 	int index;
 } raveloxmidi_config_iter_t;
 
-raveloxmidi_config_iter_t *config_iter_create( char *prefix );
+raveloxmidi_config_iter_t *config_iter_create( const char *prefix );
 void config_iter_destroy( raveloxmidi_config_iter_t **iter );
 void config_iter_reset( raveloxmidi_config_iter_t *iter );
 void config_iter_next( raveloxmidi_config_iter_t *iter  );
-char *config_iter_string_get( raveloxmidi_config_iter_t *iter );
-int config_iter_int_get( raveloxmidi_config_iter_t *iter );
-long config_iter_long_get( raveloxmidi_config_iter_t *iter );
-int config_iter_is_set( raveloxmidi_config_iter_t *iter );
+char *config_iter_string_get( const raveloxmidi_config_iter_t *iter );
+int config_iter_int_get( const raveloxmidi_config_iter_t *iter );
+long config_iter_long_get( const raveloxmidi_config_iter_t *iter );
+int config_iter_is_set( const raveloxmidi_config_iter_t *iter );
 
 #define MAX_CONFIG_LINE	1024
 

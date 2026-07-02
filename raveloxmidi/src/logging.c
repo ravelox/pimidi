@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -50,7 +51,15 @@ static name_map_t loglevel_map[] = {
 
 static pthread_mutex_t	logging_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static volatile sig_atomic_t logging_reopen_requested = 0;
+
+static void logging_sighup_handler(int sig)
+{
+	logging_reopen_requested = 1;
+}
+
 static char *logging_file_name = NULL;
+static FILE *logging_fp = NULL;
 static unsigned char prefix_disabled = 0;
 
 void logging_lock( void )
@@ -121,24 +130,28 @@ void logging_prefix_enable( void )
 
 void logging_printf(int level, const char *format, ...)
 {
-	FILE *logging_fp = NULL;
+	FILE *current_logging_fp = NULL;
 	va_list ap;
 
 	if( logging_enabled == 0 ) return;
-	if( level < logging_threshold ) return;
 
-	logging_lock(); 
+	logging_lock();
 
-	if( logging_file_name )
+	if( level < logging_threshold )
 	{
-		logging_fp = fopen( logging_file_name , "a+" );
-		if( !logging_fp )
-		{
-			logging_fp = stderr;
-		}
-	} else {
-		logging_fp = stderr;
+		logging_unlock();
+		return;
 	}
+
+	if( logging_reopen_requested && logging_file_name )
+	{
+		logging_reopen_requested = 0;
+		if( logging_fp != stderr ) fclose( logging_fp );
+		logging_fp = fopen( logging_file_name, "a+" );
+		if( !logging_fp ) logging_fp = stderr;
+	}
+
+	current_logging_fp = ( logging_fp ? logging_fp : stderr );
 
 	if( ! prefix_disabled )
 	{
@@ -147,26 +160,28 @@ void logging_printf(int level, const char *format, ...)
 
 		gettimeofday( &tv, &tz);
 
-		fprintf( logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
+		fprintf( current_logging_fp , "[%lu.%lu]\t[tid=%lu]\t%s: ", tv.tv_sec, tv.tv_usec, pthread_self(), logging_value_to_name( loglevel_map, level ) );
 	}
 
+	va_list ap_copy;
 	va_start(ap, format);
+	va_copy(ap_copy, ap);
 
-	vfprintf( logging_fp, format, ap );
-
-	va_end(ap);
-
-	if( logging_fp && logging_fp != stderr )
+	if( vfprintf( current_logging_fp, format, ap ) < 0
+	 || fflush( current_logging_fp ) != 0 )
 	{
-		fclose( logging_fp );
+	    vfprintf( stderr, format, ap_copy );
 	}
+
+	va_end(ap_copy);
+	va_end(ap);
 
 	logging_unlock();
 }
 
 void logging_init(void)
 {
-	char *name = NULL;
+	const char *name = NULL;
 
 	pthread_mutex_init( &logging_mutex, NULL );
 
@@ -183,16 +198,28 @@ void logging_init(void)
 			if( name )
 			{
 				logging_file_name = X_STRDUP( name );
-			} else {
-				logging_file_name = NULL;
+				if( logging_file_name )
+				{
+					// Check to see if the logging_fp already has a value.
+					// If it does, fclose() for safety.
+					if(logging_fp && logging_fp != stderr) fclose( logging_fp );
+					logging_fp = fopen( logging_file_name , "a+" );
+				}
+				if( ! logging_fp ) logging_fp = stderr;
 			}
-		} else {
+		}
+
+		if( ! logging_fp )
+		{
 			logging_file_name = NULL;
+			logging_fp = stderr;
 		}
 		
 		
 		logging_enabled = 1;
 	}
+
+	signal( SIGHUP, logging_sighup_handler );
 
 	if( is_yes( config_string_get("logging.hex_dump") ) )
 	{
@@ -205,6 +232,12 @@ void logging_init(void)
 void logging_teardown(void)
 {
 	logging_lock();
+
+	if( logging_fp && logging_fp != stderr )
+	{
+		fclose( logging_fp );
+	}
+	logging_fp = NULL;
 
 	if( logging_file_name )
 	{

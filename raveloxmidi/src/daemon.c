@@ -36,9 +36,8 @@ extern int errno;
 
 void daemon_start(void)
 {
-        pid_t pid;
+	pid_t pid;
 	char *pid_file;
-	FILE *reopen_file = NULL;
 
 	pid_file = config_string_get("daemon.pid_file");
 
@@ -88,13 +87,11 @@ void daemon_start(void)
                 _exit(0);
         }       
 
-        reopen_file = freopen("/dev/null","r",stdin);
-	if( ! reopen_file )
+        if( ! freopen("/dev/null","r",stdin) )
 	{
 		logging_printf( LOGGING_ERROR, "daemon_start: Unable to reopen stdin as /dev/null: %s\n", strerror( errno ) );
 	}
-        reopen_file = freopen("/dev/null","w",stdout);
-	if( ! reopen_file )
+        if( ! freopen("/dev/null","w",stdout) )
 	{
 		logging_printf( LOGGING_ERROR, "daemon_start: Unable to reopen stdout as /dev/null: %s\n", strerror( errno ) );
 	}
@@ -104,19 +101,15 @@ void daemon_teardown(void)
 {
 	
 	struct stat filestat;
-	int ret = 0;
 	char *pid_file_name = NULL;
 
 	pid_file_name = config_string_get("daemon.pid_file");
 
 	if( pid_file_name )
 	{
-		ret = stat( pid_file_name, &filestat );
-
-		if( ret == 0 )
+		if( stat( pid_file_name, &filestat ) == 0 )
 		{
-			ret = unlink( pid_file_name );
-			if( ret != 0 )
+			if( unlink( pid_file_name ) != 0 )
 			{
 				logging_printf( LOGGING_ERROR, "daemon_teardown: Cannot remove %s:%s\n", pid_file_name, strerror( errno ) );
 			}

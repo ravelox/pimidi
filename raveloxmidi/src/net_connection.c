@@ -115,7 +115,7 @@ void net_ctx_dump_all( void )
 	logging_printf( LOGGING_DEBUG, "net_ctx_dump_all: end\n");
 }
 
-static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint16_t port, char *ip_address , char *name)
+static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint32_t send_ssrc, uint16_t port, const char *ip_address , const char *name)
 {
 	if( ! ctx ) return;
 
@@ -126,6 +126,10 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->control_port = port;
 	ctx->data_port = port+1;
 	ctx->start = time_in_microseconds();
+	ctx->control_address_len = 0;
+	ctx->data_address_len = 0;
+	memset( &ctx->control_address, 0, sizeof( ctx->control_address ) );
+	memset( &ctx->data_address, 0, sizeof( ctx->data_address ) );
 
 
 	if( ctx->ip_address )
@@ -133,6 +137,12 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 		X_FREE( ctx->ip_address );
 	}
 	ctx->ip_address = ( char *) X_STRDUP( ip_address );
+
+	if( ctx->ip_address )
+	{
+		get_sock_info( ctx->ip_address, ctx->control_port, (struct sockaddr *)&ctx->control_address, &ctx->control_address_len, NULL );
+		get_sock_info( ctx->ip_address, ctx->data_port, (struct sockaddr *)&ctx->data_address, &ctx->data_address_len, NULL );
+	}
 
 	if( ctx->name )
 	{
@@ -234,6 +244,10 @@ void net_ctx_reset( net_ctx_t *ctx )
 	net_ctx_lock( ctx );
 	ctx->seq = 1;
 	ctx->status = NET_CTX_STATUS_UNUSED;
+	ctx->control_address_len = 0;
+	ctx->data_address_len = 0;
+	memset( &ctx->control_address, 0, sizeof( ctx->control_address ) );
+	memset( &ctx->data_address, 0, sizeof( ctx->data_address ) );
 
 	if( ctx->midi_state )
 	{
@@ -386,7 +400,7 @@ void net_ctx_add( net_ctx_t *ctx )
 	data_table_add_item( connections, ctx );
 }
 
-net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_address, uint16_t port, char *name )
+net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, const char *ip_address, uint16_t port, const char *name )
 {
 	net_ctx_t *new_ctx = NULL;
 	uint32_t send_ssrc = 0;
@@ -434,39 +448,39 @@ net_ctx_t * net_ctx_register( uint32_t ssrc, uint32_t initiator, char *ip_addres
 	}
 
 register_end:
-	net_ctx_dump_all();
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_dump_all();
 
 	return new_ctx;
 }
 
-void net_ctx_add_journal_note( net_ctx_t *ctx, midi_note_t *midi_note )
+void net_ctx_add_journal_note( net_ctx_t *ctx, const midi_note_t *midi_note )
 {
 	if( ! midi_note ) return;
 	if( ! ctx) return;
 	net_ctx_lock( ctx );
 	midi_journal_add_note( ctx->journal, ctx->seq, midi_note );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
-void net_ctx_add_journal_control( net_ctx_t *ctx, midi_control_t *midi_control )
+void net_ctx_add_journal_control( net_ctx_t *ctx, const midi_control_t *midi_control )
 {
 	if( ! midi_control ) return;
 	if( !ctx ) return;
 	net_ctx_lock( ctx );
 	midi_journal_add_control( ctx->journal, ctx->seq, midi_control );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
-void net_ctx_add_journal_program( net_ctx_t *ctx, midi_program_t *midi_program )
+void net_ctx_add_journal_program( net_ctx_t *ctx, const midi_program_t *midi_program )
 {
 	if( !midi_program ) return;
 	if( !ctx ) return;
 	net_ctx_lock( ctx );
 	midi_journal_add_program( ctx->journal, ctx->seq, midi_program );
 	net_ctx_unlock( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
 }
 
 void net_ctx_journal_dump( net_ctx_t *ctx )
@@ -506,7 +520,7 @@ void net_ctx_journal_reset( net_ctx_t *ctx )
 	net_ctx_unlock( ctx );
 }
 
-void net_ctx_update_rtp_fields( net_ctx_t *ctx, rtp_packet_t *rtp_packet)
+void net_ctx_update_rtp_fields( const net_ctx_t *ctx, rtp_packet_t *rtp_packet)
 {
 	if( ! rtp_packet ) return;
 	if( ! ctx ) return;
@@ -527,31 +541,45 @@ void net_ctx_increment_seq( net_ctx_t *ctx )
 
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control)
 {
-	struct sockaddr_in6 send_address;
+	struct sockaddr *send_address = NULL;
 	ssize_t bytes_sent = 0;
-	socklen_t addr_len = 0, socket_addr_len = 0;
+	socklen_t addr_len = 0;
 	int port_number = 0;
-	int family = AF_UNSPEC;
 	int send_socket = 0;
 
 	if( ! buffer ) return;
-	if( buffer_len <= 0 ) return;
+	if( buffer_len == 0 ) return;
 	if( ! ctx ) return;
 
-	net_ctx_dump( ctx );
-	net_ctx_journal_dump( ctx );
+	if( LOGGING_DEBUG_ENABLED )
+	{
+		net_ctx_dump( ctx );
+		net_ctx_journal_dump( ctx );
+	}
 
 	net_ctx_lock( ctx );
 
-	/* Set up the destination address */
-	memset((char *)&send_address, 0, sizeof( send_address));
 	port_number = ( use_control == USE_CONTROL_PORT ? ctx->control_port : ctx->data_port );
-	get_sock_info( ctx->ip_address, port_number, (struct sockaddr *)&send_address, &addr_len, &family);
+	if( use_control == USE_CONTROL_PORT )
+	{
+		send_address = (struct sockaddr *)&ctx->control_address;
+		addr_len = ctx->control_address_len;
+	} else {
+		send_address = (struct sockaddr *)&ctx->data_address;
+		addr_len = ctx->data_address_len;
+	}
+
+	if( ! send_address || addr_len == 0 )
+	{
+		logging_printf( LOGGING_ERROR, "net_ctx_send: No cached destination address for [%s]:%u\n", ctx->ip_address, port_number );
+		net_ctx_unlock( ctx );
+		return;
+	}
 
 	send_socket = ( use_control == USE_CONTROL_PORT ? net_socket_get_control_socket() : net_socket_get_data_socket() );
 
 	//net_socket_send_lock();
-	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, (struct sockaddr *)&send_address, addr_len);
+	bytes_sent = sendto( send_socket, buffer, buffer_len , MSG_DONTWAIT, send_address, addr_len);
 	//net_socket_send_unlock();
 
 	if( bytes_sent < 0 )
@@ -582,7 +610,7 @@ int net_ctx_get_num_connections( void )
 	return data_table_item_count( connections );
 }
 
-int net_ctx_is_used( net_ctx_t *ctx )
+int net_ctx_is_used( const net_ctx_t *ctx )
 {
 	if( ! ctx ) return 0;
 	return ctx->status != NET_CTX_STATUS_UNUSED;
@@ -608,7 +636,7 @@ char *net_ctx_connections_to_string( void )
 	net_connections_lock();
 
 	memset(ctx_buffer, 0, sizeof(ctx_buffer) );
-	sprintf( ctx_buffer, "{\"connections\":[");
+	snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"connections\":[");
 	dstring_append( dstring, ctx_buffer );
 
 	for( i=0 ; i < num_connections; i++ )
@@ -621,7 +649,7 @@ char *net_ctx_connections_to_string( void )
 
 		connection_count += 1;
 		memset( ctx_buffer, 0, sizeof(ctx_buffer) );
-		sprintf( ctx_buffer, "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
+		snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
 			i, ( ctx->name ? ctx->name : "unknown"), ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
 		dstring_append( dstring, ctx_buffer );
 
@@ -634,7 +662,7 @@ char *net_ctx_connections_to_string( void )
 	dstring_append( dstring, "]" );
 
 	memset( ctx_buffer, 0, sizeof(ctx_buffer ) );
-	sprintf( ctx_buffer, ",\"count\":%zu}", connection_count );
+	snprintf( ctx_buffer, sizeof(ctx_buffer), ",\"count\":%zu}", connection_count );
 	dstring_append( dstring, ctx_buffer );
 
 	net_connections_unlock();
@@ -643,7 +671,7 @@ char *net_ctx_connections_to_string( void )
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
 
-	hex_dump( out_buffer, strlen( out_buffer));
+	if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( out_buffer, strlen( out_buffer));
 
 	dstring_destroy( &dstring );
 

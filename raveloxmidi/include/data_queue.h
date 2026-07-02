@@ -44,7 +44,7 @@ typedef struct data_queue_t {
 
 
 /* Public functions */
-data_queue_t * data_queue_create( char *name, data_queue_action_func_t action );
+data_queue_t * data_queue_create( const char *name, data_queue_action_func_t action );
 void data_queue_destroy( data_queue_t **queue );
 void data_queue_add( data_queue_t *queue, void *data, void *context);
 void data_queue_stop( data_queue_t *queue );

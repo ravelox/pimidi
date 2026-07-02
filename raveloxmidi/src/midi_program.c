@@ -52,7 +52,7 @@ void midi_program_destroy( midi_program_t **midi_program )
 	X_FREENULL( "midi_program", (void **)midi_program );
 }
 
-int midi_program_unpack( midi_program_t **midi_program, unsigned char *buffer, size_t buffer_len )
+int midi_program_unpack( midi_program_t **midi_program, const unsigned char *buffer, size_t buffer_len )
 {
 	int ret = 0;
 
@@ -81,7 +81,7 @@ int midi_program_unpack( midi_program_t **midi_program, unsigned char *buffer, s
 	return ret;
 }
 
-int midi_program_pack( midi_program_t *midi_program, unsigned char **buffer, size_t *buffer_len )
+int midi_program_pack( const midi_program_t *midi_program, unsigned char **buffer, size_t *buffer_len )
 {
 	int ret = 0;
 
@@ -136,4 +136,3 @@ int midi_program_from_command( midi_command_t *command , midi_program_t **midi_p
 
 	return ret;
 }
-

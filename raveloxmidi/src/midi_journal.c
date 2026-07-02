@@ -30,7 +30,7 @@
 
 #include "logging.h"
 
-void journal_header_pack( journal_header_t *header , char **packed , size_t *size )
+void journal_header_pack( const journal_header_t *header , char **packed , size_t *size )
 {
 	char *p = NULL;
 
@@ -75,7 +75,7 @@ void journal_header_destroy( journal_header_t **header )
 	if( header ) X_FREENULL( "journal_header", (void **)header );
 }
 
-void channel_header_pack( channel_header_t *header , unsigned char **packed , size_t *size )
+void channel_header_pack( const channel_header_t *header , unsigned char **packed , size_t *size )
 {
 	unsigned char *p = NULL;
 	uint16_t temp_header = 0;
@@ -202,7 +202,6 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	{
 		memcpy( p, packed_chapter_n, packed_chapter_n_size );
 		*size += packed_chapter_n_size;
-		p += packed_chapter_n_size;
 	}
 
 channel_pack_cleanup:
@@ -379,7 +378,7 @@ void journal_destroy( journal_t **journal )
 	*journal = NULL;
 }
 
-void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_note)
+void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t *midi_note)
 {
 	uint16_t note_slot = 0;
 	chapter_n_note_t *new_note = NULL;
@@ -451,7 +450,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, midi_note_t *midi_
 	journal->channels[ channel ]->chapter_n->num_notes++;
 }
 
-void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t *midi_control)
+void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_control_t *midi_control)
 {
 	unsigned char channel = 0;
 	unsigned char controller = 0;
@@ -499,7 +498,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, midi_control_t 
 	journal->channels[ channel ]->chapter_c->controller_log[ controller ].value = midi_control->controller_value;
 }
 
-void midi_journal_add_program( journal_t *journal, uint32_t seq, midi_program_t *midi_program)
+void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_program_t *midi_program)
 {
 	unsigned char channel = 0;
 

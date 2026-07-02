@@ -58,7 +58,7 @@ void chapter_n_header_reset( chapter_n_header_t *header );
 void chapter_n_dump( chapter_n_t *chapter_n );
 void chapter_n_reset( chapter_n_t *chapter_n );
 
-void chapter_n_note_pack( chapter_n_note_t *note , unsigned char **packed , size_t *size );
+void chapter_n_note_pack( const chapter_n_note_t *note , unsigned char **packed , size_t *size );
 void chapter_n_note_destroy( chapter_n_note_t **note );
 chapter_n_note_t * chapter_n_note_create( void );
 void chapter_n_note_dump( chapter_n_note_t *note );

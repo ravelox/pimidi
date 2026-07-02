@@ -11,7 +11,7 @@ AM_INIT_AUTOMAKE
 
 AC_CONFIG_HEADERS([config.h])
 
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AC_PROG_INSTALL
 
@@ -40,7 +40,8 @@ if test "$have_dpkg" == "yes"
 then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
-	AC_OUTPUT( DEBIAN/control pkgscripts/build_deb )
+	AC_CONFIG_FILES([DEBIAN/control pkgscripts/build_deb ])
+AC_OUTPUT
 fi
 
 COPYRIGHT_YEAR="`date +'%Y'`"
@@ -49,4 +50,5 @@ AC_SUBST(COPYRIGHT_YEAR)
 GIT_BRANCH_NAME="`pkgscripts/branch_name`"
 AC_SUBST(GIT_BRANCH_NAME)
 
-AC_OUTPUT(Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h)
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h])
+AC_OUTPUT
