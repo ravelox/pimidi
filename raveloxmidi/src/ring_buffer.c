@@ -85,7 +85,7 @@ void ring_buffer_reset( ring_buffer_t *ring , size_t size)
 	if( ring->data )
 	{
 		X_FREE( ring->data );
-		ring->data = ( char * ) X_MALLOC( size );
+		ring->data = ( unsigned char * ) X_MALLOC( size );
 		if( ring->data )
 		{
 			memset( ring->data, 0, size );
@@ -113,7 +113,7 @@ ring_buffer_t *ring_buffer_create( size_t size )
 		return NULL;
 	}
 
-	new_buffer->data = ( char * ) X_MALLOC( size );
+	new_buffer->data = ( unsigned char * ) X_MALLOC( size );
 	if( ! new_buffer->data )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_create: insufficient memory to create internal data buffer\n");
@@ -178,10 +178,10 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 		if( ( ring->end + len ) <= ring->size )
 		{
 			logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=contiguous write=contiguous ring=%p\n", ring);
-			char *dest = ring->data + ring->end;
+			unsigned char *dest = ring->data + ring->end;
 
 			/* Copy the data */
-			memcpy( dest, data, len );
+			memcpy( dest, ( const unsigned char * )data, len );
 
 			/* Update the pointers */
 			ring->used += len;
@@ -190,16 +190,16 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 		/* 2: The buffer isn't wrapped but the data has to be split */
 			size_t first_part = ring->size - ring->end;
 			size_t second_part = len - first_part;
-			char *dest = NULL;
+			unsigned char *dest = NULL;
 
 			logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=wrapped ring=%p\n", ring);
 			/* Copy the first part */
 			dest = ring->data + ring->end;
-			memcpy( dest, data, first_part );
+			memcpy( dest, ( const unsigned char * )data, first_part );
 
 			/* Copy the second part */
 			dest = ring->data;
-			memcpy( dest, data + first_part, second_part );
+			memcpy( dest, ( const unsigned char * )data + first_part, second_part );
 
 			/* Update the pointers */
 			ring->end = second_part;
@@ -208,10 +208,10 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 	} else {
 
 		/* 3: The buffer is wrapped and the data can be stored contiguously */
-		char *dest = ring->data + ring->end;
+		unsigned char *dest = ring->data + ring->end;
 
 		logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=contiguous ring=%p\n", ring );
-		memcpy( dest, data, len );
+		memcpy( dest, ( const unsigned char * )data, len );
 
 		/* Update the pointers */
 		ring->end += len;
@@ -228,7 +228,7 @@ ring_buffer_write_end:
 char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 {
 	char *dest = NULL;
-	const char *src = NULL;
+	const unsigned char *src = NULL;
 	size_t first_part = 0;
 	size_t second_part = 0;
 
@@ -332,13 +332,13 @@ ring_buffer_read_byte_end:
 
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 {
-	char *new_data = NULL;
+	unsigned char *new_data = NULL;
 	char *old_data = NULL;
 	size_t bytes_used = 0;
 
 	if( ! ring ) return 0;
 
-	new_data = ( char * )X_MALLOC( new_size );
+	new_data = ( unsigned char * )X_MALLOC( new_size );
 	if( ! new_data )
 	{
 		logging_printf( LOGGING_DEBUG, "ring_buffer_resize: Insufficient memory to resize\n");

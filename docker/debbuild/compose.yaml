@@ -1,0 +1,8 @@
+services:
+  debbuild:
+    build:
+      context: .
+    image: pimidi-debbuild-ubuntu2404
+    volumes:
+      - ../..:/workspace
+    working_dir: /workspace/raveloxmidi

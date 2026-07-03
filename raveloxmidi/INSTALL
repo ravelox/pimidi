@@ -58,3 +58,37 @@ The RPM spec builds the following packages:
 * raveloxmidi - binary package
 * libraveloxmidi - runtime library package
 * libraveloxmidi-devel - headers and pkg-config files
+
+Docker package validation
+-------------------------
+
+Docker-based package builds are available if Docker and Docker Compose
+are installed. These targets build inside clean distribution containers
+while leaving the native package targets available.
+
+From a configured source tree:
+
+1. cd raveloxmidi
+2. make docker-deb
+
+This builds the .deb packages in an Ubuntu container.
+
+To build .rpm packages in a Fedora container:
+
+1. cd raveloxmidi
+2. make docker-rpm
+
+To build both package formats:
+
+1. cd raveloxmidi
+2. make docker-packages
+
+Docker-built package artifacts are copied to build/.
+
+Cleanup behavior
+----------------
+
+make clean removes normal compiler and generated build files but keeps
+package artifacts in build/.
+
+make distclean removes build/ and its package artifacts.

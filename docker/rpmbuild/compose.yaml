@@ -1,0 +1,12 @@
+services:
+  rpmbuild:
+    build:
+      context: .
+    image: pimidi-rpmbuild-fedora44
+    volumes:
+      - ../..:/workspace
+      - rpmbuild-home:/home/builder
+    working_dir: /workspace/raveloxmidi
+
+volumes:
+  rpmbuild-home:

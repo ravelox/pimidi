@@ -12,6 +12,26 @@ Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on
 
 The build will auto-detect ALSA and build rawmidi support. Please read **FAQ.md** for ALSA requirements. Thanks to Daniel Collins (malacalypse) for being the guinea pig for this.
 
+## Building Packages
+
+Native package builds are available from the `raveloxmidi` directory:
+
+```
+make deb
+make rpm
+```
+
+Docker-based validation builds are also available:
+
+```
+make docker-deb
+make docker-rpm
+make docker-packages
+```
+
+Docker package builds place the generated `.deb` and `.rpm` files in
+`raveloxmidi/build/`.
+
 Except for the Avahi code, it's all mine but I have leaned heavily on the following references:
 
 * RTP MIDI: An RTP Payload Format for MIDI ( http://www.eecs.berkeley.edu/~lazzaro/rtpmidi/index.html )

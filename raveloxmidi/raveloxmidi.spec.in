@@ -52,7 +52,6 @@ rm -rf $RPM_BUILD_ROOT
 %{_includedir}/*.h
 %{_libdir}/libraveloxmidi.so
 %{_libdir}/libraveloxmidi.a
-%{_libdir}/libraveloxmidi.la
 %{_libdir}/pkgconfig/raveloxmidi.pc
 
 %changelog

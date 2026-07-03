@@ -116,6 +116,7 @@ src/raveloxmidi
 raveloxmidi.service
 raveloxmidi.spec
 raveloxmidi.pc
+raveloxmidi-*.tar.gz
 
 build/
 

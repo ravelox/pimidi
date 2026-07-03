@@ -48,7 +48,10 @@ pkgconfig_DATA = raveloxmidi.pc
 
 ACLOCAL_AMFLAGS = -I m4
 
-CLEANFILES = *.tar.gz *spec build/*deb
+CLEANFILES = *.tar.gz *spec
+
+distclean-local:
+	rm -rf build
 
 deb:
 	chmod 700 pkgscripts/build_deb
@@ -56,3 +59,11 @@ deb:
 
 rpm:	dist
 	rpmbuild -ta $(distdir).tar.gz
+
+docker-deb:
+	docker compose -f ../docker/debbuild/compose.yaml up --build --abort-on-container-exit
+
+docker-rpm:
+	docker compose -f ../docker/rpmbuild/compose.yaml up --build --abort-on-container-exit
+
+docker-packages: docker-deb docker-rpm
