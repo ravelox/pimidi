@@ -470,7 +470,7 @@ int net_socket_read( int fd )
 		if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( read_buffer, read_buffer_size );
 
 		ret = net_applemidi_unpack( &command, read_buffer, read_buffer_size );
-		if( LOGGING_DEBUG_ENABLED ) net_applemidi_command_dump( command );
+		net_applemidi_command_dump( command );
 
 		switch( command->command )
 		{
