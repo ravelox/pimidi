@@ -1,7 +1,6 @@
-bin_PROGRAMS = raveloxmidi
+lib_LTLIBRARIES = libraveloxmidi.la
 
-raveloxmidi_SOURCES = \
-	raveloxmidi.c \
+libraveloxmidi_la_SOURCES = \
 	dns_service_publisher.c \
 	dns_service_discover.c \
 	applemidi_inv.c \
@@ -39,10 +38,16 @@ raveloxmidi_SOURCES = \
 	data_context.c \
 	midi_sender.c
 
-raveloxmidi_LDADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
+libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
+libraveloxmidi_la_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
+libraveloxmidi_la_LDFLAGS = -version-info 0:0:0
+
+bin_PROGRAMS = raveloxmidi
+
+raveloxmidi_SOURCES = raveloxmidi.c
+raveloxmidi_LDADD = libraveloxmidi.la
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
 
 EXTRA_DIST = 
 
 AM_CPPFLAGS = -I ../include
-

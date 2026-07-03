@@ -16,6 +16,7 @@ Required packages
 
 autoconf-2.59+
 automake-1.9+
+libtool
 pkgconfig-0.21
 
 avahi-devel

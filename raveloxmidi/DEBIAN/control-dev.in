@@ -1,0 +1,9 @@
+Package: libraveloxmidi-dev
+Version: @VERSION@-1
+Section: libdevel
+Priority: optional
+Architecture: @DEB_ARCH@
+Depends: libraveloxmidi0 (= @VERSION@-1), pkg-config
+Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
+Description: libraveloxmidi development files
+ Header files and pkg-config metadata for libraveloxmidi

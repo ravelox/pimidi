@@ -1,7 +1,8 @@
-m4_define([VERSION_NUMBER],[0.20.3])
+m4_define([VERSION_NUMBER],[0.30.1])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
 AC_INIT([raveloxmidi],[FULL_VERSION])
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_CANONICAL_HOST
 AC_CANONICAL_BUILD
@@ -14,6 +15,8 @@ AC_CONFIG_HEADERS([config.h])
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 AC_PROG_INSTALL
+AM_PROG_AR
+LT_INIT
 
 AC_SYS_LARGEFILE
 
@@ -40,8 +43,7 @@ if test "$have_dpkg" == "yes"
 then
 	DEB_ARCH="`dpkg --print-architecture`"
 	AC_SUBST(DEB_ARCH)
-	AC_CONFIG_FILES([DEBIAN/control pkgscripts/build_deb ])
-AC_OUTPUT
+	AC_CONFIG_FILES([DEBIAN/control DEBIAN/control-lib DEBIAN/control-dev pkgscripts/build_deb ])
 fi
 
 COPYRIGHT_YEAR="`date +'%Y'`"
@@ -50,5 +52,5 @@ AC_SUBST(COPYRIGHT_YEAR)
 GIT_BRANCH_NAME="`pkgscripts/branch_name`"
 AC_SUBST(GIT_BRANCH_NAME)
 
-AC_CONFIG_FILES([Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec include/build_info.h])
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile man/raveloxmidi.1 raveloxmidi.service raveloxmidi.spec raveloxmidi.pc include/build_info.h])
 AC_OUTPUT

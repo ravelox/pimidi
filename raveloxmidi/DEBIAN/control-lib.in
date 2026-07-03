@@ -1,0 +1,9 @@
+Package: libraveloxmidi0
+Version: @VERSION@-1
+Section: libs
+Priority: optional
+Architecture: @DEB_ARCH@
+Depends: libavahi-client3@ALSA_DEPS@
+Maintainer: Dave Kelly <raveloxmidi@ravelox.co.uk>
+Description: libraveloxmidi
+ Shared library for raveloxmidi RTP-MIDI support

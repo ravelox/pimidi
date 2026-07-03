@@ -1,5 +1,7 @@
 # RaveloxMIDI
 
+This branch is a development branch. I cannot guarantee that things will not break while development is in progress.
+
 Please read **FAQ.md**
 
 raveloxmidi is a simple proxy to send MIDI NoteOn, NoteOff, Control Change (CC) and Program Change (PC) events from the local machine via RTP MIDI or to receive any MIDI events from a remote source via RTP MIDI and write them to a file.

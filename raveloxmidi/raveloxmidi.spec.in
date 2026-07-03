@@ -6,9 +6,26 @@ License: GPLv3
 Group: Applications/System
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
+Requires: libraveloxmidi%{?_isa} = %{version}-%{release}
 
 %description
 Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
+
+%package -n libraveloxmidi
+Summary: Shared library for raveloxmidi RTP-MIDI support
+Group: System Environment/Libraries
+
+%description -n libraveloxmidi
+Shared library for raveloxmidi RTP-MIDI support.
+
+%package -n libraveloxmidi-devel
+Summary: Development files for libraveloxmidi
+Group: Development/Libraries
+Requires: libraveloxmidi%{?_isa} = %{version}-%{release}
+Requires: pkgconfig
+
+%description -n libraveloxmidi-devel
+Header files and pkg-config metadata for libraveloxmidi.
 
 %prep
 %setup -q
@@ -27,5 +44,15 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{_bindir}/*
 %doc %attr(444, bin, bin) %{_mandir}/man1/@PACKAGE@.1.gz
+
+%files -n libraveloxmidi
+%{_libdir}/libraveloxmidi.so.*
+
+%files -n libraveloxmidi-devel
+%{_includedir}/*.h
+%{_libdir}/libraveloxmidi.so
+%{_libdir}/libraveloxmidi.a
+%{_libdir}/libraveloxmidi.la
+%{_libdir}/pkgconfig/raveloxmidi.pc
 
 %changelog

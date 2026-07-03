@@ -73,6 +73,7 @@ autom4te.cache
 /config.status
 /config.sub
 /configure
+/configure~
 /configure.scan
 /depcomp
 /install-sh
@@ -82,6 +83,7 @@ autom4te.cache
 # https://www.gnu.org/software/libtool/
 
 /ltmain.sh
+/libtool
 
 # http://www.gnu.org/software/texinfo
 
@@ -102,14 +104,18 @@ m4/lt~obsolete.m4
 Makefile
 
 DEBIAN/control
+DEBIAN/control-lib
+DEBIAN/control-dev
 .vscode
 config.h
 man/raveloxmidi.1
 build_deb
 .deps
+.libs
 src/raveloxmidi
 raveloxmidi.service
 raveloxmidi.spec
+raveloxmidi.pc
 
 build/
 

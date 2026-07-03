@@ -1,25 +1,82 @@
 #!/bin/bash
+set -e
+shopt -s nullglob
+
+PACKAGE_NAME="@PACKAGE@"
+PACKAGE_VERSION="@VERSION@-1"
 
 #
-# Define the local build directory
+# Define the local build directories
 #
-BUILDDIR=build/@PACKAGE@_@VERSION@-1
+STAGEDIR="build/stage/${PACKAGE_NAME}_${PACKAGE_VERSION}"
+BINARYDIR="build/${PACKAGE_NAME}_${PACKAGE_VERSION}"
+LIBDIR="build/libraveloxmidi0_${PACKAGE_VERSION}"
+DEVDIR="build/libraveloxmidi-dev_${PACKAGE_VERSION}"
+
+copy_paths()
+{
+	local package_dir="$1"
+	shift
+
+	local source_path
+	for source_path in "$@"
+	do
+		if [ -e "${source_path}" ] || [ -L "${source_path}" ]
+		then
+			local relative_path="${source_path#${STAGEDIR}/}"
+			mkdir -p "${package_dir}/$(dirname "${relative_path}")"
+			cp -a "${source_path}" "${package_dir}/${relative_path}"
+		fi
+	done
+}
+
+rm -rf "${STAGEDIR}" "${BINARYDIR}" "${LIBDIR}" "${DEVDIR}"
+mkdir -p "${STAGEDIR}" "${BINARYDIR}" "${LIBDIR}" "${DEVDIR}"
 
 #
-# Use the automake installer to install the files in the local build directory
+# Use the automake installer to install the files in the staging directory
 #
-DESTDIR=../${BUILDDIR} make install
+DESTDIR="$(pwd)/${STAGEDIR}" make install prefix=/usr
 
 #
-# Copy the debian control file
+# Split the staged install into binary, runtime library and development packages
 #
-mkdir -p ${BUILDDIR}/DEBIAN
-cp -R DEBIAN/control ${BUILDDIR}/DEBIAN
+copy_paths "${BINARYDIR}" \
+	"${STAGEDIR}"/usr/bin/* \
+	"${STAGEDIR}"/usr/local/bin/* \
+	"${STAGEDIR}"/usr/share/man/man1/* \
+	"${STAGEDIR}"/usr/local/share/man/man1/*
+
+copy_paths "${LIBDIR}" \
+	"${STAGEDIR}"/usr/lib*/libraveloxmidi.so.* \
+	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.so.*
+
+copy_paths "${DEVDIR}" \
+	"${STAGEDIR}"/usr/include/*.h \
+	"${STAGEDIR}"/usr/local/include/*.h \
+	"${STAGEDIR}"/usr/lib*/libraveloxmidi.so \
+	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.so \
+	"${STAGEDIR}"/usr/lib*/libraveloxmidi.a \
+	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.a \
+	"${STAGEDIR}"/usr/lib*/libraveloxmidi.la \
+	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.la \
+	"${STAGEDIR}"/usr/lib*/pkgconfig/raveloxmidi.pc \
+	"${STAGEDIR}"/usr/local/lib*/pkgconfig/raveloxmidi.pc
 
 #
-# Make the debian packate
+# Copy the debian control files
+#
+mkdir -p "${BINARYDIR}/DEBIAN" "${LIBDIR}/DEBIAN" "${DEVDIR}/DEBIAN"
+cp -R DEBIAN/control "${BINARYDIR}/DEBIAN/control"
+cp -R DEBIAN/control-lib "${LIBDIR}/DEBIAN/control"
+cp -R DEBIAN/control-dev "${DEVDIR}/DEBIAN/control"
+
+#
+# Make the debian packages
 #
 cd build
-dpkg-deb --build @PACKAGE@_@VERSION@-1
-rm -Rf "@PACKAGE@_@VERSION@-1/"
+dpkg-deb --root-owner-group --build "${PACKAGE_NAME}_${PACKAGE_VERSION}"
+dpkg-deb --root-owner-group --build "libraveloxmidi0_${PACKAGE_VERSION}"
+dpkg-deb --root-owner-group --build "libraveloxmidi-dev_${PACKAGE_VERSION}"
+rm -Rf "${PACKAGE_NAME}_${PACKAGE_VERSION}/" "libraveloxmidi0_${PACKAGE_VERSION}/" "libraveloxmidi-dev_${PACKAGE_VERSION}/" stage/
 cd ..
