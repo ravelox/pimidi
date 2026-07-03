@@ -18,28 +18,28 @@ binary as a consumer of that library.
 
 ## Phase 2 - Public SDK/API
 
-- [ ] Define the public API boundary.
-- [ ] Add a primary public SDK header, such as `raveloxmidi.h`.
-- [ ] Identify internal headers that should no longer be installed.
-- [ ] Keep only intentional public headers in the dev package.
-- [ ] Introduce an opaque SDK context type, such as `raveloxmidi_context_t`.
-- [ ] Add public lifecycle APIs for creating, starting, stopping and freeing a context.
-- [ ] Move the `raveloxmidi` binary to use the public SDK API.
-- [ ] Add a public version API, such as `raveloxmidi_version()`.
-- [ ] Add symbol visibility controls for exported library APIs.
-- [ ] Review libtool versioning and set an intentional ABI version policy.
+- [ ] P2-001 Define the public API boundary.
+- [ ] P2-002 Add a primary public SDK header, such as `raveloxmidi.h`.
+- [ ] P2-003 Identify internal headers that should no longer be installed.
+- [ ] P2-004 Keep only intentional public headers in the dev package.
+- [ ] P2-005 Introduce an opaque SDK context type, such as `raveloxmidi_context_t`.
+- [ ] P2-006 Add public lifecycle APIs for creating, starting, stopping and freeing a context.
+- [ ] P2-007 Move the `raveloxmidi` binary to use the public SDK API.
+- [ ] P2-008 Add a public version API, such as `raveloxmidi_version()`.
+- [ ] P2-009 Add symbol visibility controls for exported library APIs.
+- [ ] P2-010 Review libtool versioning and set an intentional ABI version policy.
 
 ## Phase 3 - MIDI Event Callbacks
 
-- [ ] Define public callback types for MIDI events sent by `midi_sender`.
-- [ ] Add callback registration and unregistration APIs.
-- [ ] Include user data in callback registration.
-- [ ] Ensure callbacks receive enough event metadata for useful integrations.
-- [ ] Avoid running user callbacks on the sender hot path.
-- [ ] Queue callback events to a dispatcher or worker thread.
-- [ ] Define queue overflow behavior.
-- [ ] Document callback threading and latency guarantees.
-- [ ] Add tests or validation tooling for callback delivery.
+- [ ] P3-001 Define public callback types for MIDI events sent by `midi_sender`.
+- [ ] P3-002 Add callback registration and unregistration APIs.
+- [ ] P3-003 Include user data in callback registration.
+- [ ] P3-004 Ensure callbacks receive enough event metadata for useful integrations.
+- [ ] P3-005 Avoid running user callbacks on the sender hot path.
+- [ ] P3-006 Queue callback events to a dispatcher or worker thread.
+- [ ] P3-007 Define queue overflow behavior.
+- [ ] P3-008 Document callback threading and latency guarantees.
+- [ ] P3-009 Add tests or validation tooling for callback delivery.
 
 ## Phase 4 - Developer Experience
 
