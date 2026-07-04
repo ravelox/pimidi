@@ -110,10 +110,12 @@ DEBIAN/control-dev
 .vscode
 config.h
 man/raveloxmidi.1
+man/raveloxmidi-stream.1
 build_deb
 .deps
 .libs
 src/raveloxmidi
+src/raveloxmidi-stream
 raveloxmidi.service
 raveloxmidi.spec
 raveloxmidi.pc

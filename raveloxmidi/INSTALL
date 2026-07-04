@@ -22,6 +22,11 @@ against an installed dev package using:
 
     pkg-config --cflags --libs raveloxmidi
 
+The raveloxmidi-stream utility is installed with the binary package. It
+bridges raw MIDI byte streams on stdin/stdout or named pipes to the
+RTP-MIDI service. The stream format and pipe workflows are documented in
+docs/STREAM_CLI.md.
+
 Required packages
 -----------------
 
@@ -57,7 +62,7 @@ A build/ directory will be created containing:
 
 The .deb package split is:
 
-* raveloxmidi - the command line binary, service file and man page
+* raveloxmidi - the command line utilities, service file and man pages
 * libraveloxmidi0 - the runtime shared library needed by the binary and
   SDK consumers
 * libraveloxmidi-dev - the public header, linker symlink and
@@ -82,7 +87,7 @@ The RPM spec builds the following packages:
 
 The .rpm package split is:
 
-* raveloxmidi - the command line binary, service file and man page
+* raveloxmidi - the command line utilities, service file and man pages
 * libraveloxmidi - the runtime shared library needed by the binary and
   SDK consumers
 * libraveloxmidi-devel - the public header, linker symlink and

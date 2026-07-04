@@ -13,6 +13,10 @@ status values, ownership rules and the public configuration API.
 SDK examples are available in `raveloxmidi/examples/` and build against
 the installed dev package with `pkg-config`.
 
+The `raveloxmidi-stream` utility supports stdin/stdout and named pipe
+MIDI workflows. See `raveloxmidi/docs/STREAM_CLI.md` for the binary
+stream format and examples.
+
 ## 1a. Which package do I need to build software against libraveloxmidi?
 
 Install `libraveloxmidi-dev` on Debian or Ubuntu, or

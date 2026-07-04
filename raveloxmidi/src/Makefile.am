@@ -48,11 +48,15 @@ libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 libraveloxmidi_la_CFLAGS = -DRAVELOXMIDI_BUILDING_LIBRARY @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
 libraveloxmidi_la_LDFLAGS = -version-info $(LIBRAVELOXMIDI_LT_CURRENT):$(LIBRAVELOXMIDI_LT_REVISION):$(LIBRAVELOXMIDI_LT_AGE)
 
-bin_PROGRAMS = raveloxmidi
+bin_PROGRAMS = raveloxmidi raveloxmidi-stream
 
 raveloxmidi_SOURCES = raveloxmidi.c
 raveloxmidi_LDADD = libraveloxmidi.la
 raveloxmidi_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
+
+raveloxmidi_stream_SOURCES = raveloxmidi_stream.c
+raveloxmidi_stream_LDADD = libraveloxmidi.la @PTHREAD_LIBS@
+raveloxmidi_stream_CFLAGS = @PTHREAD_CFLAGS@
 
 EXTRA_DIST = 
 

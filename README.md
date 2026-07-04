@@ -22,6 +22,10 @@ SDK examples are available in `raveloxmidi/examples/`. They build
 against the installed dev package with `pkg-config --cflags --libs
 raveloxmidi`.
 
+The `raveloxmidi-stream` utility can bridge raw MIDI byte streams on
+stdin/stdout or named pipes to the RTP-MIDI service. Its stream format
+and pipe workflows are documented in `raveloxmidi/docs/STREAM_CLI.md`.
+
 ## Building Packages
 
 Native package builds are available from the `raveloxmidi` directory:
@@ -44,7 +48,7 @@ Docker package builds place the generated `.deb` and `.rpm` files in
 
 The package split is:
 
-* `raveloxmidi` - binary and service files
+* `raveloxmidi` - command line utilities and service files
 * `libraveloxmidi0` / `libraveloxmidi` - runtime shared library
 * `libraveloxmidi-dev` / `libraveloxmidi-devel` - public header,
   linker symlink and pkg-config metadata

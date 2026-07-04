@@ -24,9 +24,9 @@ under active development. Future compatible releases may add event fields
 or new event types. Existing fields and status values should not be
 removed without an ABI/versioning review.
 
-The stream-oriented command line tools, named pipe workflows and
-stdin/stdout MIDI stream format remain experimental until Phase 5 is
-implemented.
+The stream-oriented `raveloxmidi-stream` command line tool, named pipe
+workflows and stdin/stdout MIDI stream format are documented in
+`docs/STREAM_CLI.md`.
 
 ## Examples
 

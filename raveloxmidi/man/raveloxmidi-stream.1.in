@@ -1,0 +1,50 @@
+.TH raveloxmidi-stream "1"
+.SH NAME
+raveloxmidi-stream @VERSION@ \- raw MIDI stream bridge for raveloxmidi
+.SH SYNOPSIS
+\fBraveloxmidi-stream\fP \-\-bind-address \fIaddress\fP [\-\-input \fI-\fP|\fIpath\fP] [\-\-output \fI-\fP|\fIpath\fP] [options]
+
+\fBraveloxmidi-stream\fP \-\-config \fIfilename\fP [\-\-input \fI-\fP|\fIpath\fP] [\-\-output \fI-\fP|\fIpath\fP] [options]
+.SH DESCRIPTION
+.BR raveloxmidi-stream
+bridges simple binary MIDI streams to and from the raveloxmidi RTP-MIDI service.
+It can read outgoing MIDI messages from stdin or a named pipe, and it can write
+received MIDI events to stdout or a named pipe.
+.SH OPTIONS
+.TP
+.B -c, --config \fIfilename\fP
+Name of configuration file to use.
+.TP
+.B -b, --bind-address \fIaddress\fP
+Set the raveloxmidi \fBnetwork.bind_address\fP configuration item.
+.TP
+.B -i, --input \fI-\fP|\fIpath\fP
+Read outgoing raw MIDI bytes from stdin or the given file or named pipe.
+.TP
+.B -o, --output \fI-\fP|\fIpath\fP
+Write received raw MIDI bytes to stdout or the given file or named pipe.
+.TP
+.B -d, --debug
+Enable debug logging.
+.TP
+.B -v, --version
+Display current version number and exit.
+.TP
+.B -h, --help
+Display help information.
+.SH STREAM FORMAT
+The stream format is a sequence of ordinary MIDI messages. Each message must
+include its status byte. Running status is not supported.
+.LP
+Examples:
+.LP
+Note On is encoded as status, note, velocity:
+.LP
+\fB0x90 0x3c 0x64\fP
+.LP
+Program Change is encoded as status, program:
+.LP
+\fB0xc0 0x05\fP
+.LP
+See \fBdocs/STREAM_CLI.md\fP in the source tree for the complete stream format
+and named pipe workflow examples.

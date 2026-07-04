@@ -58,14 +58,14 @@ binary as a consumer of that library.
 
 ## Phase 5 - Stream CLI Tools
 
-- [ ] P5-001 Add a command line utility that reads raw MIDI from stdin and sends it over RTP-MIDI.
-- [ ] P5-002 Add support for writing received MIDI events to stdout.
-- [ ] P5-003 Add named pipe input for outgoing MIDI messages.
-- [ ] P5-004 Add named pipe output for incoming MIDI messages.
-- [ ] P5-005 Document the binary MIDI stream format.
-- [ ] P5-006 Add examples for stdin/stdout and named pipe workflows.
-- [ ] P5-007 Ensure stream utility behavior is implemented through the public SDK.
-- [ ] P5-008 Ensure named pipe and stdin/stdout handling does not block sender or network threads.
+- [x] P5-001 Add a command line utility that reads raw MIDI from stdin and sends it over RTP-MIDI.
+- [x] P5-002 Add support for writing received MIDI events to stdout.
+- [x] P5-003 Add named pipe input for outgoing MIDI messages.
+- [x] P5-004 Add named pipe output for incoming MIDI messages.
+- [x] P5-005 Document the binary MIDI stream format.
+- [x] P5-006 Add examples for stdin/stdout and named pipe workflows.
+- [x] P5-007 Ensure stream utility behavior is implemented through the public SDK.
+- [x] P5-008 Ensure named pipe and stdin/stdout handling does not block sender or network threads.
 
 ## Phase 6 - Packaging Cleanup
 
