@@ -16,6 +16,7 @@ The container runs:
 make clean
 make -j$(nproc)
 make deb
+pkgscripts/validate_deb_contents build/*.deb
 ```
 
 Debian package artifacts are written to `raveloxmidi/build/`.

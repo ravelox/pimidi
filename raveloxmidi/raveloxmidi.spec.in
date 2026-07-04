@@ -37,6 +37,8 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
+rm -f $RPM_BUILD_ROOT%{_libdir}/libraveloxmidi.a
+rm -f $RPM_BUILD_ROOT%{_libdir}/libraveloxmidi.la
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -44,14 +46,14 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{_bindir}/*
 %doc %attr(444, bin, bin) %{_mandir}/man1/@PACKAGE@.1.gz
+%doc %attr(444, bin, bin) %{_mandir}/man1/@PACKAGE@-stream.1.gz
 
 %files -n libraveloxmidi
 %{_libdir}/libraveloxmidi.so.*
 
 %files -n libraveloxmidi-devel
-%{_includedir}/*.h
+%{_includedir}/raveloxmidi.h
 %{_libdir}/libraveloxmidi.so
-%{_libdir}/libraveloxmidi.a
 %{_libdir}/pkgconfig/raveloxmidi.pc
 
 %changelog

@@ -1,0 +1,95 @@
+#!/bin/bash
+set -euo pipefail
+
+fail()
+{
+	echo "validate_deb_contents: $*" >&2
+	exit 1
+}
+
+list_package()
+{
+	local package="$1"
+	dpkg-deb -c "$package" | awk '{print $6}' | sed 's#^\./#/#' | sed 's#/$##'
+}
+
+assert_contains()
+{
+	local listing="$1"
+	local pattern="$2"
+
+	if ! grep -Eq "$pattern" "$listing"
+	then
+		fail "missing expected path matching ${pattern} in ${listing}"
+	fi
+}
+
+assert_not_contains()
+{
+	local listing="$1"
+	local pattern="$2"
+
+	if grep -Eq "$pattern" "$listing"
+	then
+		fail "unexpected path matching ${pattern} in ${listing}"
+	fi
+}
+
+binary_package=""
+library_package=""
+dev_package=""
+
+for package in "$@"
+do
+	case "$(basename "$package")" in
+		raveloxmidi_*.deb) binary_package="$package" ;;
+		libraveloxmidi0_*.deb) library_package="$package" ;;
+		libraveloxmidi-dev_*.deb) dev_package="$package" ;;
+	esac
+done
+
+[ -n "$binary_package" ] || fail "missing raveloxmidi binary package"
+[ -n "$library_package" ] || fail "missing libraveloxmidi0 runtime package"
+[ -n "$dev_package" ] || fail "missing libraveloxmidi-dev package"
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+binary_list="${tmpdir}/binary.list"
+library_list="${tmpdir}/library.list"
+dev_list="${tmpdir}/dev.list"
+
+list_package "$binary_package" > "$binary_list"
+list_package "$library_package" > "$library_list"
+list_package "$dev_package" > "$dev_list"
+
+assert_contains "$binary_list" '^/usr/bin/raveloxmidi$'
+assert_contains "$binary_list" '^/usr/bin/raveloxmidi-stream$'
+assert_contains "$binary_list" '^/usr/share/man/man1/raveloxmidi\.1'
+assert_contains "$binary_list" '^/usr/share/man/man1/raveloxmidi-stream\.1'
+assert_not_contains "$binary_list" '^/usr/include/'
+assert_not_contains "$binary_list" '^/usr/lib.*/libraveloxmidi'
+assert_not_contains "$binary_list" '^/usr/lib.*/pkgconfig/'
+
+assert_contains "$library_list" '^/usr/lib.*/libraveloxmidi\.so\.[0-9]'
+assert_not_contains "$library_list" '^/usr/bin/'
+assert_not_contains "$library_list" '^/usr/include/'
+assert_not_contains "$library_list" '^/usr/lib.*/pkgconfig/'
+assert_not_contains "$library_list" '^/usr/lib.*/libraveloxmidi\.so$'
+assert_not_contains "$library_list" '^/usr/lib.*/libraveloxmidi\.(a|la)$'
+
+assert_contains "$dev_list" '^/usr/include/raveloxmidi\.h$'
+assert_contains "$dev_list" '^/usr/lib.*/libraveloxmidi\.so$'
+assert_contains "$dev_list" '^/usr/lib.*/pkgconfig/raveloxmidi\.pc$'
+assert_not_contains "$dev_list" '^/usr/bin/'
+assert_not_contains "$dev_list" '^/usr/share/man/'
+assert_not_contains "$dev_list" '^/usr/lib.*/libraveloxmidi\.so\.[0-9]'
+assert_not_contains "$dev_list" '^/usr/lib.*/libraveloxmidi\.(a|la)$'
+
+public_headers="$(grep -E '^/usr/include/.*\.h$' "$dev_list" || true)"
+if [ "$public_headers" != "/usr/include/raveloxmidi.h" ]
+then
+	fail "dev package contains unexpected public headers: ${public_headers}"
+fi
+
+echo "Debian package contents validated"

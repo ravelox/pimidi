@@ -1,7 +1,7 @@
 SUBDIRS = src tests man
 
 CPPFLAGS = '-g -Wall -I ./include'
-EXTRA_DIST = include docs examples LICENSE DEBIAN/control.in DEBIAN/control-lib.in DEBIAN/control-dev.in raveloxmidi.spec* raveloxmidi.pc.in
+EXTRA_DIST = include docs examples LICENSE DEBIAN/control.in DEBIAN/control-lib.in DEBIAN/control-dev.in pkgscripts/branch_name pkgscripts/build_number pkgscripts/validate_deb_contents pkgscripts/validate_rpm_contents raveloxmidi.spec* raveloxmidi.pc.in
 
 include_HEADERS = \
 	include/raveloxmidi.h

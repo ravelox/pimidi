@@ -22,6 +22,7 @@ make dist
 tarball="$(ls -1t raveloxmidi-*.tar.gz | head -n 1)"
 rpmbuild -ta "${tarball}"
 find /home/builder/rpmbuild/RPMS /home/builder/rpmbuild/SRPMS -type f -name '*.rpm' -exec cp -p {} build/ \;
+pkgscripts/validate_rpm_contents build/*.rpm
 
 echo
 echo "RPM artifacts:"

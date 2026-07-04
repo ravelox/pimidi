@@ -18,6 +18,8 @@ do
 	dpkg-deb --info "${package}"
 done
 
+pkgscripts/validate_deb_contents build/*.deb
+
 echo
 echo "Debian package artifacts:"
 find build -maxdepth 1 -type f -name '*.deb' -print | sort

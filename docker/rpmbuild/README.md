@@ -18,6 +18,7 @@ make clean
 make -j$(nproc)
 make dist
 rpmbuild -ta raveloxmidi-*.tar.gz
+pkgscripts/validate_rpm_contents build/*.rpm
 ```
 
 RPM artifacts are written under the `rpmbuild-home` Docker volume at

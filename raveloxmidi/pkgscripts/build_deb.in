@@ -56,10 +56,6 @@ copy_paths "${DEVDIR}" \
 	"${STAGEDIR}"/usr/local/include/*.h \
 	"${STAGEDIR}"/usr/lib*/libraveloxmidi.so \
 	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.so \
-	"${STAGEDIR}"/usr/lib*/libraveloxmidi.a \
-	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.a \
-	"${STAGEDIR}"/usr/lib*/libraveloxmidi.la \
-	"${STAGEDIR}"/usr/local/lib*/libraveloxmidi.la \
 	"${STAGEDIR}"/usr/lib*/pkgconfig/raveloxmidi.pc \
 	"${STAGEDIR}"/usr/local/lib*/pkgconfig/raveloxmidi.pc
 
@@ -80,3 +76,5 @@ dpkg-deb --root-owner-group --build "libraveloxmidi0_${PACKAGE_VERSION}"
 dpkg-deb --root-owner-group --build "libraveloxmidi-dev_${PACKAGE_VERSION}"
 rm -Rf "${PACKAGE_NAME}_${PACKAGE_VERSION}/" "libraveloxmidi0_${PACKAGE_VERSION}/" "libraveloxmidi-dev_${PACKAGE_VERSION}/" stage/
 cd ..
+
+pkgscripts/validate_deb_contents build/*.deb

@@ -69,9 +69,9 @@ binary as a consumer of that library.
 
 ## Phase 6 - Packaging Cleanup
 
-- [ ] Ensure the runtime library package contains only runtime library files.
-- [ ] Ensure the binary package contains only the CLI/service files.
-- [ ] Ensure the dev package contains public headers, linker symlink and pkg-config files.
-- [ ] Remove internal headers from package outputs unless they are intentionally public.
-- [ ] Verify `.deb` package contents in Docker validation.
-- [ ] Verify `.rpm` package contents in Docker validation.
+- [x] Ensure the runtime library package contains only runtime library files.
+- [x] Ensure the binary package contains only the CLI/service files.
+- [x] Ensure the dev package contains public headers, linker symlink and pkg-config files.
+- [x] Remove internal headers from package outputs unless they are intentionally public.
+- [x] Verify `.deb` package contents in Docker validation.
+- [x] Verify `.rpm` package contents in Docker validation.
