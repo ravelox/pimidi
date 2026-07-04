@@ -17,6 +17,11 @@ library, headers and pkg-config metadata.
 Public SDK/API documentation is maintained in docs/PUBLIC_API.md from
 the raveloxmidi source directory.
 
+SDK examples are available in examples/. They are designed to build
+against an installed dev package using:
+
+    pkg-config --cflags --libs raveloxmidi
+
 Required packages
 -----------------
 
@@ -50,6 +55,14 @@ A build/ directory will be created containing:
 * libraveloxmidi0_VERSION-1.deb - runtime library package
 * libraveloxmidi-dev_VERSION-1.deb - headers and pkg-config files
 
+The .deb package split is:
+
+* raveloxmidi - the command line binary, service file and man page
+* libraveloxmidi0 - the runtime shared library needed by the binary and
+  SDK consumers
+* libraveloxmidi-dev - the public header, linker symlink and
+  raveloxmidi.pc pkg-config file needed to build SDK consumers
+
 The public SDK calls included with the dev package are documented in
 docs/PUBLIC_API.md.
 
@@ -66,6 +79,14 @@ The RPM spec builds the following packages:
 * raveloxmidi - binary package
 * libraveloxmidi - runtime library package
 * libraveloxmidi-devel - headers and pkg-config files
+
+The .rpm package split is:
+
+* raveloxmidi - the command line binary, service file and man page
+* libraveloxmidi - the runtime shared library needed by the binary and
+  SDK consumers
+* libraveloxmidi-devel - the public header, linker symlink and
+  raveloxmidi.pc pkg-config file needed to build SDK consumers
 
 The public SDK calls included with the devel package are documented in
 docs/PUBLIC_API.md.
@@ -95,6 +116,23 @@ To build both package formats:
 2. make docker-packages
 
 Docker-built package artifacts are copied to build/.
+
+The Docker package targets are validation builds. They are useful for
+confirming that the native package targets still work in clean Ubuntu
+and Fedora environments without replacing the native `make deb` and
+`make rpm` workflows.
+
+API stability
+-------------
+
+The stable public SDK surface is the installed raveloxmidi.h header and
+the calls documented in docs/PUBLIC_API.md. Internal source-tree headers
+are not public API.
+
+The callback and raw MIDI injection APIs are available to SDK consumers,
+but should be treated as new while the library branch is still under
+active development. Stream CLI tools, stdin/stdout MIDI stream handling
+and named pipe workflows remain experimental until Phase 5 is complete.
 
 Memory leak validation
 ----------------------

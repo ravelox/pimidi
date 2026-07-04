@@ -18,6 +18,10 @@ The public `libraveloxmidi` SDK is documented in
 `raveloxmidi/docs/PUBLIC_API.md`. That file lists the supported public
 calls, ownership rules, status values and configuration API.
 
+SDK examples are available in `raveloxmidi/examples/`. They build
+against the installed dev package with `pkg-config --cflags --libs
+raveloxmidi`.
+
 ## Building Packages
 
 Native package builds are available from the `raveloxmidi` directory:
@@ -37,6 +41,13 @@ make docker-packages
 
 Docker package builds place the generated `.deb` and `.rpm` files in
 `raveloxmidi/build/`.
+
+The package split is:
+
+* `raveloxmidi` - binary and service files
+* `libraveloxmidi0` / `libraveloxmidi` - runtime shared library
+* `libraveloxmidi-dev` / `libraveloxmidi-devel` - public header,
+  linker symlink and pkg-config metadata
 
 ## Memory Leak Checks
 

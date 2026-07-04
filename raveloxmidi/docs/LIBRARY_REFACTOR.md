@@ -48,13 +48,13 @@ binary as a consumer of that library.
 
 ## Phase 4 - Developer Experience
 
-- [ ] Add a minimal C SDK example using `pkg-config`.
-- [ ] Add an example that registers MIDI sent callbacks.
-- [ ] Add an example that starts the service, sends a MIDI event and shuts down.
-- [ ] Document native package builds.
-- [ ] Document Docker package validation builds.
-- [ ] Document runtime, library and dev package contents.
-- [ ] Document what API is stable and what remains experimental.
+- [x] Add a minimal C SDK example using `pkg-config`.
+- [x] Add an example that registers MIDI sent callbacks.
+- [x] Add an example that starts the service, sends a MIDI event and shuts down.
+- [x] Document native package builds.
+- [x] Document Docker package validation builds.
+- [x] Document runtime, library and dev package contents.
+- [x] Document what API is stable and what remains experimental.
 
 ## Phase 5 - Stream CLI Tools
 

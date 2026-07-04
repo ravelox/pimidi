@@ -10,6 +10,16 @@ The public `libraveloxmidi` SDK is documented in
 `raveloxmidi/docs/PUBLIC_API.md`. It lists the available public calls,
 status values, ownership rules and the public configuration API.
 
+SDK examples are available in `raveloxmidi/examples/` and build against
+the installed dev package with `pkg-config`.
+
+## 1a. Which package do I need to build software against libraveloxmidi?
+
+Install `libraveloxmidi-dev` on Debian or Ubuntu, or
+`libraveloxmidi-devel` on Fedora or other RPM-based systems. Those
+packages contain the public `raveloxmidi.h` header, the linker symlink
+and `raveloxmidi.pc` pkg-config metadata.
+
 ## 2. External software tries to connect to raveloxmidi over IPv6
 
 If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:

@@ -12,6 +12,31 @@ Applications should include only the public SDK header:
 Internal project headers are not public API and should not be included
 by SDK consumers.
 
+## API Stability
+
+The stable public SDK surface is the API declared in the installed
+`raveloxmidi.h` header and documented in this file. Applications should
+not include internal project headers from the source tree.
+
+The callback APIs and raw MIDI injection API are public SDK calls, but
+their behavior should still be treated as new while the library branch is
+under active development. Future compatible releases may add event fields
+or new event types. Existing fields and status values should not be
+removed without an ABI/versioning review.
+
+The stream-oriented command line tools, named pipe workflows and
+stdin/stdout MIDI stream format remain experimental until Phase 5 is
+implemented.
+
+## Examples
+
+C SDK examples are provided in `examples/` in the source tree. They are
+designed to build against an installed dev package using:
+
+```sh
+pkg-config --cflags --libs raveloxmidi
+```
+
 ## Status Values
 
 Public SDK calls that can fail return `raveloxmidi_status_t`.
