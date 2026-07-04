@@ -36,7 +36,8 @@ libraveloxmidi_la_SOURCES = \
 	dstring.c \
 	data_queue.c \
 	data_context.c \
-	midi_sender.c
+	midi_sender.c \
+	raveloxmidi_api.c
 
 libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 libraveloxmidi_la_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@

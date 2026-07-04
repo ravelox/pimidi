@@ -162,10 +162,34 @@ typedef enum raveloxmidi_event_type {
 
 Exact names and fields can be refined in later P2 and P3 tasks.
 
+## Phase 2 API Additions
+
+`P2-005`, `P2-006` and `P2-008` add the first concrete public SDK
+functions:
+
+```c
+const char *raveloxmidi_version( void );
+
+raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context );
+raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value );
+raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
+raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
+void raveloxmidi_context_free( raveloxmidi_context_t **context );
+```
+
+The context type remains opaque to SDK consumers. The initial
+implementation supports one active context because several underlying
+subsystems still use process-global state. Multi-context support should
+wait until those internals are instance-owned.
+
 ## Packaging Implications
 
-Until P2-003 and P2-004 are complete, the build may still install
-internal headers. That is a temporary compatibility state.
+The exact internal headers that should stop being installed are listed
+in `LIBRARY_HEADER_INSTALL_PLAN.md`.
+
+P2-004 updates the build so only intentional public headers are
+installed. Internal headers remain available to the project build through
+local include paths, but they are no longer SDK/package surface.
 
 The intended final dev package contents are:
 

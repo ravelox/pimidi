@@ -35,6 +35,7 @@ typedef enum raveloxmidi_status_t {
 	RAVELOXMIDI_ERROR,
 	RAVELOXMIDI_ERROR_INVALID_ARGUMENT,
 	RAVELOXMIDI_ERROR_NO_MEMORY,
+	RAVELOXMIDI_ERROR_INVALID_STATE,
 	RAVELOXMIDI_ERROR_NOT_RUNNING
 } raveloxmidi_status_t;
 
@@ -45,6 +46,14 @@ typedef enum raveloxmidi_event_type_t {
 	RAVELOXMIDI_EVENT_PROGRAM_CHANGE,
 	RAVELOXMIDI_EVENT_RAW_MIDI
 } raveloxmidi_event_type_t;
+
+const char *raveloxmidi_version( void );
+
+raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context );
+raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value );
+raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
+raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
+void raveloxmidi_context_free( raveloxmidi_context_t **context );
 
 #ifdef __cplusplus
 }
