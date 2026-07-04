@@ -1,5 +1,9 @@
 lib_LTLIBRARIES = libraveloxmidi.la
 
+LIBRAVELOXMIDI_LT_CURRENT = 0
+LIBRAVELOXMIDI_LT_REVISION = 0
+LIBRAVELOXMIDI_LT_AGE = 0
+
 libraveloxmidi_la_SOURCES = \
 	dns_service_publisher.c \
 	dns_service_discover.c \
@@ -40,8 +44,8 @@ libraveloxmidi_la_SOURCES = \
 	raveloxmidi_api.c
 
 libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
-libraveloxmidi_la_CFLAGS = @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
-libraveloxmidi_la_LDFLAGS = -version-info 0:0:0
+libraveloxmidi_la_CFLAGS = -DRAVELOXMIDI_BUILDING_LIBRARY @PTHREAD_CFLAGS@ @AVAHI_CFLAGS@ @ALSA_CFLAGS@
+libraveloxmidi_la_LDFLAGS = -version-info $(LIBRAVELOXMIDI_LT_CURRENT):$(LIBRAVELOXMIDI_LT_REVISION):$(LIBRAVELOXMIDI_LT_AGE)
 
 bin_PROGRAMS = raveloxmidi
 

@@ -89,12 +89,12 @@ static void raveloxmidi_context_unlock( void )
 	pthread_mutex_unlock( &api_lock );
 }
 
-const char *raveloxmidi_version( void )
+RAVELOXMIDI_API const char *raveloxmidi_version( void )
 {
 	return VERSION;
 }
 
-raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context )
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context )
 {
 	raveloxmidi_context_t *new_context = NULL;
 	char *argv[] = { (char *)"raveloxmidi-sdk", NULL };
@@ -130,7 +130,7 @@ raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context
 	return RAVELOXMIDI_OK;
 }
 
-raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value )
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value )
 {
 	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
 	if( ! key ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
@@ -140,7 +140,7 @@ raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *cont
 	return RAVELOXMIDI_OK;
 }
 
-raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context )
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context )
 {
 	dns_service_desc_t service_desc;
 	int err = 0;
@@ -197,7 +197,7 @@ start_error:
 	return RAVELOXMIDI_ERROR;
 }
 
-raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context )
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context )
 {
 	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
 
@@ -268,7 +268,7 @@ raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context )
 	return RAVELOXMIDI_OK;
 }
 
-void raveloxmidi_context_free( raveloxmidi_context_t **context )
+RAVELOXMIDI_API void raveloxmidi_context_free( raveloxmidi_context_t **context )
 {
 	raveloxmidi_context_t *old_context = NULL;
 

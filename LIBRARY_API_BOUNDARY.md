@@ -182,6 +182,12 @@ implementation supports one active context because several underlying
 subsystems still use process-global state. Multi-context support should
 wait until those internals are instance-owned.
 
+## Visibility And ABI
+
+Public SDK function declarations are marked with `RAVELOXMIDI_API`.
+The detailed symbol visibility and libtool versioning policy is recorded
+in `LIBRARY_ABI_POLICY.md`.
+
 ## Packaging Implications
 
 The exact internal headers that should stop being installed are listed

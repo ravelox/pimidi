@@ -24,6 +24,18 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined _WIN32 || defined __CYGWIN__
+#  if defined RAVELOXMIDI_BUILDING_LIBRARY
+#    define RAVELOXMIDI_API __declspec(dllexport)
+#  else
+#    define RAVELOXMIDI_API __declspec(dllimport)
+#  endif
+#elif defined __GNUC__ && __GNUC__ >= 4
+#  define RAVELOXMIDI_API __attribute__((visibility("default")))
+#else
+#  define RAVELOXMIDI_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,13 +59,13 @@ typedef enum raveloxmidi_event_type_t {
 	RAVELOXMIDI_EVENT_RAW_MIDI
 } raveloxmidi_event_type_t;
 
-const char *raveloxmidi_version( void );
+RAVELOXMIDI_API const char *raveloxmidi_version( void );
 
-raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context );
-raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value );
-raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
-raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
-void raveloxmidi_context_free( raveloxmidi_context_t **context );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
+RAVELOXMIDI_API void raveloxmidi_context_free( raveloxmidi_context_t **context );
 
 #ifdef __cplusplus
 }

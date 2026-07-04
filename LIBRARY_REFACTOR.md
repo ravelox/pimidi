@@ -26,8 +26,8 @@ binary as a consumer of that library.
 - [x] P2-006 Add public lifecycle APIs for creating, starting, stopping and freeing a context.
 - [ ] P2-007 Move the `raveloxmidi` binary to use the public SDK API.
 - [x] P2-008 Add a public version API, such as `raveloxmidi_version()`.
-- [ ] P2-009 Add symbol visibility controls for exported library APIs.
-- [ ] P2-010 Review libtool versioning and set an intentional ABI version policy.
+- [x] P2-009 Add symbol visibility controls for exported library APIs.
+- [x] P2-010 Review libtool versioning and set an intentional ABI version policy.
 
 ## Phase 3 - MIDI Event Callbacks
 
