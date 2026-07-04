@@ -41,6 +41,7 @@ libraveloxmidi_la_SOURCES = \
 	data_queue.c \
 	data_context.c \
 	midi_sender.c \
+	raveloxmidi_events.c \
 	raveloxmidi_api.c
 
 libraveloxmidi_la_LIBADD = @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@

@@ -29,17 +29,22 @@ binary as a consumer of that library.
 - [x] P2-009 Add symbol visibility controls for exported library APIs.
 - [x] P2-010 Review libtool versioning and set an intentional ABI version policy.
 
-## Phase 3 - MIDI Event Callbacks
+## Phase 3 - MIDI Event Callbacks And Local I/O Separation
 
-- [ ] P3-001 Define public callback types for MIDI events sent by `midi_sender`.
-- [ ] P3-002 Add callback registration and unregistration APIs.
-- [ ] P3-003 Include user data in callback registration.
-- [ ] P3-004 Ensure callbacks receive enough event metadata for useful integrations.
-- [ ] P3-005 Avoid running user callbacks on the sender hot path.
-- [ ] P3-006 Queue callback events to a dispatcher or worker thread.
-- [ ] P3-007 Define queue overflow behavior.
-- [ ] P3-008 Document callback threading and latency guarantees.
-- [ ] P3-009 Add tests or validation tooling for callback delivery.
+- [x] P3-001 Define public callback types for MIDI events sent by `midi_sender`.
+- [x] P3-002 Add callback registration and unregistration APIs.
+- [x] P3-003 Include user data in callback registration.
+- [x] P3-004 Ensure callbacks receive enough event metadata for useful integrations.
+- [x] P3-005 Avoid running user callbacks on the sender hot path.
+- [x] P3-006 Queue callback events to a dispatcher or worker thread.
+- [x] P3-007 Define queue overflow behavior.
+- [x] P3-008 Document callback threading and latency guarantees.
+- [x] P3-009 Add tests or validation tooling for callback delivery.
+- [x] P3-010 Support callback-only operation with no ALSA output or inbound MIDI file sink.
+- [x] P3-011 Separate RTP-MIDI networking from local MIDI input/output sinks.
+- [x] P3-012 Add SDK APIs for inbound RTP-MIDI event callbacks.
+- [x] P3-013 Add SDK APIs for outbound/local MIDI event injection.
+- [x] P3-014 Define local MIDI source and sink modes: ALSA, file, stdin/stdout, named pipe and callback.
 
 ## Phase 4 - Developer Experience
 
@@ -51,7 +56,18 @@ binary as a consumer of that library.
 - [ ] Document runtime, library and dev package contents.
 - [ ] Document what API is stable and what remains experimental.
 
-## Phase 5 - Packaging Cleanup
+## Phase 5 - Stream CLI Tools
+
+- [ ] P5-001 Add a command line utility that reads raw MIDI from stdin and sends it over RTP-MIDI.
+- [ ] P5-002 Add support for writing received MIDI events to stdout.
+- [ ] P5-003 Add named pipe input for outgoing MIDI messages.
+- [ ] P5-004 Add named pipe output for incoming MIDI messages.
+- [ ] P5-005 Document the binary MIDI stream format.
+- [ ] P5-006 Add examples for stdin/stdout and named pipe workflows.
+- [ ] P5-007 Ensure stream utility behavior is implemented through the public SDK.
+- [ ] P5-008 Ensure named pipe and stdin/stdout handling does not block sender or network threads.
+
+## Phase 6 - Packaging Cleanup
 
 - [ ] Ensure the runtime library package contains only runtime library files.
 - [ ] Ensure the binary package contains only the CLI/service files.

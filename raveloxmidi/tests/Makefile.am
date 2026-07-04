@@ -4,7 +4,8 @@ check_PROGRAMS = sdk_lifecycle_test
 TESTS = sdk_lifecycle_test
 
 sdk_lifecycle_test_SOURCES = sdk_lifecycle_test.c
-sdk_lifecycle_test_LDADD = $(top_builddir)/src/libraveloxmidi.la
+sdk_lifecycle_test_CFLAGS = @PTHREAD_CFLAGS@
+sdk_lifecycle_test_LDADD = $(top_builddir)/src/libraveloxmidi.la @PTHREAD_LIBS@
 
 VALGRIND = valgrind
 VALGRIND_FLAGS = \

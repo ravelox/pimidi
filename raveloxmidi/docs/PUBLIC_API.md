@@ -211,6 +211,114 @@ Notes:
 - If logging has not been initialized yet, this call initializes logging
   using the current configuration.
 
+## `raveloxmidi_context_set_midi_event_callback`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_set_midi_event_callback(
+	raveloxmidi_context_t *context,
+	raveloxmidi_midi_event_callback_t callback,
+	void *user_data
+);
+```
+
+Registers a callback that receives MIDI events processed by the MIDI
+sender. The callback receives note on, note off, control change, program
+change and raw MIDI events.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+- `callback`: Function to call for each MIDI event. This must not be
+  `NULL`.
+- `user_data`: Caller-owned pointer passed back to `callback`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Callback registered.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` or `callback` is
+  `NULL`.
+- `RAVELOXMIDI_ERROR_INVALID_STATE`: The context callback dispatcher is
+  not available.
+
+Threading:
+
+- User callbacks do not run on the MIDI sender hot path.
+- Events are copied and queued to a library-owned dispatcher thread.
+- The `event` pointer and `event->data` pointer are valid only for the
+  duration of the callback. Copy anything that must outlive the call.
+- The callback must not block indefinitely. Long-running work should be
+  moved to an application-owned queue or worker thread.
+
+Queue behavior:
+
+- Callback event delivery uses an internal dynamically allocated queue.
+- If the library cannot allocate a callback event item, that callback
+  event is dropped and an error is logged. MIDI sender processing
+  continues.
+- Future stream-oriented source and sink modes must preserve the same
+  rule: user-provided I/O must not block the MIDI sender or network
+  threads.
+
+## `raveloxmidi_context_clear_midi_event_callback`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_clear_midi_event_callback(
+	raveloxmidi_context_t *context
+);
+```
+
+Removes the current MIDI event callback from a context.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Callback cleared.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`.
+- `RAVELOXMIDI_ERROR_INVALID_STATE`: The context callback dispatcher is
+  not available.
+
+## `raveloxmidi_context_send_raw_midi`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_send_raw_midi(
+	raveloxmidi_context_t *context,
+	uint8_t status,
+	const uint8_t *data,
+	size_t data_len
+);
+```
+
+Submits a raw MIDI message to the library sender path. The message is
+queued to `midi_sender`, then delivered to RTP-MIDI connections, local
+output sinks and registered event callbacks.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+- `status`: MIDI status byte.
+- `data`: MIDI data bytes following the status byte. This may be `NULL`
+  only when `data_len` is zero.
+- `data_len`: Number of bytes in `data`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Message queued.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`, or `data`
+  is `NULL` while `data_len` is non-zero.
+- `RAVELOXMIDI_ERROR_NOT_RUNNING`: The context has not started the MIDI
+  sender.
+- `RAVELOXMIDI_ERROR_NO_MEMORY`: Allocation failed.
+
+Notes:
+
+- The input data is copied before the function returns.
+- This API is intended for SDK integrations and future stream utilities
+  that need to inject outgoing MIDI without using the legacy local socket
+  protocol.
+
 ## `raveloxmidi_context_start`
 
 ```c
@@ -346,8 +454,7 @@ Ownership:
 
 ## Public Event Types
 
-The SDK currently defines `raveloxmidi_event_type_t` for future MIDI
-event callback APIs:
+The SDK defines `raveloxmidi_event_type_t` for MIDI event callbacks:
 
 - `RAVELOXMIDI_EVENT_NOTE_OFF`
 - `RAVELOXMIDI_EVENT_NOTE_ON`
@@ -355,5 +462,23 @@ event callback APIs:
 - `RAVELOXMIDI_EVENT_PROGRAM_CHANGE`
 - `RAVELOXMIDI_EVENT_RAW_MIDI`
 
-Callback registration and event delivery APIs are planned in Phase 3
-and are not available yet.
+Callback event details are delivered through
+`raveloxmidi_midi_event_t`:
+
+```c
+typedef struct raveloxmidi_midi_event_t {
+	raveloxmidi_event_type_t type;
+	uint64_t delta;
+	uint8_t status;
+	uint8_t channel;
+	const uint8_t *data;
+	size_t data_len;
+	uint32_t originator_ssrc;
+	int originator_alsa_device_hash;
+} raveloxmidi_midi_event_t;
+```
+
+Callback-only operation is supported by registering a callback and
+disabling local output sinks. Do not configure `alsa.output_device`, and
+set `inbound_midi` to `NULL`, an empty value, `none` or `off` before
+startup to avoid writing incoming MIDI events to the file sink.

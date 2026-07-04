@@ -21,6 +21,9 @@
 #ifndef MIDI_COMMAND_H
 #define MIDI_COMMAND_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "midi_note.h"
 
 typedef struct channel_message_t {

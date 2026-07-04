@@ -900,9 +900,11 @@ int net_socket_init( void )
 	// If a file name is defined, open up the file handle to write inbound MIDI events
 	inbound_midi_filename = config_string_get("inbound_midi");
 
-	if( ! inbound_midi_filename )
+	if( ! config_is_set( "inbound_midi" ) )
 	{
-		logging_printf(LOGGING_WARN, "net_socket_setup: No filename defined for inbound_midi\n");
+		logging_printf(LOGGING_DEBUG, "net_socket_setup: inbound_midi file sink disabled\n");
+	} else if( ! inbound_midi_filename || strcasecmp( inbound_midi_filename, "none" ) == 0 || strcasecmp( inbound_midi_filename, "off" ) == 0 ) {
+		logging_printf(LOGGING_DEBUG, "net_socket_setup: inbound_midi file sink disabled\n");
 	} else if( ! check_file_security( inbound_midi_filename ) ) {
 		logging_printf(LOGGING_WARN, "net_socket_setup: %s fails security check\n", inbound_midi_filename );
 		logging_printf(LOGGING_WARN, "net_socket_setup: File mode=%s\n", config_string_get("file_mode") );

@@ -60,6 +60,22 @@ typedef enum raveloxmidi_event_type_t {
 	RAVELOXMIDI_EVENT_RAW_MIDI
 } raveloxmidi_event_type_t;
 
+typedef struct raveloxmidi_midi_event_t {
+	raveloxmidi_event_type_t type;
+	uint64_t delta;
+	uint8_t status;
+	uint8_t channel;
+	const uint8_t *data;
+	size_t data_len;
+	uint32_t originator_ssrc;
+	int originator_alsa_device_hash;
+} raveloxmidi_midi_event_t;
+
+typedef void (*raveloxmidi_midi_event_callback_t)(
+	raveloxmidi_context_t *context,
+	const raveloxmidi_midi_event_t *event,
+	void *user_data );
+
 RAVELOXMIDI_API const char *raveloxmidi_version( void );
 
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context );
@@ -67,6 +83,9 @@ RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_get_config( raveloxmidi_context_t *context, const char *key, const char **value );
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config_file( raveloxmidi_context_t *context, const char *filename );
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_dump_config( raveloxmidi_context_t *context );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_midi_event_callback( raveloxmidi_context_t *context, raveloxmidi_midi_event_callback_t callback, void *user_data );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_clear_midi_event_callback( raveloxmidi_context_t *context );
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_send_raw_midi( raveloxmidi_context_t *context, uint8_t status, const uint8_t *data, size_t data_len );
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_request_stop( raveloxmidi_context_t *context );
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_wait( raveloxmidi_context_t *context );

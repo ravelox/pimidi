@@ -62,6 +62,7 @@ extern int inbound_midi_fd;
 
 #include "raveloxmidi_alsa.h"
 #include "midi_sender.h"
+#include "raveloxmidi_events.h"
 
 #include "data_queue.h"
 #include "data_context.h"
@@ -328,6 +329,8 @@ midi_sender_send_single_clean:
 		default:
 			break;
 	}
+
+	raveloxmidi_events_publish_midi_command( command, originator_ssrc, alsa_originator_card );
 
 	// Determine if the MIDI commands need to be written out to ALSA or the local MIDI file descriptor
 	output_available = ( inbound_midi_fd >= 0 );

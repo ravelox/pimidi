@@ -35,6 +35,7 @@
 #include "net_connection.h"
 #include "net_socket.h"
 #include "raveloxmidi_config.h"
+#include "raveloxmidi_events.h"
 #include "remote_connection.h"
 
 #ifdef HAVE_ALSA
@@ -57,6 +58,7 @@ struct raveloxmidi_context {
 	int midi_sender_initialized;
 	int midi_sender_started;
 	int remote_connect_initialized;
+	int events_initialized;
 	int running;
 	pthread_t loop_thread;
 };
@@ -195,6 +197,20 @@ RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_con
 	config_init( 1, argv );
 	new_context->config_initialized = 1;
 
+	if( raveloxmidi_events_init( new_context ) != RAVELOXMIDI_OK )
+	{
+		config_teardown();
+		utils_teardown();
+		utils_mem_tracking_teardown();
+		utils_pthread_tracking_teardown();
+		raveloxmidi_context_lock();
+		if( active_context == new_context ) active_context = NULL;
+		raveloxmidi_context_unlock();
+		free( new_context );
+		return RAVELOXMIDI_ERROR_NO_MEMORY;
+	}
+	new_context->events_initialized = 1;
+
 	*context = new_context;
 	return RAVELOXMIDI_OK;
 }
@@ -250,6 +266,44 @@ RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_dump_config( raveloxmid
 	}
 
 	config_dump();
+	return RAVELOXMIDI_OK;
+}
+
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_midi_event_callback( raveloxmidi_context_t *context, raveloxmidi_midi_event_callback_t callback, void *user_data )
+{
+	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( ! callback ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+
+	return raveloxmidi_events_set_callback( context, callback, user_data );
+}
+
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_clear_midi_event_callback( raveloxmidi_context_t *context )
+{
+	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+
+	return raveloxmidi_events_clear_callback( context );
+}
+
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_send_raw_midi( raveloxmidi_context_t *context, uint8_t status, const uint8_t *data, size_t data_len )
+{
+	midi_command_t *command = NULL;
+
+	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( data_len > 0 && ! data ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( ! context->midi_sender_started ) return RAVELOXMIDI_ERROR_NOT_RUNNING;
+
+	command = midi_command_create();
+	if( ! command ) return RAVELOXMIDI_ERROR_NO_MEMORY;
+
+	midi_command_set( command, 0, status, data, data_len );
+	if( data_len > 0 && ! command->data )
+	{
+		midi_command_destroy( (void **)&command );
+		return RAVELOXMIDI_ERROR_NO_MEMORY;
+	}
+
+	midi_sender_add( command, NULL );
+
 	return RAVELOXMIDI_OK;
 }
 
@@ -378,6 +432,12 @@ RAVELOXMIDI_API void raveloxmidi_context_free( raveloxmidi_context_t **context )
 	old_context = *context;
 
 	if( raveloxmidi_context_runtime_initialized( old_context ) ) raveloxmidi_context_stop( old_context );
+
+	if( old_context->events_initialized )
+	{
+		raveloxmidi_events_teardown( old_context );
+		old_context->events_initialized = 0;
+	}
 
 	if( old_context->logging_initialized )
 	{
