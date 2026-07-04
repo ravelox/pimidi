@@ -14,6 +14,9 @@ From a fresh git clone, you should do the following:
 This installs the raveloxmidi binary, the libraveloxmidi shared
 library, headers and pkg-config metadata.
 
+Public SDK/API documentation is maintained in docs/PUBLIC_API.md from
+the raveloxmidi source directory.
+
 Required packages
 -----------------
 
@@ -45,6 +48,9 @@ A build/ directory will be created containing:
 * libraveloxmidi0_VERSION-1.deb - runtime library package
 * libraveloxmidi-dev_VERSION-1.deb - headers and pkg-config files
 
+The public SDK calls included with the dev package are documented in
+docs/PUBLIC_API.md.
+
 To build .rpm packages, from a fresh clone:
 
 1. cd raveloxmidi
@@ -58,6 +64,9 @@ The RPM spec builds the following packages:
 * raveloxmidi - binary package
 * libraveloxmidi - runtime library package
 * libraveloxmidi-devel - headers and pkg-config files
+
+The public SDK calls included with the devel package are documented in
+docs/PUBLIC_API.md.
 
 Docker package validation
 -------------------------

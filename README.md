@@ -12,6 +12,12 @@ Thanks to feedback from a couple of users, I've also tested this with rtpMIDI on
 
 The build will auto-detect ALSA and build rawmidi support. Please read **FAQ.md** for ALSA requirements. Thanks to Daniel Collins (malacalypse) for being the guinea pig for this.
 
+## Public SDK/API
+
+The public `libraveloxmidi` SDK is documented in
+`raveloxmidi/docs/PUBLIC_API.md`. That file lists the supported public
+calls, ownership rules, status values and configuration API.
+
 ## Building Packages
 
 Native package builds are available from the `raveloxmidi` directory:

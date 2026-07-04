@@ -4,7 +4,13 @@
 
 Please check raveloxmidi/required for the per-platform packages needed.
 
-## 1. External software tries to connect to raveloxmidi over IPv6
+## 1. Where is the public SDK/API documented?
+
+The public `libraveloxmidi` SDK is documented in
+`raveloxmidi/docs/PUBLIC_API.md`. It lists the available public calls,
+status values, ownership rules and the public configuration API.
+
+## 2. External software tries to connect to raveloxmidi over IPv6
 
 If you are finding that the client connecting to raveloxmidi is reporting issues trying to connect to an IPv6 address and you do NOT have IPv6 networking, you need to edit /etc/avahi/avahi-daemon.conf and set:
 ```
@@ -14,7 +20,7 @@ publish-aaaa-on-ipv4=no
 Obviously, if you want to use IPv6, both those options should be set to yes
 You will need to restart Avahi for those changes to be picked up.
 
-## 2. How to configure and test ALSA Support
+## 3. How to configure and test ALSA Support
 
 The autotools configure script will automatically detect the presence of ALSA libraries and will build the code for support.
 raveloxmidi uses the rawmidi interface so the snd-virmidi module must be loaded.
