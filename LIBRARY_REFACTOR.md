@@ -18,8 +18,8 @@ binary as a consumer of that library.
 
 ## Phase 2 - Public SDK/API
 
-- [ ] P2-001 Define the public API boundary.
-- [ ] P2-002 Add a primary public SDK header, such as `raveloxmidi.h`.
+- [x] P2-001 Define the public API boundary.
+- [x] P2-002 Add a primary public SDK header, such as `raveloxmidi.h`.
 - [ ] P2-003 Identify internal headers that should no longer be installed.
 - [ ] P2-004 Keep only intentional public headers in the dev package.
 - [ ] P2-005 Introduce an opaque SDK context type, such as `raveloxmidi_context_t`.

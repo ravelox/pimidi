@@ -4,6 +4,7 @@ CPPFLAGS = '-g -Wall -I ./include'
 EXTRA_DIST = include LICENSE DEBIAN/control.in DEBIAN/control-lib.in DEBIAN/control-dev.in raveloxmidi.spec* raveloxmidi.pc.in
 
 include_HEADERS = \
+	include/raveloxmidi.h \
 	include/applemidi_by.h \
 	include/applemidi_feedback.h \
 	include/applemidi_inv.h \
