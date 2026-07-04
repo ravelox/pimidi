@@ -32,6 +32,8 @@ avahi (or avahi-server + avahi-client)
 
 NOTE: avahi-daemon MUST be running for raveloxmidi to register its zeroconf name.
 
+Memory leak checks also require valgrind if run natively.
+
 Building packages
 -----------------
 
@@ -93,6 +95,22 @@ To build both package formats:
 2. make docker-packages
 
 Docker-built package artifacts are copied to build/.
+
+Memory leak validation
+----------------------
+
+From a configured source tree, run:
+
+1. cd raveloxmidi
+2. make memcheck
+
+This runs the SDK lifecycle test and a short raveloxmidi binary startup
+path under Valgrind.
+
+To run the same checks in an Ubuntu container:
+
+1. cd raveloxmidi
+2. make docker-memcheck
 
 Cleanup behavior
 ----------------

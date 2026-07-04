@@ -38,6 +38,21 @@ make docker-packages
 Docker package builds place the generated `.deb` and `.rpm` files in
 `raveloxmidi/build/`.
 
+## Memory Leak Checks
+
+From a configured `raveloxmidi` source tree, run the Valgrind-based
+memory leak suite with:
+
+```
+make memcheck
+```
+
+Docker-based memory leak validation is also available:
+
+```
+make docker-memcheck
+```
+
 Except for the Avahi code, it's all mine but I have leaned heavily on the following references:
 
 * RTP MIDI: An RTP Payload Format for MIDI ( http://www.eecs.berkeley.edu/~lazzaro/rtpmidi/index.html )

@@ -1,4 +1,4 @@
-SUBDIRS = src man
+SUBDIRS = src tests man
 
 CPPFLAGS = '-g -Wall -I ./include'
 EXTRA_DIST = include LICENSE DEBIAN/control.in DEBIAN/control-lib.in DEBIAN/control-dev.in raveloxmidi.spec* raveloxmidi.pc.in
@@ -30,3 +30,9 @@ docker-rpm:
 	docker compose -f ../docker/rpmbuild/compose.yaml up --build --abort-on-container-exit
 
 docker-packages: docker-deb docker-rpm
+
+memcheck: all
+	$(MAKE) -C tests memcheck
+
+docker-memcheck:
+	docker compose -f ../docker/memcheck/compose.yaml up --build --abort-on-container-exit

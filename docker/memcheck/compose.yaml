@@ -1,0 +1,8 @@
+services:
+  memcheck:
+    build:
+      context: .
+    image: pimidi-memcheck-ubuntu2404
+    volumes:
+      - ../..:/workspace
+    working_dir: /workspace/raveloxmidi

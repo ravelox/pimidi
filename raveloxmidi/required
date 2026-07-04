@@ -17,6 +17,10 @@ libavahi-client-dev
 libtool
 pkg-config
 
+Memory leak checks:
+
+valgrind
+
 Build .deb packages:
 
 dpkg-dev
@@ -41,6 +45,10 @@ libtool
 make
 pkgconf-pkg-config
 
+Memory leak checks:
+
+valgrind
+
 Build .rpm packages:
 
 diffutils
@@ -56,12 +64,12 @@ alsa-lib
 avahi
 avahi-libs
 
-Docker package validation
--------------------------
+Docker validation
+-----------------
 
-The Docker package validation targets require Docker and Docker Compose
-on the host. The container images install their own distro-specific
-build dependencies.
+The Docker package and memcheck validation targets require Docker and
+Docker Compose on the host. The container images install their own
+distro-specific build dependencies.
 
 Notes
 -----
