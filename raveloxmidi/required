@@ -1,10 +1,73 @@
+Required packages
+=================
+
+These package names are for building raveloxmidi from source. Package
+names may vary slightly between distribution releases.
+
 Ubuntu/Debian
 -------------
-libavahi-core-dev
-libavahi-client-dev
-libasound2-dev
 
-RedHat/CentOs
--------------
+Build from source:
+
+autoconf
+automake
+build-essential
+libasound2-dev
+libavahi-client-dev
+libtool
+pkg-config
+
+Build .deb packages:
+
+dpkg-dev
+
+Runtime:
+
+avahi-daemon
+libavahi-client3
+libasound2
+
+Fedora/Red Hat
+--------------
+
+Build from source:
+
+alsa-lib-devel
+autoconf
+automake
 avahi-devel
-alsalib-devel
+gcc
+libtool
+make
+pkgconf-pkg-config
+
+Build .rpm packages:
+
+diffutils
+findutils
+gzip
+rpm-build
+sed
+tar
+
+Runtime:
+
+alsa-lib
+avahi
+avahi-libs
+
+Docker package validation
+-------------------------
+
+The Docker package validation targets require Docker and Docker Compose
+on the host. The container images install their own distro-specific
+build dependencies.
+
+Notes
+-----
+
+Avahi must be running at runtime for raveloxmidi to register its
+zeroconf service name.
+
+ALSA support is optional at configure time. If the ALSA development
+package is missing, the build continues without rawmidi support.

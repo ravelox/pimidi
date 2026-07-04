@@ -18,160 +18,212 @@
    Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 */
 
+#include <getopt.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
+#include <strings.h>
 
-#include <signal.h>
+#include "raveloxmidi.h"
 
-#include "config.h"
+static raveloxmidi_context_t *signal_context = NULL;
 
-#include "net_applemidi.h"
-#include "net_socket.h"
-#include "net_connection.h"
-
-#include "remote_connection.h"
-
-#include "dns_service_publisher.h"
-#include "dns_service_discover.h"
-
-#include "midi_sender.h"
-
-#include "raveloxmidi_config.h"
-#include "daemon.h"
-
-#include "logging.h"
-
-#ifdef HAVE_ALSA
-#include "raveloxmidi_alsa.h"
-#endif
-
-#include "utils.h"
-
-#include "build_info.h"
-
-int main(int argc, char *argv[])
+static void usage( void )
 {
-	dns_service_desc_t service_desc;
-	int ret = 0;
-	int running_as_daemon = 0;
+	fprintf( stderr, "Usage:\n" );
+	fprintf( stderr, "\traveloxmidi [-c filename] [-d] [-i] [-R] [-N] [-P filename] [-C] [-h]\n" );
+	fprintf( stderr, "\traveloxmidi [--config filename] [--debug] [--info] [--readonly] [--nodaemon] [--pidfile filename] [--dumpconfig] [--version] [--help]\n" );
+}
 
-	utils_pthread_tracking_init();
-	utils_mem_tracking_init();
-	utils_init();
+static void shutdown_handler( int sig )
+{
+	(void)sig;
 
-	ret = config_init( argc, argv);
+	if( signal_context ) raveloxmidi_context_request_stop( signal_context );
+}
 
-	logging_init();
-	logging_printf( LOGGING_INFO, "%s (%s-%s)\n", PACKAGE, VERSION, GIT_BRANCH_NAME);
+static int set_config_or_fail( raveloxmidi_context_t *context, const char *key, const char *value )
+{
+	raveloxmidi_status_t status = RAVELOXMIDI_OK;
 
-	/* If config should be displayed, do it and then exit */
-	if( (ret > 0) || ( logging_get_threshold() == LOGGING_DEBUG ))
+	status = raveloxmidi_context_set_config( context, key, value );
+	if( status != RAVELOXMIDI_OK )
 	{
-		config_dump();
-		if( ret == CONFIG_DUMP_EXIT ) {
-			ret = EXIT_SUCCESS;
-			goto daemon_stop;
+		fprintf( stderr, "Unable to set configuration %s\n", key );
+		return EXIT_FAILURE;
+	}
+
+	return EXIT_SUCCESS;
+}
+
+int main( int argc, char *argv[] )
+{
+	raveloxmidi_context_t *context = NULL;
+	raveloxmidi_status_t status = RAVELOXMIDI_OK;
+	const char *config_value = NULL;
+	int ret = EXIT_SUCCESS;
+	int dump_config = 0;
+	int debug_requested = 0;
+	static struct option long_options[] = {
+		{"config", required_argument, NULL, 'c'},
+		{"debug", no_argument, NULL, 'd'},
+		{"info", no_argument, NULL, 'i'},
+		{"nodaemon", no_argument, NULL, 'N'},
+		{"pidfile", required_argument, NULL, 'P'},
+		{"readonly", no_argument, NULL, 'R'},
+		{"dumpconfig", no_argument, NULL, 'C'},
+		{"version", no_argument, NULL, 'v'},
+		{"help", no_argument, NULL, 'h'},
+		{0, 0, 0, 0}
+	};
+	const char *short_options = "c:dihNP:RCv";
+
+	status = raveloxmidi_context_create( &context );
+	if( status != RAVELOXMIDI_OK )
+	{
+		fprintf( stderr, "Unable to create raveloxmidi context\n" );
+		return EXIT_FAILURE;
+	}
+
+	while( 1 )
+	{
+		int c = getopt_long( argc, argv, short_options, long_options, NULL );
+		if( c == -1 ) break;
+
+		switch( c )
+		{
+			case '?':
+				usage();
+				ret = EXIT_FAILURE;
+				goto cleanup;
+			case 'c':
+				status = raveloxmidi_context_set_config_file( context, optarg );
+				if( status != RAVELOXMIDI_OK )
+				{
+					fprintf( stderr, "Unable to load configuration file %s\n", optarg );
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
+			case 'i':
+				if( set_config_or_fail( context, "logging.enabled", "yes" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				if( set_config_or_fail( context, "logging.log_level", "info" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
+			case 'd':
+				if( set_config_or_fail( context, "logging.enabled", "yes" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				if( set_config_or_fail( context, "logging.log_level", "debug" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				debug_requested = 1;
+				break;
+			case 'h':
+				usage();
+				ret = EXIT_SUCCESS;
+				goto cleanup;
+			case 'v':
+				fprintf( stderr, "raveloxmidi (%s)\n", raveloxmidi_version() );
+				ret = EXIT_SUCCESS;
+				goto cleanup;
+			case 'N':
+				if( set_config_or_fail( context, "run_as_daemon", "no" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
+			case 'P':
+				if( set_config_or_fail( context, "daemon.pid_file", optarg ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
+			case 'R':
+				if( set_config_or_fail( context, "readonly", "yes" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
+			case 'C':
+				dump_config = 1;
+				if( set_config_or_fail( context, "logging.enabled", "yes" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				if( set_config_or_fail( context, "logging.log_level", "debug" ) != EXIT_SUCCESS )
+				{
+					ret = EXIT_FAILURE;
+					goto cleanup;
+				}
+				break;
 		}
 	}
 
-	if( ! config_is_set("network.bind_address") )
+	if( dump_config || debug_requested )
 	{
-		ret = EXIT_FAILURE;
+		raveloxmidi_context_dump_config( context );
+		if( dump_config )
+		{
+			ret = EXIT_SUCCESS;
+			goto cleanup;
+		}
+	}
+
+	status = raveloxmidi_context_get_config( context, "logging.log_level", &config_value );
+	if( ( status == RAVELOXMIDI_OK ) && config_value && ( strcasecmp( config_value, "debug" ) == 0 ) && ! debug_requested )
+	{
+		raveloxmidi_context_dump_config( context );
+	}
+
+	status = raveloxmidi_context_get_config( context, "network.bind_address", &config_value );
+	if( ( status != RAVELOXMIDI_OK ) || ! config_value || ( *config_value == '\0' ) )
+	{
 		fprintf( stderr, "No network.bind_address configuration is set\n" );
-		goto daemon_stop;
-	}
-
-	service_desc.name = config_string_get("service.name");
-	service_desc.service = "_apple-midi._udp";
-	service_desc.port = config_int_get("network.control.port");
-	service_desc.publish_ipv4 = is_yes( config_string_get("service.ipv4"));
-	service_desc.publish_ipv6 = is_yes( config_string_get("service.ipv6"));
-
-	if( is_yes( config_string_get("run_as_daemon") ) )
-	{
-		running_as_daemon = 1;
-		daemon_start();
-	}
-
-	if( net_socket_init() != 0 )
-	{
 		ret = EXIT_FAILURE;
-		logging_printf(LOGGING_ERROR, "Unable to create sockets\n");
-		goto daemon_stop;
+		goto cleanup;
 	}
 
-#ifdef HAVE_ALSA
-	raveloxmidi_alsa_init( "alsa.input_device" , "alsa.output_device" , config_int_get("alsa.input_buffer_size") );
-#endif
+	signal_context = context;
+	signal( SIGINT, shutdown_handler );
+	signal( SIGTERM, shutdown_handler );
+	signal( SIGUSR2, shutdown_handler );
 
-	net_ctx_init();
-
-	ret = dns_service_publisher_start( &service_desc );
-	
-	if( ret != 0 )
+	status = raveloxmidi_context_start( context );
+	if( status != RAVELOXMIDI_OK )
 	{
+		fprintf( stderr, "Unable to start raveloxmidi\n" );
 		ret = EXIT_FAILURE;
-		logging_printf(LOGGING_ERROR, "Unable to create publish thread\n");
-		goto daemon_stop;
+		goto cleanup;
 	}
-	net_socket_loop_init();
 
-	midi_sender_init();
-	midi_sender_start();
-
-	signal( SIGINT , net_socket_loop_shutdown);
-	signal( SIGTERM , net_socket_loop_shutdown);
-	signal( SIGUSR2 , net_socket_loop_shutdown);
-
-	if( config_string_get("remote.connect") )
+	status = raveloxmidi_context_wait( context );
+	if( status != RAVELOXMIDI_OK )
 	{
-		dns_discover_init();
-		remote_connect_init();
-		dns_discover_teardown();
+		fprintf( stderr, "Unable to wait for raveloxmidi shutdown\n" );
+		ret = EXIT_FAILURE;
+		goto cleanup;
 	}
 
-	if( net_socket_get_shutdown_status() == OK )
-	{
-#ifdef HAVE_ALSA
-		raveloxmidi_alsa_loop();
-#endif
-		net_socket_fd_loop();
-	}
-#ifdef HAVE_ALSA
-	raveloxmidi_wait_for_alsa();
-	raveloxmidi_alsa_teardown();
-#endif
-	net_socket_loop_teardown();
-
-	dns_service_publisher_stop();
-
-	midi_sender_stop();
-	midi_sender_teardown();
-
-	remote_connect_teardown();
-
-	/* XXX: Not really sure it was a success... */
 	ret = EXIT_SUCCESS;
 
-daemon_stop:
-	if( running_as_daemon )
-	{
-		daemon_teardown();
-	}
-
-	net_socket_teardown();
-	net_ctx_teardown();
-
-	config_teardown();
-
-	logging_teardown();
-
-	utils_teardown();
-
-	utils_mem_tracking_teardown();
-	utils_pthread_tracking_teardown();
-
+cleanup:
+	signal_context = NULL;
+	raveloxmidi_context_free( &context );
 	return ret;
 }

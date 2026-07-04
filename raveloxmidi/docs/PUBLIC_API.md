@@ -45,7 +45,7 @@ raveloxmidi_context_create( &context );
 raveloxmidi_context_set_config_file( context, "/etc/raveloxmidi.conf" );
 raveloxmidi_context_set_config( context, "network.bind_address", "127.0.0.1" );
 raveloxmidi_context_start( context );
-raveloxmidi_context_stop( context );
+raveloxmidi_context_wait( context );
 raveloxmidi_context_free( &context );
 ```
 
@@ -188,6 +188,29 @@ Notes:
 - `config.file` can be read with `raveloxmidi_context_get_config()`
   after this call succeeds.
 
+## `raveloxmidi_context_dump_config`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_dump_config( raveloxmidi_context_t *context );
+```
+
+Dumps the current configuration through the library logging system.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Configuration dump was requested.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`.
+
+Notes:
+
+- The current dump output is emitted at debug log level.
+- If logging has not been initialized yet, this call initializes logging
+  using the current configuration.
+
 ## `raveloxmidi_context_start`
 
 ```c
@@ -220,13 +243,67 @@ Notes:
 - If startup fails after partial initialization, the SDK attempts to
   unwind initialized runtime subsystems before returning.
 
+## `raveloxmidi_context_request_stop`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_request_stop( raveloxmidi_context_t *context );
+```
+
+Requests shutdown for a running context without waiting for the runtime
+thread to finish.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Shutdown was requested.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`.
+- `RAVELOXMIDI_ERROR_NOT_RUNNING`: The context has no running or
+  partially initialized runtime subsystems to stop.
+
+Notes:
+
+- This is useful for signal handlers or event loops that need to ask the
+  service to stop and then wait elsewhere.
+- Call `raveloxmidi_context_wait()` after requesting shutdown to join
+  the runtime thread and clean up runtime subsystems.
+
+## `raveloxmidi_context_wait`
+
+```c
+raveloxmidi_status_t raveloxmidi_context_wait( raveloxmidi_context_t *context );
+```
+
+Waits for a running context to stop, joins the library-owned runtime
+thread and tears down runtime subsystems.
+
+Arguments:
+
+- `context`: Context returned by `raveloxmidi_context_create()`.
+
+Return values:
+
+- `RAVELOXMIDI_OK`: Runtime stopped and cleanup completed.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`.
+- `RAVELOXMIDI_ERROR_NOT_RUNNING`: The context has no running or
+  partially initialized runtime subsystems to wait for.
+
+Notes:
+
+- This call blocks until shutdown is requested. Shutdown can be requested
+  by `raveloxmidi_context_request_stop()`, by `raveloxmidi_context_stop()`
+  or by the runtime receiving its local shutdown command.
+
 ## `raveloxmidi_context_stop`
 
 ```c
 raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
 ```
 
-Stops a running context and tears down runtime subsystems created by
+Requests shutdown for a running context, waits for the runtime thread to
+finish and tears down runtime subsystems created by
 `raveloxmidi_context_start()`.
 
 Arguments:
@@ -242,8 +319,9 @@ Return values:
 
 Notes:
 
-- `raveloxmidi_context_stop()` joins the library-owned network thread
-  before returning.
+- `raveloxmidi_context_stop()` is equivalent to calling
+  `raveloxmidi_context_request_stop()` followed by
+  `raveloxmidi_context_wait()`.
 - It is valid to call `raveloxmidi_context_free()` without first calling
   `raveloxmidi_context_stop()`; free will stop a running context.
 

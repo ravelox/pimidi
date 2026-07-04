@@ -174,7 +174,10 @@ raveloxmidi_status_t raveloxmidi_context_create( raveloxmidi_context_t **context
 raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi_context_t *context, const char *key, const char *value );
 raveloxmidi_status_t raveloxmidi_context_get_config( raveloxmidi_context_t *context, const char *key, const char **value );
 raveloxmidi_status_t raveloxmidi_context_set_config_file( raveloxmidi_context_t *context, const char *filename );
+raveloxmidi_status_t raveloxmidi_context_dump_config( raveloxmidi_context_t *context );
 raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context );
+raveloxmidi_status_t raveloxmidi_context_request_stop( raveloxmidi_context_t *context );
+raveloxmidi_status_t raveloxmidi_context_wait( raveloxmidi_context_t *context );
 raveloxmidi_status_t raveloxmidi_context_stop( raveloxmidi_context_t *context );
 void raveloxmidi_context_free( raveloxmidi_context_t **context );
 ```

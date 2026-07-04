@@ -18,19 +18,17 @@ The `RAVELOXMIDI_API` macro expands to:
   compilers.
 - Nothing on compilers without a supported visibility mechanism.
 
-Internal headers and internal functions are not SDK surface, even while
-some of those symbols remain visible for the current `raveloxmidi`
-binary.
+Internal headers and internal functions are not SDK surface, even if
+some of those symbols remain visible until hidden visibility is enforced.
 
 ## Hidden Visibility Enforcement
 
-The build intentionally does not yet compile the library with
-`-fvisibility=hidden` or a linker export map. `P2-007` is still open,
-and the `raveloxmidi` binary still links against internal library
-symbols. Enforcing hidden visibility before the binary moves to the
-public SDK API would break that link.
+The `raveloxmidi` binary now links only against public SDK symbols. The
+build does not yet compile the library with `-fvisibility=hidden` or a
+linker export map, so some internal implementation symbols may still be
+visible from the shared object.
 
-After `P2-007` is complete, the next visibility step should be:
+The next visibility step should be:
 
 - Add compiler detection for `-fvisibility=hidden`.
 - Compile `libraveloxmidi` with hidden visibility by default.
@@ -43,12 +41,12 @@ After `P2-007` is complete, the next visibility step should be:
 The current values are declared in `raveloxmidi/src/Makefile.am`:
 
 ```make
-LIBRAVELOXMIDI_LT_CURRENT = 1
+LIBRAVELOXMIDI_LT_CURRENT = 2
 LIBRAVELOXMIDI_LT_REVISION = 0
-LIBRAVELOXMIDI_LT_AGE = 1
+LIBRAVELOXMIDI_LT_AGE = 2
 ```
 
-The library is at ABI interface `1` while the SDK is still being formed
+The library is at ABI interface `2` while the SDK is still being formed
 on the `library` development branch.
 
 Use libtool's standard update rules when changing the public ABI:
