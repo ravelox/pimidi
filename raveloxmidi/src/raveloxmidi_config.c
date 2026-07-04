@@ -70,7 +70,7 @@ static void config_set_defaults( void )
 
 }
 
-static void config_load_file( const char *filename )
+int config_load_file( const char *filename )
 {
 
 	FILE *config_file = NULL;
@@ -79,14 +79,14 @@ static void config_load_file( const char *filename )
 	char *key;
 	const char *value;
 
-	if( ! filename ) return;
+	if( ! filename ) return -1;
 
 	config_file = fopen( filename, "r" );
 
 	if( ! config_file )
 	{
 		fprintf( stderr, "Unable to open configuration file [%s]:%s\n", filename, strerror( errno ) );
-		return;
+		return -1;
 	}
 
 	while( 1 )
@@ -133,6 +133,8 @@ static void config_load_file( const char *filename )
 	}
 
 	if( config_file) fclose( config_file );
+
+	return 0;
 }
 
 int config_init( int argc, char *argv[] )

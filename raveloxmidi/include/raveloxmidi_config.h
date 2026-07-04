@@ -25,6 +25,7 @@
 
 int config_init( int argc, char *argv[] );
 void config_teardown( void );
+int config_load_file( const char *filename );
 
 char *config_string_get( char *key );
 int config_int_get( char *key );

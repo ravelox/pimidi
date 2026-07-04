@@ -140,6 +140,36 @@ RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config( raveloxmidi
 	return RAVELOXMIDI_OK;
 }
 
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_get_config( raveloxmidi_context_t *context, const char *key, const char **value )
+{
+	char *config_value = NULL;
+
+	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( ! key ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( ! value ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+
+	*value = NULL;
+
+	config_value = config_string_get( (char *)key );
+	if( ! config_value ) return RAVELOXMIDI_ERROR_NOT_FOUND;
+
+	*value = config_value;
+	return RAVELOXMIDI_OK;
+}
+
+RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_set_config_file( raveloxmidi_context_t *context, const char *filename )
+{
+	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( ! filename ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( strlen( filename ) == 0 ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( context->running ) return RAVELOXMIDI_ERROR_INVALID_STATE;
+
+	if( config_load_file( filename ) != 0 ) return RAVELOXMIDI_ERROR;
+
+	config_add_item( "config.file", filename );
+	return RAVELOXMIDI_OK;
+}
+
 RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_start( raveloxmidi_context_t *context )
 {
 	dns_service_desc_t service_desc;

@@ -43,13 +43,13 @@ After `P2-007` is complete, the next visibility step should be:
 The current values are declared in `raveloxmidi/src/Makefile.am`:
 
 ```make
-LIBRAVELOXMIDI_LT_CURRENT = 0
+LIBRAVELOXMIDI_LT_CURRENT = 1
 LIBRAVELOXMIDI_LT_REVISION = 0
-LIBRAVELOXMIDI_LT_AGE = 0
+LIBRAVELOXMIDI_LT_AGE = 1
 ```
 
-The library remains at ABI interface `0` while the SDK is still being
-formed on the `library` development branch.
+The library is at ABI interface `1` while the SDK is still being formed
+on the `library` development branch.
 
 Use libtool's standard update rules when changing the public ABI:
 
