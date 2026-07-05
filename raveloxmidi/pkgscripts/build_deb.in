@@ -30,6 +30,7 @@ copy_paths()
 	done
 }
 
+rm -f build/*.deb
 rm -rf "${STAGEDIR}" "${BINARYDIR}" "${LIBDIR}" "${DEVDIR}"
 mkdir -p "${STAGEDIR}" "${BINARYDIR}" "${LIBDIR}" "${DEVDIR}"
 
