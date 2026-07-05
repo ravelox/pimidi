@@ -11,7 +11,7 @@ pkgconfig_DATA = raveloxmidi.pc
 
 ACLOCAL_AMFLAGS = -I m4
 
-CLEANFILES = *.tar.gz *spec configure~
+CLEANFILES = *.tar.gz *spec *~
 
 distclean-local:
 	rm -rf build
