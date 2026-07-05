@@ -70,6 +70,34 @@ byte.
 System Exclusive framing is not implemented in the stream utility yet.
 `0xF0` and `0xF7` are currently treated as single-byte raw messages.
 
+### SysEx Framing Implementation Plan
+
+Implementing SysEx support requires a framed stream representation because
+SysEx messages are variable-length and may contain arbitrary bytes until
+the terminating `0xF7`.
+
+Required steps:
+
+- Define the stream contract for SysEx as `0xF0 payload... 0xF7`, where
+  the full frame is delivered as one raw MIDI event. Document whether the
+  output side always writes the terminating `0xF7` and how malformed input
+  is handled.
+- Replace the input thread's fixed two-byte `data_bytes` buffer with a
+  dynamically sized message buffer.
+- When input reads `0xF0`, continue reading bytes until `0xF7`, EOF,
+  shutdown, or a configured maximum SysEx frame size.
+- Reject or log malformed SysEx frames that hit EOF/shutdown before `0xF7`
+  or exceed the maximum frame size.
+- Extend `raveloxmidi_context_send_raw_midi()` or add a companion SDK call
+  so callers can submit variable-length raw MIDI data beginning with
+  `0xF0`. The current stream input path can only pass status plus a short
+  fixed data payload.
+- Update the SDK event callback/output path so `RAVELOXMIDI_EVENT_RAW_MIDI`
+  events with SysEx payloads are queued and written without the current
+  three-byte limit.
+- Add tests for complete SysEx frames, malformed unterminated frames,
+  oversized frames, and back-to-back channel/SysEx/channel messages.
+
 ## Examples
 
 Send middle C Note On over RTP-MIDI from stdin:

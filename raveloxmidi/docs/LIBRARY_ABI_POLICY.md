@@ -23,17 +23,22 @@ some of those symbols remain visible until hidden visibility is enforced.
 
 ## Hidden Visibility Enforcement
 
-The `raveloxmidi` binary now links only against public SDK symbols. The
-build does not yet compile the library with `-fvisibility=hidden` or a
-linker export map, so some internal implementation symbols may still be
-visible from the shared object.
+The `raveloxmidi` binary links only against public SDK symbols. The build
+checks whether the compiler supports `-fvisibility=hidden` and, when it
+does, compiles `libraveloxmidi` with hidden visibility by default.
 
-The next visibility step should be:
+Public SDK declarations remain exported through `RAVELOXMIDI_API`.
+Internal implementation symbols should not appear in the dynamic symbol
+table on platforms where hidden visibility is supported.
 
-- Add compiler detection for `-fvisibility=hidden`.
-- Compile `libraveloxmidi` with hidden visibility by default.
-- Keep only `RAVELOXMIDI_API` symbols exported.
-- Verify exported symbols with `nm -D` or an equivalent platform tool.
+Verify exported symbols with:
+
+```sh
+nm -D --defined-only src/.libs/libraveloxmidi.so | awk '{print $3}' | grep '^raveloxmidi'
+```
+
+Only the `raveloxmidi_` public SDK functions documented in
+`PUBLIC_API.md` should be listed.
 
 ## Libtool Versioning
 
@@ -42,7 +47,7 @@ The current values are declared in `raveloxmidi/src/Makefile.am`:
 
 ```make
 LIBRAVELOXMIDI_LT_CURRENT = 2
-LIBRAVELOXMIDI_LT_REVISION = 0
+LIBRAVELOXMIDI_LT_REVISION = 1
 LIBRAVELOXMIDI_LT_AGE = 2
 ```
 

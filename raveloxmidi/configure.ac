@@ -1,4 +1,4 @@
-m4_define([VERSION_NUMBER],[0.33.1])
+m4_define([VERSION_NUMBER],[0.33.2])
 m4_define([BUILD_NUMBER],m4_esyscmd_s(pkgscripts/build_number))
 m4_define([FULL_VERSION], [VERSION_NUMBER.BUILD_NUMBER])
 AC_INIT([raveloxmidi],[FULL_VERSION])
@@ -19,6 +19,23 @@ AM_PROG_AR
 LT_INIT
 
 AC_SYS_LARGEFILE
+
+AC_CACHE_CHECK([whether $CC supports -fvisibility=hidden],
+	[raveloxmidi_cv_cc_visibility_hidden],
+	[
+		save_CFLAGS="$CFLAGS"
+		CFLAGS="$CFLAGS -fvisibility=hidden"
+		AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM([], [])],
+			[raveloxmidi_cv_cc_visibility_hidden=yes],
+			[raveloxmidi_cv_cc_visibility_hidden=no])
+		CFLAGS="$save_CFLAGS"
+	])
+
+AS_IF([test "x$raveloxmidi_cv_cc_visibility_hidden" = "xyes"],
+	[RAVELOXMIDI_HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"],
+	[RAVELOXMIDI_HIDDEN_VISIBILITY_CFLAGS=""])
+AC_SUBST(RAVELOXMIDI_HIDDEN_VISIBILITY_CFLAGS)
 
 PKG_PROG_PKG_CONFIG
 
