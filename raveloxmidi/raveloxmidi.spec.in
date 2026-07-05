@@ -57,3 +57,5 @@ rm -rf $RPM_BUILD_ROOT
 %{_libdir}/pkgconfig/raveloxmidi.pc
 
 %changelog
+* Sun Jul 05 2026 Dave Kelly <github@ravelox.co.uk> - @VERSION@-1
+- Package @VERSION@.

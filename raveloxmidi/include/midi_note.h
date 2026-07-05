@@ -24,8 +24,8 @@
 typedef struct midi_note_t {
 	unsigned char	channel:4;
 	unsigned char	command:4;
-	char		note;
-	char		velocity;
+	unsigned char	note;
+	unsigned char	velocity;
 } midi_note_t;
 
 #define MIDI_COMMAND_NOTE_ON	0x09

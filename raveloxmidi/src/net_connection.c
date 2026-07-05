@@ -624,7 +624,7 @@ net_ctx_t *net_ctx_find_by_index( int index )
 char *net_ctx_connections_to_string( void )
 {
 	dstring_t *dstring = NULL;
-	unsigned char *out_buffer = NULL;
+	char *out_buffer = NULL;
 	int i = 0;
 	char ctx_buffer[1024];
 	size_t connection_count = 0;
@@ -671,7 +671,7 @@ char *net_ctx_connections_to_string( void )
 
 	logging_printf( LOGGING_DEBUG, "net_ctx_connections_to_string: out_buffer=[%s]\n", out_buffer);
 
-	if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( out_buffer, strlen( out_buffer));
+	if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( (unsigned char *)out_buffer, strlen( out_buffer));
 
 	dstring_destroy( &dstring );
 

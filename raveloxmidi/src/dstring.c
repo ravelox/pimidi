@@ -57,7 +57,7 @@ dstring_t *dstring_create( size_t block_size )
 	memset( new_string, 0, sizeof( dstring_t ) );
 	new_string->num_blocks = 1;
 	new_string->block_size = block_size;
-	new_string->data = (unsigned char *)X_MALLOC( new_string->num_blocks * new_string->block_size );
+	new_string->data = (char *)X_MALLOC( new_string->num_blocks * new_string->block_size );
 	memset( new_string->data, 0, new_string->num_blocks * new_string->block_size );
 	pthread_mutex_init( &(new_string->lock), NULL );
 
@@ -74,7 +74,7 @@ int dstring_reset( dstring_t *dstring )
 		X_FREE( dstring->data );
 	}
 	dstring->num_blocks = 1;
-	dstring->data = (unsigned char *)X_MALLOC( dstring->num_blocks * dstring->block_size );
+	dstring->data = (char *)X_MALLOC( dstring->num_blocks * dstring->block_size );
 	dstring_unlock( dstring );
 	return 1;
 }
@@ -145,9 +145,9 @@ dstring_write_end:
 	return ret;
 }
 
-unsigned char *dstring_value( dstring_t *dstring )
+char *dstring_value( dstring_t *dstring )
 {
-	unsigned char *out_buffer = NULL;
+	char *out_buffer = NULL;
 
 	if( ! dstring ) return NULL;
 

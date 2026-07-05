@@ -150,7 +150,7 @@ void ring_buffer_destroy( ring_buffer_t **ring )
 	X_FREENULL("ring", (void **)ring);
 }
 
-size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
+size_t ring_buffer_write( ring_buffer_t *ring, const unsigned char *data, size_t len )
 {
 	size_t return_val = 0;
 
@@ -181,7 +181,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 			unsigned char *dest = ring->data + ring->end;
 
 			/* Copy the data */
-			memcpy( dest, ( const unsigned char * )data, len );
+			memcpy( dest, data, len );
 
 			/* Update the pointers */
 			ring->used += len;
@@ -195,11 +195,11 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 			logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=wrapped ring=%p\n", ring);
 			/* Copy the first part */
 			dest = ring->data + ring->end;
-			memcpy( dest, ( const unsigned char * )data, first_part );
+			memcpy( dest, data, first_part );
 
 			/* Copy the second part */
 			dest = ring->data;
-			memcpy( dest, ( const unsigned char * )data + first_part, second_part );
+			memcpy( dest, data + first_part, second_part );
 
 			/* Update the pointers */
 			ring->end = second_part;
@@ -211,7 +211,7 @@ size_t ring_buffer_write( ring_buffer_t *ring, const char *data, size_t len )
 		unsigned char *dest = ring->data + ring->end;
 
 		logging_printf( LOGGING_DEBUG, "ring_buffer_write: buffer=wrapped write=contiguous ring=%p\n", ring );
-		memcpy( dest, ( const unsigned char * )data, len );
+		memcpy( dest, data, len );
 
 		/* Update the pointers */
 		ring->end += len;
@@ -225,9 +225,9 @@ ring_buffer_write_end:
 	return return_val;
 }
 
-char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
+unsigned char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 {
-	char *dest = NULL;
+	unsigned char *dest = NULL;
 	const unsigned char *src = NULL;
 	size_t first_part = 0;
 	size_t second_part = 0;
@@ -244,7 +244,7 @@ char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 	if( ring->used == 0 ) goto ring_buffer_read_end;
 	if( len > ring->used ) goto ring_buffer_read_end;
 
-	dest = ( char * ) X_MALLOC( len );
+	dest = ( unsigned char * ) X_MALLOC( len );
 	if( ! dest )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_read: Insufficient memory to allocate read output buffer\n");
@@ -333,7 +333,7 @@ ring_buffer_read_byte_end:
 int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 {
 	unsigned char *new_data = NULL;
-	char *old_data = NULL;
+	unsigned char *old_data = NULL;
 	size_t bytes_used = 0;
 
 	if( ! ring ) return 0;
@@ -370,9 +370,9 @@ int ring_buffer_resize( ring_buffer_t *ring, size_t new_size )
 	return 1;
 }
 
-char *ring_buffer_drain( ring_buffer_t *ring , size_t *len)
+unsigned char *ring_buffer_drain( ring_buffer_t *ring , size_t *len)
 {
-	char *data = NULL;
+	unsigned char *data = NULL;
 	*len = 0;
 	if( ! ring ) return NULL;
 
@@ -421,7 +421,7 @@ int ring_buffer_compare( ring_buffer_t *ring, const char *compare, size_t compar
 		}
 
 		ring_byte = ring->data[ ring_buffer_data_index( ring, i ) ];
-		compare_byte = compare[i];
+		compare_byte = (unsigned char)compare[i];
 		if( ring_byte != compare_byte )
 		{
 			ret = ring_byte - compare_byte;

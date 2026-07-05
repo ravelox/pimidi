@@ -27,7 +27,7 @@ typedef struct dstring_t
 {
 	size_t block_size;
 	size_t num_blocks;
-	unsigned char *data;
+	char *data;
 	pthread_mutex_t	lock;
 } dstring_t;
 
@@ -37,7 +37,7 @@ void dstring_destroy( dstring_t **dstring );
 void dstring_dump( dstring_t *dstring );
 size_t dstring_len( dstring_t *dstring );
 size_t dstring_append( dstring_t *dstring, const char *in_string );
-unsigned char *dstring_value( dstring_t *dstring );
+char *dstring_value( dstring_t *dstring );
 
 #define DSTRING_DEFAULT_BLOCK_SIZE	512
 

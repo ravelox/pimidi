@@ -159,7 +159,7 @@ void midi_command_set( midi_command_t *command, uint64_t delta, uint8_t status, 
 	
 	if( data )
 	{
-		command->data = ( char * ) X_MALLOC( data_len );
+		command->data = ( unsigned char * ) X_MALLOC( data_len );
 		if( ! command->data )
 		{
 			logging_printf( LOGGING_ERROR, "midi_command_set: Insufficient memory to create command data buffer\n");

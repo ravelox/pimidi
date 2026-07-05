@@ -380,7 +380,7 @@ int net_socket_read( int fd )
 	size_t packet_size = 0;
 	raveloxmidi_socket_t *found_socket = NULL;
 
-	char *read_buffer = NULL;
+	unsigned char *read_buffer = NULL;
 	size_t read_buffer_size = 0;
 
 	midi_sender_context_t *originators = NULL;
@@ -546,7 +546,7 @@ int net_socket_read( int fd )
 		buffer = net_ctx_connections_to_string();
 		if( buffer )
 		{
-			if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( buffer, strlen( buffer ) );
+			if( LOGGING_HEX_DUMP_ENABLED ) hex_dump( (unsigned char *)buffer, strlen( buffer ) );
 
 			bytes_written = sendto( fd, (const char *)buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
 

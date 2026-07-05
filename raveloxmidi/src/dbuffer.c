@@ -110,7 +110,7 @@ void dbuffer_dump( dbuffer_t *dbuffer )
 	logging_printf(LOGGING_DEBUG, "dbuffer: buffer=%p, len=%u, blocks=%u\n", dbuffer, dbuffer->len, dbuffer->num_blocks );
 }
 
-size_t dbuffer_write( dbuffer_t *dbuffer, const char *in_buffer, size_t in_buffer_len )
+size_t dbuffer_write( dbuffer_t *dbuffer, const unsigned char *in_buffer, size_t in_buffer_len )
 {
 	size_t ret = 0;
 	size_t required_len = 0;
@@ -126,13 +126,13 @@ size_t dbuffer_write( dbuffer_t *dbuffer, const char *in_buffer, size_t in_buffe
 
 	if( allocated_len < required_len )
 	{
-		char *new_dbuffer_data = NULL;
+		unsigned char *new_dbuffer_data = NULL;
 		size_t new_block_count = 0;
 		size_t new_allocated_len = 0;
 
 		new_block_count = ( required_len / dbuffer->block_size ) + 1 ;
 		new_allocated_len = new_block_count * dbuffer->block_size;
-		new_dbuffer_data = (char *)X_REALLOC( dbuffer->data, new_allocated_len );
+		new_dbuffer_data = (unsigned char *)X_REALLOC( dbuffer->data, new_allocated_len );
 
 		if( ! new_dbuffer_data )
 		{
@@ -158,7 +158,7 @@ dbuffer_write_end:
 	return ret;
 }
 
-size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
+size_t dbuffer_read( dbuffer_t *dbuffer, unsigned char **out_buffer )
 {
 	size_t ret = 0;
 
@@ -169,7 +169,7 @@ size_t dbuffer_read( dbuffer_t *dbuffer, char **out_buffer )
 
 	if( LOGGING_DEBUG_ENABLED ) dbuffer_dump( dbuffer );
 
-	*out_buffer = ( char * ) X_MALLOC( dbuffer->len );
+	*out_buffer = ( unsigned char * ) X_MALLOC( dbuffer->len );
 	memset( *out_buffer, 0, dbuffer->len );
 	if( ! *out_buffer )
 	{
