@@ -10,7 +10,7 @@
 
 - **RP-004 Medium**: `raveloxmidi/src/dbuffer.c:172` calls `memset(*out_buffer, ...)` before checking whether `X_MALLOC()` returned `NULL`. Under memory pressure this becomes an immediate crash.
 
-- **RP-005 Medium**: `raveloxmidi/src/net_socket.c:802` uses a signal handler that calls non-async-signal-safe code: `logging_printf()`, mutex-backed shutdown state, `write()`, and `close()`. This can deadlock or corrupt state during `SIGINT`, `SIGTERM`, or `SIGUSR2`. The shutdown paths also write to both pipe ends; only the write end should be written.
+- **RP-005 Medium - Fixed**: `raveloxmidi/src/net_socket.c` now keeps the shutdown request path signal-safe by setting a `sig_atomic_t` flag and writing only to the shutdown pipe write end. Logging, mutex use and descriptor close operations were removed from the shutdown request path; pipe descriptors are closed during normal loop teardown.
 
 - **RP-006 Medium**: `raveloxmidi/src/net_applemidi.c:276` treats the remaining INV name bytes as a trusted C string via `X_STRDUP((const char *)p)`. A malformed packet without a NUL terminator can read past the packet buffer. Use bounded duplication from `in_buffer_len`.
 

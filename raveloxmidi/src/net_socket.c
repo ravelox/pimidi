@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -71,8 +72,8 @@ extern int errno;
 
 static data_table_t *sockets = NULL;
 
-static int net_socket_shutdown = 0;
-static int shutdown_fd[2] = {0,0};
+static volatile sig_atomic_t net_socket_shutdown = 0;
+static int shutdown_fd[2] = {-1,-1};
 
 int inbound_midi_fd = -1;
 
@@ -80,13 +81,12 @@ static struct pollfd *poll_fds = NULL;
 static nfds_t poll_fds_count = 0;
 static nfds_t poll_fds_capacity = 0;
 
-static pthread_mutex_t shutdown_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t send_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t poll_fds_lock = PTHREAD_MUTEX_INITIALIZER;
 int socket_timeout = 0;
 
 static void net_socket_set_shutdown_lock( int i );
-static void net_socket_signal_shutdown( const char *caller );
+static void net_socket_signal_shutdown( void );
 static void net_socket_drain_shutdown_signal( void );
 
 static int net_socket_poll_fds_add( int fd )
@@ -532,7 +532,7 @@ int net_socket_read( int fd )
 
 		net_socket_set_shutdown_lock(1);
 
-		net_socket_signal_shutdown( "net_socket_read" );
+		net_socket_signal_shutdown();
 
 		midi_state_advance( found_socket->state, 4);
 /*
@@ -698,27 +698,20 @@ net_socket_read_clean:
 
 static void net_socket_set_shutdown_lock( int i )
 {
-	X_MUTEX_LOCK( &shutdown_lock );
-	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: %d\n", i);
 	net_socket_shutdown = i;
-	logging_printf(LOGGING_DEBUG,"net_socket_set_shutdown_lock: exit\n");
-	X_MUTEX_UNLOCK( &shutdown_lock );
 }
 
-static void net_socket_signal_shutdown( const char *caller )
+static void net_socket_signal_shutdown( void )
 {
 	ssize_t bytes_written = 0;
 
-	bytes_written = write( shutdown_fd[1], "X", 1 );
-	if( bytes_written < 0 )
-	{
-		if( errno != EAGAIN && errno != EWOULDBLOCK )
-		{
-			logging_printf( LOGGING_WARN, "%s: shutdown pipe write failed: %s\n", caller, strerror( errno ) );
-		}
-	} else if( bytes_written != 1 ) {
-		logging_printf( LOGGING_WARN, "%s: shutdown pipe write incomplete: %ld\n", caller, bytes_written );
-	}
+	if( shutdown_fd[1] < 0 ) return;
+
+	do {
+		bytes_written = write( shutdown_fd[1], "X", 1 );
+	} while( ( bytes_written < 0 ) && ( errno == EINTR ) );
+
+	(void)bytes_written;
 }
 
 static void net_socket_drain_shutdown_signal( void )
@@ -743,20 +736,16 @@ static void net_socket_drain_shutdown_signal( void )
 
 int net_socket_get_shutdown_status( void )
 {
-	int i = OK;
-
-	X_MUTEX_LOCK( &shutdown_lock );
-	i = net_socket_shutdown;
-	X_MUTEX_UNLOCK( &shutdown_lock );
-	return i;
+	return net_socket_shutdown;
 }
 
 void net_socket_loop_init()
 {
 	int err = 0;
 
-	pthread_mutex_init( &shutdown_lock, NULL);
 	net_socket_set_shutdown_lock(0);
+	shutdown_fd[0] = -1;
+	shutdown_fd[1] = -1;
 	socket_timeout = config_long_get("network.socket_timeout");
 
 
@@ -767,9 +756,9 @@ void net_socket_loop_init()
 		logging_printf( LOGGING_ERROR, "net_socket_loop_init: pipe error: %s\n", strerror(errno));
 	} else {
 		logging_printf(LOGGING_DEBUG, "net_socket_loop_init: pipe0=%d pipe1=%d\n", shutdown_fd[0], shutdown_fd[1]);
+		fcntl(shutdown_fd[0], F_SETFL, O_NONBLOCK);
+		fcntl(shutdown_fd[1], F_SETFL, O_NONBLOCK);
 	}
-	fcntl(shutdown_fd[0], F_SETFL, O_NONBLOCK);
-	fcntl(shutdown_fd[1], F_SETFL, O_NONBLOCK);
 }
 
 void net_socket_loop_teardown()
@@ -778,8 +767,19 @@ void net_socket_loop_teardown()
 	poll_fds_count = 0;
 	poll_fds_capacity = 0;
 
+	if( shutdown_fd[0] >= 0 )
+	{
+		close( shutdown_fd[0] );
+		shutdown_fd[0] = -1;
+	}
+
+	if( shutdown_fd[1] >= 0 )
+	{
+		close( shutdown_fd[1] );
+		shutdown_fd[1] = -1;
+	}
+
 	pthread_mutex_destroy( &poll_fds_lock );
-	pthread_mutex_destroy( &shutdown_lock );
 	pthread_mutex_destroy( &send_lock );
 }
 
@@ -837,14 +837,11 @@ int net_socket_fd_loop()
 
 void net_socket_loop_shutdown(int signal)
 {
-	logging_printf(LOGGING_INFO, "net_socket_loop_shutdown: shutdown signal received(%u)\n", signal);
+	(void)signal;
 
 	net_socket_set_shutdown_lock( 1 );
 
-	net_socket_signal_shutdown( "net_socket_loop_shutdown" );
-
-	close( shutdown_fd[0] );
-	close( shutdown_fd[1] );
+	net_socket_signal_shutdown();
 }
 
 int net_socket_init( void )
