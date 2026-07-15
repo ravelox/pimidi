@@ -146,6 +146,8 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	int total_connections = 0;
 	char output_available = 0;
 	unsigned char *raw_buffer = NULL;
+	unsigned char *packed_rtp_buffer = NULL;
+	size_t packed_rtp_buffer_capacity = 0;
 
 	midi_command_to_payload( command, &single_midi_payload );
 	if( ! single_midi_payload ) return;
@@ -172,13 +174,14 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	}
 
 	total_connections = net_ctx_get_num_connections();
+	net_connections_lock();
 	// Build the RTP packet for each connection
 	for( i = 0; i < total_connections; i++ )
 	{
 		char *packed_journal = NULL;
 		size_t packed_journal_len = 0;
-		unsigned char *packed_rtp_buffer = NULL;
 		size_t packed_rtp_buffer_len = 0;
+		size_t needed_rtp_buffer_len = 0;
 		unsigned char *p = NULL;
 		size_t packed_payload_len = 0;
 		uint16_t temp_header = 0;
@@ -212,12 +215,18 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		packed_payload_len = 1 + single_midi_payload->header->len + ( single_midi_payload->header->len > 15 ? 1 : 0 );
 		logging_printf(LOGGING_DEBUG, "midi_sender_send_single: packed_payload_len=%u packed_journal_len=%u\n", packed_payload_len, packed_journal_len);
 
-		packed_rtp_buffer_len = RTP_PACKET_HEADER_SIZE + packed_payload_len + packed_journal_len;
-		packed_rtp_buffer = (unsigned char *)X_MALLOC( packed_rtp_buffer_len );
-		if( ! packed_rtp_buffer )
+		needed_rtp_buffer_len = RTP_PACKET_HEADER_SIZE + packed_payload_len + packed_journal_len;
+		if( packed_rtp_buffer_capacity < needed_rtp_buffer_len )
 		{
-			logging_printf( LOGGING_ERROR, "midi_sender_send_single: Unable to allocate RTP packet buffer\n" );
-			goto midi_sender_send_single_clean;
+			unsigned char *new_packed_rtp_buffer = (unsigned char *)X_REALLOC( packed_rtp_buffer, needed_rtp_buffer_len );
+			if( ! new_packed_rtp_buffer )
+			{
+				logging_printf( LOGGING_ERROR, "midi_sender_send_single: Unable to allocate RTP packet buffer\n" );
+				X_FREENULL( "packed_journal", (void **)&packed_journal );
+				continue;
+			}
+			packed_rtp_buffer = new_packed_rtp_buffer;
+			packed_rtp_buffer_capacity = needed_rtp_buffer_len;
 		}
 
 		rtp_packet.header.v = RTP_VERSION;
@@ -287,7 +296,6 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		packet_ready = 1;
 
 midi_sender_send_single_clean:
-		X_FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 		X_FREENULL( "packed_journal", (void **)&packed_journal );
 
 		if( ! packet_ready || ! journal_enabled )
@@ -311,8 +319,10 @@ midi_sender_send_single_clean:
 				continue;
 		}
 	}
+	net_connections_unlock();
 
 	// Clean up
+	X_FREENULL( "packed_rtp_buffer", (void **)&packed_rtp_buffer );
 	midi_payload_destroy( &single_midi_payload );
 	switch( message_type )
 	{

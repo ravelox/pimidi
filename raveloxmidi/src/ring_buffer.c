@@ -276,19 +276,23 @@ unsigned char *ring_buffer_read( ring_buffer_t *ring, size_t len , int advance)
 
 		/* Copy the first part */
 		src = ring->data + ring->start;
-		first_part = ring->size - ring->start;
+		first_part = MIN( len, ring->size - ring->start );
 		memcpy( dest,  src, first_part );
 		
 		/* Copy the second part */
-		src = ring->data;
 		second_part = len - first_part;
-		memcpy( dest + first_part, src, second_part );
+		if( second_part > 0 )
+		{
+			src = ring->data;
+			memcpy( dest + first_part, src, second_part );
+		}
 
 		if( advance == RING_YES )
 		{
 			/* Update the pointers */
 			ring->used -= len;
-			ring->start = second_part;
+			ring->start = ( ring->start + len ) % ring->size;
+			if( ring->used == 0 ) ring->end = ring->start;
 		}
 	}
 

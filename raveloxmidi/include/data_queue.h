@@ -33,6 +33,8 @@ typedef struct data_queue_t {
         char *name;
         data_queue_item_t *top;
 	data_queue_item_t *bottom;
+	data_queue_item_t *free_items;
+	size_t free_item_count;
 	unsigned char state;
 	unsigned char shutdown;
         pthread_mutex_t lock;

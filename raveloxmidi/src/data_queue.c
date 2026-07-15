@@ -30,6 +30,8 @@
 #include "utils.h"
 #include "logging.h"
 
+#define DATA_QUEUE_MAX_FREE_ITEMS 64
+
 void data_queue_lock( data_queue_t *queue )
 {
 	if( ! queue ) return;
@@ -65,6 +67,54 @@ data_queue_item_t *data_queue_item_create( void )
 	return new_item;
 }
 
+static data_queue_item_t *data_queue_item_get_free( data_queue_t *queue )
+{
+	data_queue_item_t *item = NULL;
+
+	if( ! queue ) return NULL;
+
+	if( queue->free_items )
+	{
+		item = queue->free_items;
+		queue->free_items = item->next;
+		queue->free_item_count--;
+		item->data = NULL;
+		item->context = NULL;
+		item->next = NULL;
+		return item;
+	}
+
+	return data_queue_item_create();
+}
+
+static void data_queue_item_release( data_queue_t *queue, data_queue_item_t **item )
+{
+	if( ! item ) return;
+	if( ! *item ) return;
+
+	(*item)->data = NULL;
+	(*item)->context = NULL;
+
+	if( queue )
+	{
+		data_queue_lock( queue );
+		if( queue->free_item_count < DATA_QUEUE_MAX_FREE_ITEMS )
+		{
+			(*item)->next = queue->free_items;
+			queue->free_items = *item;
+			queue->free_item_count++;
+			*item = NULL;
+		}
+		data_queue_unlock( queue );
+	}
+
+	if( *item )
+	{
+		(*item)->next = NULL;
+		X_FREENULL( "data_queue_item_release:item", (void **)item);
+	}
+}
+
 data_queue_t *data_queue_create( const char *name, data_queue_action_func_t action )
 {
 	data_queue_t *new_queue = NULL;
@@ -87,6 +137,8 @@ data_queue_t *data_queue_create( const char *name, data_queue_action_func_t acti
 	new_queue->state = DATA_QUEUE_EMPTY;
 	new_queue->top = NULL;
 	new_queue->bottom = NULL;
+	new_queue->free_items = NULL;
+	new_queue->free_item_count = 0;
 	new_queue->shutdown = DATA_QUEUE_CONTINUE;
 	new_queue->name = X_STRDUP( name );
 	new_queue->counter = 0;
@@ -132,6 +184,15 @@ void data_queue_destroy( data_queue_t **queue )
 		X_FREENULL( "data_queue_destroy:item", (void **)&item );
 	}
 
+	while( (*queue)->free_items )
+	{
+		item = (*queue)->free_items;
+		(*queue)->free_items = (*queue)->free_items->next;
+		item->next = NULL;
+		X_FREENULL( "data_queue_destroy:free_item", (void **)&item );
+	}
+	(*queue)->free_item_count = 0;
+
 	if( (*queue)->name )
 	{
 		X_FREENULL( "data_queue_destroy:queue->name", (void **) &( (*queue)->name ) );
@@ -158,18 +219,18 @@ void data_queue_add( data_queue_t *queue, void *data, void *context )
 	if( ! queue ) return;
 	if( ! data ) return;
 
-	new_item = data_queue_item_create();
-	
+	data_queue_lock( queue );
+	new_item = data_queue_item_get_free( queue );
+
 	if( ! new_item )
 	{
 		logging_printf(LOGGING_DEBUG, "data_queue_add: Insufficient memory to create new data_queue_item\n");
+		data_queue_unlock( queue );
 		return;
 	}
 
 	new_item->data = data;
 	new_item->context = context;
-
-	data_queue_lock( queue );
 
 	logging_printf( LOGGING_DEBUG, "data_queue_add: Adding item=%p to [%s]\n", new_item, (queue->name?queue->name:"unknown") );
 
@@ -291,11 +352,7 @@ static void *data_queue_handler( void *data )
 				action( item_data, item_context );
 			}
 
-			item->data = NULL;
-			item->context = NULL;
-			item->next = NULL;
-
-			X_FREENULL( "data_queue_handler:item", (void **)&item);
+			data_queue_item_release( queue, &item );
 		}
 	}
 
