@@ -74,24 +74,31 @@ void ring_buffer_dump( ring_buffer_t *ring )
 void ring_buffer_reset( ring_buffer_t *ring , size_t size)
 {
 	if( ! ring ) return;
+	if( size == 0 ) return;
 
 	ring_buffer_lock( ring );
 
-	ring->size = size;
 	ring->start = 0;
 	ring->end = 0;
 	ring->used = 0;
 
-	if( ring->data )
+	if( ring->data && ring->size != size )
 	{
 		X_FREE( ring->data );
-		ring->data = ( unsigned char * ) X_MALLOC( size );
-		if( ring->data )
-		{
-			memset( ring->data, 0, size );
-		}
+		ring->data = NULL;
 	}
-	
+
+	if( ! ring->data )
+	{
+		ring->data = ( unsigned char * ) X_MALLOC( size );
+	}
+
+	if( ring->data )
+	{
+		ring->size = size;
+		memset( ring->data, 0, size );
+	}
+
 	ring_buffer_unlock( ring );
 }
 
@@ -113,16 +120,17 @@ ring_buffer_t *ring_buffer_create( size_t size )
 		return NULL;
 	}
 
-	new_buffer->data = ( unsigned char * ) X_MALLOC( size );
+	memset( new_buffer, 0, sizeof( ring_buffer_t ) );
+	pthread_mutex_init( &new_buffer->lock , NULL );
+	ring_buffer_reset( new_buffer , size );
+
 	if( ! new_buffer->data )
 	{
 		logging_printf( LOGGING_ERROR, "ring_buffer_create: insufficient memory to create internal data buffer\n");
+		pthread_mutex_destroy( &new_buffer->lock );
 		X_FREE( new_buffer );
 		return NULL;
 	}
-
-	pthread_mutex_init( &new_buffer->lock , NULL );
-	ring_buffer_reset( new_buffer , size );
 
 	return new_buffer;
 }
