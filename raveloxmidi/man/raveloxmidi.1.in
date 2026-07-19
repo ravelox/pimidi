@@ -191,9 +191,21 @@ for more information
 .TP
 .B
 journal.write
-Set to yes to enable MIDI recovery journal.
+Set to yes to include an RTP-MIDI recovery journal in outbound packets. The journal covers note, control, program, pitch bend, channel pressure, and poly pressure state.
 .br
 Default is no.
+.TP
+.B
+journal.read
+Set to yes to detect gaps in inbound RTP sequence numbers and apply supported recovery-journal chapters before processing the current MIDI command section.
+.br
+Default is yes.
+.TP
+.B
+stream.max_sysex_size
+Maximum complete System Exclusive frame size accepted by \\fBraveloxmidi-stream\\fP, including the F0 and F7 framing bytes. Oversized or incomplete frames are discarded.
+.br
+Default is 1048576 bytes.
 .TP
 .B
 timing.enabled
@@ -205,7 +217,7 @@ Default is no.
 .TP
 .B
 timing.playout_delay_ms
-Additional receive-side playout delay, in milliseconds, used to absorb network jitter when Btiming.enabledP is yes.
+Additional receive-side playout delay, in milliseconds, used to absorb network jitter when \fBtiming.enabled\fP is yes.
 .br
 Negative values are treated as zero.
 .br

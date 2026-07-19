@@ -54,6 +54,7 @@ typedef struct stream_output_queue_t {
 typedef struct stream_input_t {
 	raveloxmidi_context_t *context;
 	const char *path;
+	size_t max_sysex_size;
 	int enabled;
 	int stop_when_done;
 	pthread_t thread;
@@ -64,6 +65,7 @@ typedef struct stream_app_t {
 	stream_input_t input;
 	stream_output_queue_t output;
 	volatile sig_atomic_t stop_requested;
+	int output_sysex_partial;
 } stream_app_t;
 
 static stream_app_t *signal_app = NULL;
@@ -368,12 +370,43 @@ static void *output_thread_main( void *data )
 static void midi_event_callback( raveloxmidi_context_t *context, const raveloxmidi_midi_event_t *event, void *user_data )
 {
 	stream_app_t *app = (stream_app_t *)user_data;
-	uint8_t buffer[4];
+	uint8_t *buffer = NULL;
 
 	(void)context;
 
 	if( ! app || ! event ) return;
-	if( event->data_len > 3 ) return;
+	if( event->data_len == SIZE_MAX ) return;
+
+	/* Remove the artificial F0/F7 boundary octets used by RFC 6295
+	 * when a SysEx command is segmented across RTP packets. */
+	if( event->status == 0xf0 && event->data_len > 0 && event->data[event->data_len-1] == 0xf0 )
+	{
+		app->output_sysex_partial = 1;
+		buffer = (uint8_t *)malloc( event->data_len );
+		if( buffer ) { buffer[0] = 0xf0; memcpy(buffer+1,event->data,event->data_len-1); }
+		if( buffer && output_queue_push(&app->output, buffer, event->data_len) != 0 ) {
+			app->stop_requested = 1; raveloxmidi_context_request_stop(app->context);
+		}
+		free(buffer);
+		return;
+	}
+	if( app->output_sysex_partial && event->status == 0xf7 && event->data_len > 0 )
+	{
+		size_t len = event->data_len - (event->data[event->data_len-1] == 0xf0 ? 1 : 0);
+		if( event->data[event->data_len-1] == 0xf7 ) app->output_sysex_partial = 0;
+		if( output_queue_push(&app->output, event->data, len) != 0 ) {
+			app->stop_requested = 1; raveloxmidi_context_request_stop(app->context);
+		}
+		return;
+	}
+
+	buffer = (uint8_t *)malloc( event->data_len + 1 );
+	if( ! buffer )
+	{
+		app->stop_requested = 1;
+		raveloxmidi_context_request_stop( app->context );
+		return;
+	}
 
 	buffer[0] = event->status;
 	if( event->data_len > 0 ) memcpy( buffer + 1, event->data, event->data_len );
@@ -383,6 +416,82 @@ static void midi_event_callback( raveloxmidi_context_t *context, const raveloxmi
 		app->stop_requested = 1;
 		raveloxmidi_context_request_stop( app->context );
 	}
+	free( buffer );
+}
+
+static raveloxmidi_status_t send_sysex( raveloxmidi_context_t *context, const uint8_t *data, size_t data_len )
+{
+	const size_t chunk_size = 1022;
+	size_t offset = 0;
+	if( data_len <= chunk_size + 1 ) return raveloxmidi_context_send_raw_midi(context, 0xf0, data, data_len);
+	while( offset < data_len - 1 )
+	{
+		size_t remaining = data_len - 1 - offset;
+		size_t take = remaining > chunk_size ? chunk_size : remaining;
+		uint8_t *segment = (uint8_t *)malloc(take + 1);
+		uint8_t status = offset == 0 ? 0xf0 : 0xf7;
+		raveloxmidi_status_t result;
+		if( !segment ) return RAVELOXMIDI_ERROR_NO_MEMORY;
+		memcpy(segment, data + offset, take);
+		segment[take] = remaining == take ? 0xf7 : 0xf0;
+		result = raveloxmidi_context_send_raw_midi(context, status, segment, take + 1);
+		free(segment);
+		if( result != RAVELOXMIDI_OK ) return result;
+		offset += take;
+	}
+	return RAVELOXMIDI_OK;
+}
+
+static int read_sysex_data( int fd, uint8_t **data, size_t *data_len, size_t max_size,
+	volatile sig_atomic_t *stop_requested )
+{
+	uint8_t *buffer = NULL;
+	size_t len = 0;
+	size_t capacity = 256;
+
+	if( ! data || ! data_len || max_size < 2 ) return -1;
+	*data = NULL;
+	*data_len = 0;
+	buffer = (uint8_t *)malloc( capacity );
+	if( ! buffer ) return -1;
+
+	while( len + 1 < max_size )
+	{
+		uint8_t byte;
+		int result = read_exact( fd, &byte, 1, stop_requested );
+
+		if( result <= 0 )
+		{
+			fprintf( stderr, "Unterminated MIDI SysEx message\n" );
+			free( buffer );
+			return result == -2 ? -2 : -1;
+		}
+
+		if( len == capacity )
+		{
+			size_t new_capacity = capacity > max_size / 2 ? max_size - 1 : capacity * 2;
+			uint8_t *new_buffer = (uint8_t *)realloc( buffer, new_capacity );
+			if( ! new_buffer )
+			{
+				free( buffer );
+				return -1;
+			}
+			buffer = new_buffer;
+			capacity = new_capacity;
+		}
+
+		buffer[len++] = byte;
+		if( byte == 0xf7 )
+		{
+			*data = buffer;
+			*data_len = len;
+			return 1;
+		}
+	}
+
+	fprintf( stderr, "MIDI SysEx message exceeds stream.max_sysex_size (%zu bytes)\n", max_size );
+	free( buffer );
+	return -1;
 }
 
 static void *input_thread_main( void *data )
@@ -404,6 +513,8 @@ static void *input_thread_main( void *data )
 	{
 		uint8_t status = 0;
 		uint8_t data_bytes[2];
+		uint8_t *sysex_data = NULL;
+		const uint8_t *message_data = data_bytes;
 		size_t data_len = 0;
 		int read_result = read_exact( fd, &status, 1, &app->stop_requested );
 
@@ -415,14 +526,28 @@ static void *input_thread_main( void *data )
 			break;
 		}
 
-		data_len = midi_data_len_for_status( status );
+		if( status == 0xf0 )
+		{
+			read_result = read_sysex_data( fd, &sysex_data, &data_len,
+				input->max_sysex_size, &app->stop_requested );
+			if( read_result <= 0 )
+			{
+				if( read_result != -2 ) app->stop_requested = 1;
+				break;
+			}
+			message_data = sysex_data;
+		}
+		else
+		{
+			data_len = midi_data_len_for_status( status );
+		}
 		if( data_len == 0 && status < 0x80 )
 		{
 			fprintf( stderr, "Ignoring MIDI data byte without status: 0x%02x\n", status );
 			continue;
 		}
 
-		if( data_len > 0 )
+		if( data_len > 0 && status != 0xf0 )
 		{
 			read_result = read_exact( fd, data_bytes, data_len, &app->stop_requested );
 			if( read_result == 0 ) break;
@@ -434,12 +559,15 @@ static void *input_thread_main( void *data )
 			}
 		}
 
-		if( raveloxmidi_context_send_raw_midi( input->context, status, data_bytes, data_len ) != RAVELOXMIDI_OK )
+		if( (status == 0xf0 ? send_sysex(input->context, message_data, data_len) :
+			raveloxmidi_context_send_raw_midi(input->context, status, message_data, data_len)) != RAVELOXMIDI_OK )
 		{
 			fprintf( stderr, "Unable to send MIDI message\n" );
+			free( sysex_data );
 			app->stop_requested = 1;
 			break;
 		}
+		free( sysex_data );
 	}
 
 	if( fd >= 0 && fd != STDIN_FILENO ) close( fd );
@@ -458,6 +586,7 @@ int main( int argc, char **argv )
 	stream_app_t app;
 	raveloxmidi_status_t status = RAVELOXMIDI_OK;
 	const char *bind_address = NULL;
+	const char *max_sysex_value = NULL;
 	int rc = EXIT_SUCCESS;
 	int input_started = 0;
 	int output_started = 0;
@@ -473,6 +602,7 @@ int main( int argc, char **argv )
 	};
 
 	memset( &app, 0, sizeof( app ) );
+	app.input.max_sysex_size = 1048576;
 	output_queue_init( &app.output );
 
 	status = raveloxmidi_context_create( &app.context );
@@ -541,6 +671,18 @@ int main( int argc, char **argv )
 	{
 		rc = EXIT_FAILURE;
 		goto cleanup;
+	}
+	if( raveloxmidi_context_get_config( app.context, "stream.max_sysex_size", &max_sysex_value ) == RAVELOXMIDI_OK && max_sysex_value )
+	{
+		char *end = NULL;
+		unsigned long parsed = strtoul( max_sysex_value, &end, 10 );
+		if( end == max_sysex_value || *end != '\0' || parsed < 2 || parsed > SIZE_MAX )
+		{
+			fprintf( stderr, "Invalid stream.max_sysex_size: %s\n", max_sysex_value );
+			rc = EXIT_FAILURE;
+			goto cleanup;
+		}
+		app.input.max_sysex_size = (size_t)parsed;
 	}
 
 	if( ! set_config_or_fail( app.context, "run_as_daemon", "no" ) ||

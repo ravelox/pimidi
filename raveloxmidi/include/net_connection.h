@@ -58,6 +58,8 @@ typedef struct net_ctx_t {
 	uint32_t	send_ssrc;
 	uint32_t	initiator;
 	uint32_t	seq;
+	uint16_t	receive_seq;
+	unsigned char	receive_seq_valid;
 	uint16_t	control_port;
 	uint16_t	data_port;
 	struct sockaddr_storage control_address;
@@ -94,6 +96,7 @@ const char *net_ctx_status_to_string( net_ctx_status_t status );
 void net_ctx_add_journal_note( net_ctx_t *ctx, const midi_note_t *midi_note );
 void net_ctx_add_journal_control( net_ctx_t *ctx, const midi_control_t *midi_control );
 void net_ctx_add_journal_program( net_ctx_t *ctx, const midi_program_t *midi_program );
+void net_ctx_add_journal_command( net_ctx_t *ctx, const midi_command_t *command );
 
 void net_ctx_journal_dump( net_ctx_t *ctx);
 void net_ctx_journal_pack( net_ctx_t *ctx, char **journal_buffer, size_t *journal_buffer_size);

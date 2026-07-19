@@ -245,6 +245,8 @@ void net_ctx_reset( net_ctx_t *ctx )
 	net_ctx_journal_reset( ctx );
 	net_ctx_lock( ctx );
 	ctx->seq = 1;
+	ctx->receive_seq = 0;
+	ctx->receive_seq_valid = 0;
 	ctx->status = NET_CTX_STATUS_UNUSED;
 	ctx->control_address_len = 0;
 	ctx->data_address_len = 0;
@@ -483,6 +485,14 @@ void net_ctx_add_journal_program( net_ctx_t *ctx, const midi_program_t *midi_pro
 	midi_journal_add_program( ctx->journal, ctx->seq, midi_program );
 	net_ctx_unlock( ctx );
 	if( LOGGING_DEBUG_ENABLED ) net_ctx_journal_dump( ctx );
+}
+
+void net_ctx_add_journal_command( net_ctx_t *ctx, const midi_command_t *command )
+{
+	if( !ctx || !command ) return;
+	net_ctx_lock( ctx );
+	midi_journal_add_command( ctx->journal, ctx->seq, command );
+	net_ctx_unlock( ctx );
 }
 
 void net_ctx_journal_dump( net_ctx_t *ctx )

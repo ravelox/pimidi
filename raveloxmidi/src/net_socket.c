@@ -629,6 +629,7 @@ int net_socket_read( int fd )
 		}
 
 		midi_payload_unpack( &midi_payload, rtp_packet->payload, rtp_packet->payload_len );
+		if( !midi_payload ) goto net_socket_read_rtp_clean;
 
 		// Find the midi state for the RTP context
 		current_ctx = net_ctx_find_by_ssrc( rtp_packet->header.ssrc );
@@ -640,6 +641,32 @@ int net_socket_read( int fd )
 		}
 
 		// Transfer the MIDI payload into the MIDI state for the connection context
+		if( current_ctx->receive_seq_valid )
+		{
+			uint16_t distance = (uint16_t)(rtp_packet->header.seq - current_ctx->receive_seq);
+			if( distance > 1 && distance < 0x8000 && midi_payload->header->J &&
+				is_yes( config_string_get("journal.read") ) )
+			{
+				size_t payload_header_size = midi_payload->header->B ? 2 : 1;
+				size_t journal_offset = payload_header_size + midi_payload->header->len;
+				unsigned char *recovered = NULL;
+				size_t recovered_size = 0;
+				if( journal_offset < rtp_packet->payload_len &&
+					midi_journal_recover((unsigned char *)rtp_packet->payload + journal_offset,
+						rtp_packet->payload_len - journal_offset, &recovered, &recovered_size) )
+				{
+					logging_printf(LOGGING_INFO, "net_socket_read: recovered %zu MIDI bytes after RTP sequence gap %u..%u\n",
+						recovered_size, current_ctx->receive_seq, rtp_packet->header.seq);
+					midi_state_write( current_ctx->midi_state, recovered, recovered_size );
+				}
+				X_FREENULL("recovered_midi", (void **)&recovered);
+			}
+		}
+		if( !current_ctx->receive_seq_valid || (uint16_t)(rtp_packet->header.seq - current_ctx->receive_seq) < 0x8000 )
+		{
+			current_ctx->receive_seq = rtp_packet->header.seq;
+			current_ctx->receive_seq_valid = 1;
+		}
 		midi_state_write( current_ctx->midi_state, midi_payload->buffer, midi_payload->header->len );
 
 		// Sent a FEEDBACK packet back to the originating host to ack the MIDI packet

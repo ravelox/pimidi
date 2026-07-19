@@ -290,6 +290,7 @@ RAVELOXMIDI_API raveloxmidi_status_t raveloxmidi_context_send_raw_midi( raveloxm
 
 	if( ! context ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
 	if( data_len > 0 && ! data ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
+	if( data_len > 4094 ) return RAVELOXMIDI_ERROR_INVALID_ARGUMENT;
 	if( ! context->midi_sender_started ) return RAVELOXMIDI_ERROR_NOT_RUNNING;
 
 	command = midi_command_create();

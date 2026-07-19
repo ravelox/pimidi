@@ -135,6 +135,13 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 	size_t packed_chapter_n_size = 0;
 	size_t packed_chapter_c_size = 0;
 	size_t packed_chapter_p_size = 0;
+	size_t packed_chapter_w_size = 0;
+	size_t packed_chapter_t_size = 0;
+	size_t packed_chapter_a_size = 0;
+	unsigned char packed_chapter_w[2];
+	unsigned char packed_chapter_t[1];
+	unsigned char packed_chapter_a[257];
+	unsigned int pressure_count = 0;
 
 	char *p = NULL;
 
@@ -160,6 +167,12 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 		channel->header->len += packed_chapter_c_size;
 		logging_printf(LOGGING_DEBUG, "channel_pack: packed_chapter_c_size=%u channel->header->len=%u\n", packed_chapter_c_size,channel->header->len);
 	}
+	if( channel->has_w ) {
+		packed_chapter_w[0] = 0x80 | (channel->pitch_lsb & 0x7f);
+		packed_chapter_w[1] = channel->pitch_msb & 0x7f;
+		packed_chapter_w_size = 2;
+		channel->header->len += 2;
+	}
 
 	if( channel->chapter_n )
 	{
@@ -167,13 +180,31 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 		channel->header->len += packed_chapter_n_size;
 		logging_printf(LOGGING_DEBUG, "channel_pack: packed_chapter_n_size=%u channel->header->len=%u\n", packed_chapter_n_size,channel->header->len);
 	}
+	if( channel->has_t ) {
+		packed_chapter_t[0] = 0x80 | (channel->channel_pressure & 0x7f);
+		packed_chapter_t_size = 1;
+		channel->header->len++;
+	}
+	if( channel->header->bitfield & CHAPTER_A ) {
+		unsigned int note;
+		for( note = 0; note < 128; note++ ) if( channel->poly_pressure_active[note] ) pressure_count++;
+		if( pressure_count ) {
+			unsigned char *a = packed_chapter_a + 1;
+			packed_chapter_a[0] = 0x80 | ((pressure_count - 1) & 0x7f);
+			for( note = 0; note < 128; note++ ) if( channel->poly_pressure_active[note] ) {
+				*a++ = 0x80 | note; *a++ = channel->poly_pressure[note] & 0x7f;
+			}
+			packed_chapter_a_size = 1 + pressure_count * 2;
+			channel->header->len += packed_chapter_a_size;
+		}
+	}
 
 
 	channel_header_dump( channel->header );
 	channel_header_pack( channel->header, &packed_channel_header, &packed_channel_header_size );
 	logging_printf(LOGGING_DEBUG, "channel_pack: packed_channel_header_size=%u channel->header->len=%u\n", packed_channel_header_size,channel->header->len);
 
-	*packed = ( char * ) X_MALLOC( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size );
+	*packed = ( char * ) X_MALLOC( packed_channel_header_size + packed_chapter_n_size + packed_chapter_c_size + packed_chapter_p_size + packed_chapter_w_size + packed_chapter_t_size + packed_chapter_a_size );
 
 	if( ! *packed ) goto channel_pack_cleanup;
 
@@ -197,12 +228,16 @@ void channel_pack( channel_t *channel, char **packed, size_t *size )
 		*size += packed_chapter_c_size;
 		p += packed_chapter_c_size;
 	}
+	if( packed_chapter_w_size > 0 ) { memcpy( p, packed_chapter_w, packed_chapter_w_size ); *size += packed_chapter_w_size; p += packed_chapter_w_size; }
 
 	if( packed_chapter_n_size > 0 )
 	{
 		memcpy( p, packed_chapter_n, packed_chapter_n_size );
 		*size += packed_chapter_n_size;
+		p += packed_chapter_n_size;
 	}
+	if( packed_chapter_t_size > 0 ) { memcpy( p, packed_chapter_t, packed_chapter_t_size ); *size += packed_chapter_t_size; p += packed_chapter_t_size; }
+	if( packed_chapter_a_size > 0 ) { memcpy( p, packed_chapter_a, packed_chapter_a_size ); *size += packed_chapter_a_size; }
 
 channel_pack_cleanup:
 	X_FREENULL( "packed_channel_header", (void **)&packed_channel_header );
@@ -262,6 +297,10 @@ channel_t * channel_create( void )
 	new_channel->chapter_n = NULL;
 	new_channel->chapter_c = NULL;
 	new_channel->chapter_p = NULL;
+	new_channel->has_w = 0;
+	new_channel->has_t = 0;
+	memset( new_channel->poly_pressure_active, 0, sizeof(new_channel->poly_pressure_active) );
+	memset( new_channel->poly_pressure, 0, sizeof(new_channel->poly_pressure) );
 		
 	return new_channel;
 }
@@ -422,20 +461,42 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t 
 	if( midi_note->command == MIDI_COMMAND_NOTE_OFF )
 	{
 		uint8_t offset, shift;
+		uint16_t i;
 
 		// Which element
 		offset = (midi_note->note) / 8;
-		shift = ( (midi_note->note) - ( offset * 8 )) - 1;
+		shift = 7 - ( midi_note->note - ( offset * 8 ) );
 
 		// Set low and high values;
 		journal->channels[ channel ]->chapter_n->header->high = MAX( offset , journal->channels[ channel ]->chapter_n->header->high );
 		journal->channels[ channel ]->chapter_n->header->low = MIN( offset , journal->channels[ channel ]->chapter_n->header->low );
 
 		journal->channels[ channel ]->chapter_n->offbits[offset] |=  ( 1 << shift );
+		for( i = 0; i < journal->channels[channel]->chapter_n->num_notes; i++ )
+		{
+			if( journal->channels[channel]->chapter_n->notes[i]->num == midi_note->note )
+			{
+				chapter_n_note_destroy( &journal->channels[channel]->chapter_n->notes[i] );
+				memmove( &journal->channels[channel]->chapter_n->notes[i],
+					&journal->channels[channel]->chapter_n->notes[i+1],
+					(journal->channels[channel]->chapter_n->num_notes-i-1) * sizeof(chapter_n_note_t *) );
+				journal->channels[channel]->chapter_n->num_notes--;
+				journal->channels[channel]->chapter_n->notes[journal->channels[channel]->chapter_n->num_notes] = NULL;
+				break;
+			}
+		}
 
 		return;
 	}
 
+	for( note_slot = 0; note_slot < journal->channels[channel]->chapter_n->num_notes; note_slot++ )
+	{
+		if( journal->channels[channel]->chapter_n->notes[note_slot]->num == midi_note->note )
+		{
+			journal->channels[channel]->chapter_n->notes[note_slot]->velocity = midi_note->velocity;
+			return;
+		}
+	}
 	if( journal->channels[ channel ]->chapter_n->num_notes == MAX_CHAPTER_N_NOTES ) return;
 
 	new_note = chapter_n_note_create();
@@ -443,6 +504,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t 
 
 	new_note->num = midi_note->note;
 	new_note->velocity = midi_note->velocity;
+	journal->channels[channel]->chapter_n->offbits[midi_note->note / 8] &= ~(0x80 >> (midi_note->note % 8));
 
 	note_slot = journal->channels[ channel ]->chapter_n->num_notes;
 
@@ -544,6 +606,41 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_prog
 	journal->channels[ channel]->chapter_p->bank_lsb = 0;
 }
 
+static channel_t *midi_journal_channel( journal_t *journal, unsigned char channel, uint32_t seq )
+{
+	if( !journal || channel >= MAX_MIDI_CHANNELS ) return NULL;
+	journal->header->bitfield |= JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG;
+	if( !journal->channels[channel] ) journal->channels[channel] = channel_create();
+	if( !journal->channels[channel] ) return NULL;
+	if( journal->channels[channel]->header->chan != channel + 1 ) {
+		journal->channels[channel]->header->chan = channel + 1;
+		journal->header->totchan++;
+	}
+	journal->header->seq = seq;
+	return journal->channels[channel];
+}
+
+void midi_journal_add_command( journal_t *journal, uint32_t seq, const midi_command_t *command )
+{
+	channel_t *channel;
+	unsigned char type;
+	if( !command || command->status < 0x80 || command->status >= 0xf0 ) return;
+	type = command->status & 0xf0;
+	channel = midi_journal_channel( journal, command->status & 0x0f, seq );
+	if( !channel ) return;
+	if( type == 0xe0 && command->data_len >= 2 ) {
+		channel->has_w = 1; channel->pitch_lsb = command->data[0] & 0x7f; channel->pitch_msb = command->data[1] & 0x7f;
+		channel->header->bitfield |= CHAPTER_W;
+	} else if( type == 0xd0 && command->data_len >= 1 ) {
+		channel->has_t = 1; channel->channel_pressure = command->data[0] & 0x7f;
+		channel->header->bitfield |= CHAPTER_T;
+	} else if( type == 0xa0 && command->data_len >= 2 ) {
+		channel->poly_pressure_active[command->data[0] & 0x7f] = 1;
+		channel->poly_pressure[command->data[0] & 0x7f] = command->data[1] & 0x7f;
+		channel->header->bitfield |= CHAPTER_A;
+	}
+}
+
 
 void channel_header_dump( channel_header_t *header )
 {
@@ -595,6 +692,10 @@ void channel_journal_reset( channel_t *channel )
 	}
 	chapter_n_reset( channel->chapter_n );
 	chapter_c_reset( channel->chapter_c );
+	chapter_p_reset( channel->chapter_p );
+	channel->has_w = 0;
+	channel->has_t = 0;
+	memset( channel->poly_pressure_active, 0, sizeof(channel->poly_pressure_active) );
 	channel_header_reset( channel->header );
 }
 
@@ -652,4 +753,98 @@ void journal_reset( journal_t *journal )
 
 	journal_header_reset( journal->header );
 
+}
+
+static int recovery_append( unsigned char **midi, size_t *size, unsigned char status,
+	unsigned char first, unsigned char second, size_t data_size )
+{
+	unsigned char *next = (unsigned char *)X_REALLOC( *midi, *size + 1 + data_size );
+	if( !next ) return 0;
+	*midi = next;
+	next[(*size)++] = status;
+	if( data_size > 0 ) next[(*size)++] = first & 0x7f;
+	if( data_size > 1 ) next[(*size)++] = second & 0x7f;
+	return 1;
+}
+
+int midi_journal_recover( const unsigned char *packed, size_t size, unsigned char **midi, size_t *midi_size )
+{
+	const unsigned char *p = packed;
+	size_t left = size;
+	unsigned int channel_count, c;
+	*midi = NULL; *midi_size = 0;
+	if( !packed || size < JOURNAL_HEADER_PACKED_SIZE ) return 0;
+	channel_count = (packed[0] & 0x0f) + 1;
+	p += JOURNAL_HEADER_PACKED_SIZE; left -= JOURNAL_HEADER_PACKED_SIZE;
+	for( c = 0; c < channel_count; c++ ) {
+		uint16_t h; unsigned char flags, channel; size_t channel_len, consumed = 3;
+		if( left < 3 ) goto invalid;
+		h = ((uint16_t)p[0] << 8) | p[1]; flags = p[2];
+		channel = (h >> 11) & 0x0f; channel_len = h & 0x03ff;
+		if( channel_len < 3 || channel_len > left ) goto invalid;
+		p += 3;
+		if( flags & CHAPTER_P ) {
+			if( consumed + 3 > channel_len ) goto invalid;
+			if( !recovery_append(midi,midi_size,0xc0|channel,p[0],0,1) ) goto invalid;
+			p += 3; consumed += 3;
+		}
+		if( flags & CHAPTER_C ) {
+			size_t logs, i;
+			if( consumed + 1 > channel_len ) goto invalid;
+			logs = (p[0] & 0x7f) + 1; p++; consumed++;
+			if( consumed + logs * 2 > channel_len ) goto invalid;
+			for( i=0; i<logs; i++,p+=2 ) if( !recovery_append(midi,midi_size,0xb0|channel,p[0],p[1],2) ) goto invalid;
+			consumed += logs * 2;
+		}
+		if( flags & CHAPTER_M ) {
+			size_t chapter_size;
+			if( consumed + 2 > channel_len ) goto invalid;
+			chapter_size = ((size_t)(p[0] & 0x03) << 8) | p[1];
+			if( chapter_size < 2 || consumed + chapter_size > channel_len ) goto invalid;
+			p += chapter_size; consumed += chapter_size;
+		}
+		if( flags & CHAPTER_W ) {
+			if( consumed + 2 > channel_len ) goto invalid;
+			if( !recovery_append(midi,midi_size,0xe0|channel,p[0],p[1],2) ) goto invalid;
+			p += 2; consumed += 2;
+		}
+		if( flags & CHAPTER_N ) {
+			size_t notes, offbytes, i; unsigned int low, high;
+			if( consumed + 2 > channel_len ) goto invalid;
+			notes = p[0] & 0x7f; low = p[1] >> 4; high = p[1] & 0x0f;
+			if( notes == 127 && low == 15 && high == 0 ) notes = 128;
+			offbytes = low <= high ? high-low+1 : 0; p += 2; consumed += 2;
+			if( consumed + notes*2 + offbytes > channel_len ) goto invalid;
+			for( i=0; i<notes; i++,p+=2 ) if( !recovery_append(midi,midi_size,0x90|channel,p[0],p[1],2) ) goto invalid;
+			consumed += notes*2;
+			for( i=0; i<offbytes; i++,p++ ) { unsigned int bit; for(bit=0;bit<8;bit++) if(*p & (0x80>>bit))
+				if( !recovery_append(midi,midi_size,0x80|channel,(low+i)*8+bit,0,2) ) goto invalid; }
+			consumed += offbytes;
+		}
+		if( flags & CHAPTER_E ) {
+			size_t chapter_size;
+			if( consumed + 1 > channel_len ) goto invalid;
+			chapter_size = 1 + ((size_t)(p[0] & 0x7f) + 1) * 2;
+			if( consumed + chapter_size > channel_len ) goto invalid;
+			p += chapter_size; consumed += chapter_size;
+		}
+		if( flags & CHAPTER_T ) {
+			if( consumed + 1 > channel_len ) goto invalid;
+			if( !recovery_append(midi,midi_size,0xd0|channel,p[0],0,1) ) goto invalid;
+			p++; consumed++;
+		}
+		if( flags & CHAPTER_A ) {
+			size_t logs, i;
+			if( consumed + 1 > channel_len ) goto invalid;
+			logs = (p[0] & 0x7f) + 1; p++; consumed++;
+			if( consumed + logs*2 > channel_len ) goto invalid;
+			for(i=0;i<logs;i++,p+=2) if( !recovery_append(midi,midi_size,0xa0|channel,p[0],p[1],2) ) goto invalid;
+			consumed += logs*2;
+		}
+		if( consumed != channel_len ) goto invalid;
+		left -= channel_len;
+	}
+	return 1;
+invalid:
+	X_FREENULL("recovered_midi", (void **)midi); *midi_size = 0; return 0;
 }

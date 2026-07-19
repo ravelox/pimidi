@@ -24,6 +24,7 @@
 #include "midi_note.h"
 #include "midi_control.h"
 #include "midi_program.h"
+#include "midi_command.h"
 
 #include "chapter_p.h"
 #include "chapter_n.h"
@@ -60,6 +61,13 @@ typedef struct channel_t {
 	chapter_p_t *chapter_p;
 	chapter_n_t *chapter_n;
 	chapter_c_t *chapter_c;
+	unsigned char has_w;
+	unsigned char pitch_lsb;
+	unsigned char pitch_msb;
+	unsigned char has_t;
+	unsigned char channel_pressure;
+	unsigned char poly_pressure_active[128];
+	unsigned char poly_pressure[128];
 } channel_t;
 
 #define MAX_MIDI_CHANNELS	16
@@ -100,5 +108,7 @@ void journal_reset( journal_t *journal );
 void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t *midi_note );
 void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_control_t *midi_control );
 void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_program_t *midi_program );
+void midi_journal_add_command( journal_t *journal, uint32_t seq, const midi_command_t *command );
+int midi_journal_recover( const unsigned char *packed, size_t size, unsigned char **midi, size_t *midi_size );
 
 #endif

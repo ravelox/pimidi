@@ -427,6 +427,11 @@ midi_sender_send_single_clean:
 			case MIDI_PROGRAM_CHANGE:	
 				net_ctx_add_journal_program( current_ctx, midi_program );
 				break;
+			case MIDI_POLY_PRESSURE:
+			case MIDI_CHANNEL_PRESSURE:
+			case MIDI_PITCH_BEND:
+				net_ctx_add_journal_command( current_ctx, command );
+				break;
 			default:
 				continue;
 		}
