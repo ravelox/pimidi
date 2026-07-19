@@ -1,4 +1,4 @@
-Summary: Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
+Summary: AppleMIDI and RTP-MIDI proxy and development library
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -9,7 +9,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-buildroot
 Requires: libraveloxmidi%{?_isa} = %{version}-%{release}
 
 %description
-Simple rtpMIDI NoteOn/NoteOff/ControlChange/ProgramChange proxy
+AppleMIDI session endpoint and RTP-MIDI proxy with channel voice, system,
+System Exclusive, timestamp scheduling and recovery-journal support.
 
 %package -n libraveloxmidi
 Summary: Shared library for raveloxmidi RTP-MIDI support

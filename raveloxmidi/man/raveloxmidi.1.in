@@ -1,13 +1,13 @@
 .TH raveloxmidi "1"
 .SH NAME
-raveloxmidi @VERSION@ \- RTP MIDI proxy for NoteOn/NoteOff/ControlChange/ProgramChange events
+raveloxmidi @VERSION@ \- AppleMIDI and RTP-MIDI proxy
 .SH SYNOPSIS
 \fBraveloxmidi\fP [-v] [-c filename] [-d|-i] [-N] [-P \fIfilename\fP] [-R] [-h] [-C]
 
 \fBraveloxmidi\fP [\-\-version] [\-\-config \fIfilename\fP] [\-\-debug|\-\-info] [\-\-nodaemon] [\-\-pidfile \fIfilename\fP] [\-\-readonly] [\-\-help] [\-\-dumpconfig] 
 .SH DESCRIPTION
 .BR raveloxmidi
-provides a RTP MIDI proxy to send MIDI NoteOn, NoteOff, ControlChange and ProgramChange events to a remote MIDI device.
+provides an AppleMIDI session endpoint and RTP-MIDI proxy for channel voice, system and System Exclusive messages.
 .SH OPTIONS
 .TP
 .B -v
@@ -203,7 +203,7 @@ Default is yes.
 .TP
 .B
 stream.max_sysex_size
-Maximum complete System Exclusive frame size accepted by \\fBraveloxmidi-stream\\fP, including the F0 and F7 framing bytes. Oversized or incomplete frames are discarded.
+Maximum complete System Exclusive frame size accepted by \fBraveloxmidi-stream\fP, including the F0 and F7 framing bytes. Oversized or incomplete frames are discarded.
 .br
 Default is 1048576 bytes.
 .TP

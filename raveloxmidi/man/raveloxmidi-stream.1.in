@@ -40,6 +40,11 @@ Display help information.
 The stream format is a sequence of ordinary MIDI messages. Each message must
 include its status byte. Running status is not supported.
 .LP
+System Exclusive messages are framed as \fB0xF0 payload... 0xF7\fP. Complete
+frames are accepted up to the \fBstream.max_sysex_size\fP configuration limit.
+Large frames are segmented for RTP-MIDI transport and reconstructed on output.
+Unterminated or oversized frames are discarded.
+.LP
 Examples:
 .LP
 Note On is encoded as status, note, velocity:

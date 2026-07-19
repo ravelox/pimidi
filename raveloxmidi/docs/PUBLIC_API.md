@@ -280,9 +280,8 @@ Queue behavior:
 - If the library cannot allocate a callback event item, that callback
   event is dropped and an error is logged. MIDI sender processing
   continues.
-- Future stream-oriented source and sink modes must preserve the same
-  rule: user-provided I/O must not block the MIDI sender or network
-  threads.
+- Stream-oriented source and sink modes preserve the same rule:
+  user-provided I/O does not block the MIDI sender or network threads.
 
 ## `raveloxmidi_context_clear_midi_event_callback`
 
@@ -326,13 +325,14 @@ Arguments:
 - `status`: MIDI status byte.
 - `data`: MIDI data bytes following the status byte. This may be `NULL`
   only when `data_len` is zero.
-- `data_len`: Number of bytes in `data`.
+- `data_len`: Number of bytes in `data`, with a maximum of 4094 bytes so
+  the status byte and data fit the RTP-MIDI 12-bit command-section length.
 
 Return values:
 
 - `RAVELOXMIDI_OK`: Message queued.
-- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`, or `data`
-  is `NULL` while `data_len` is non-zero.
+- `RAVELOXMIDI_ERROR_INVALID_ARGUMENT`: `context` is `NULL`, `data` is
+  `NULL` while `data_len` is non-zero, or `data_len` exceeds 4094 bytes.
 - `RAVELOXMIDI_ERROR_NOT_RUNNING`: The context has not started the MIDI
   sender.
 - `RAVELOXMIDI_ERROR_NO_MEMORY`: Allocation failed.
@@ -340,9 +340,11 @@ Return values:
 Notes:
 
 - The input data is copied before the function returns.
-- This API is intended for SDK integrations and future stream utilities
-  that need to inject outgoing MIDI without using the legacy local socket
-  protocol.
+- This API is used by SDK integrations and stream utilities that need to
+  inject outgoing MIDI without using the legacy local socket protocol.
+- Applications sending larger SysEx messages must segment them into RFC
+  6295 SysEx command segments. `raveloxmidi-stream` performs this
+  segmentation automatically for complete framed SysEx input.
 
 ## `raveloxmidi_context_start`
 

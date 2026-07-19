@@ -136,8 +136,8 @@ are not public API.
 
 The callback and raw MIDI injection APIs are available to SDK consumers,
 but should be treated as new while the library branch is still under
-active development. Stream CLI tools, stdin/stdout MIDI stream handling
-and named pipe workflows remain experimental until Phase 5 is complete.
+active development. Stream CLI tools support stdin/stdout and named-pipe
+MIDI workflows, including framed and segmented System Exclusive messages.
 
 Memory leak validation
 ----------------------

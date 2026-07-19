@@ -122,7 +122,7 @@ Controller Value : 8 bits (0 to 127).
 
 When raveloxmidi receives the command packet, it will send that MIDI command to any  active connections in the connection table. 
 
-The RTP MIDI payload specification also requires a recovery journal ( see section 4 of RFC6295 at http://www.rfc-editor.org/rfc/rfc6295.txt ). raveloxmidi will add the note and control change events to the journal and attach the journal in each RTP packet sent to the connecting server. As raveloxmidi is only concerned with NoteOn, NoteOff and ControlChange events, only Chapter N and Chapter C journal entries are stored.
+The RTP MIDI payload specification also defines a recovery journal (see section 4 of RFC 6295). When `journal.write` is enabled, raveloxmidi records channel state for notes, controls, programs, pitch bend, channel pressure and poly pressure and attaches the journal to outbound RTP-MIDI packets.
 
 ### Stage 3 - Feedback
 The Apple MIDI implementation sends a feedback packet (RS) from the connecting server. This packet contains a RTP sequence number to indicate that the connecting server is acknowledging that it has received packets with a sequence number up to and including that particular value.
@@ -132,7 +132,9 @@ This tells the receiving server that it doesn't need to send journal events for 
 raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
 
 ## Inbound MIDI commands 
-raveloxmidi will also accept inbound RTP-MIDI from remote hosts and will write the MIDI commands to a named file. MIDI commands are written at the time they are received and in the order that they are listed in the MIDI payload of the RTP packet. At this time, there is no handling of the RTP-MIDI journal on the inbound connection. A Feedback response is sent back when inbound midi events are received.
+raveloxmidi also accepts inbound RTP-MIDI from remote hosts and writes MIDI commands to the configured output. When `journal.read` is enabled, RTP sequence gaps trigger recovery from supported channel-journal chapters before the current MIDI command section is processed. Unsupported system, enhanced-control and optional channel chapters are skipped using their enclosing RFC length fields. A Feedback response is sent after inbound MIDI packets are received.
+
+When `timing.enabled` is enabled, synchronized RTP timestamps and MIDI command deltas determine command scheduling. Otherwise, commands are processed immediately in arrival order.
 
 ## Command interface
 raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. The commands can only be received on the local listening port ( default is 5006 ). The commands are:
@@ -269,7 +271,11 @@ file_mode
 sync.interval
 	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
 journal.write
-	Set to yes to enable MIDI recovery journal. Default is no.
+	Set to yes to include channel-state recovery journals in outbound packets. Default is no.
+journal.read
+	Set to yes to apply supported inbound recovery-journal chapters after RTP sequence gaps. Default is yes.
+stream.max_sysex_size
+	Maximum complete System Exclusive frame accepted by raveloxmidi-stream, including the F0 and F7 bytes. Default is 1048576 bytes.
 timing.enabled
 	Set to yes to schedule inbound RTP-MIDI commands using AppleMIDI CK
 	synchronization, RTP timestamps and MIDI command deltas. Default is no.
