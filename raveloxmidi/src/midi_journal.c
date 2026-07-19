@@ -771,17 +771,33 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 {
 	const unsigned char *p = packed;
 	size_t left = size;
-	unsigned int channel_count, c;
+	unsigned int channel_count = 0, c;
+	unsigned char journal_flags;
 	*midi = NULL; *midi_size = 0;
 	if( !packed || size < JOURNAL_HEADER_PACKED_SIZE ) return 0;
-	channel_count = (packed[0] & 0x0f) + 1;
+	journal_flags = packed[0] >> 4;
 	p += JOURNAL_HEADER_PACKED_SIZE; left -= JOURNAL_HEADER_PACKED_SIZE;
+	if( journal_flags & JOURNAL_HEADER_Y_FLAG ) {
+		size_t system_len;
+		if( left < 2 ) goto invalid;
+		system_len = ((size_t)(p[0] & 0x03) << 8) | p[1];
+		if( system_len < 2 || system_len > left ) goto invalid;
+		logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping %zu-byte unsupported system journal\n", system_len);
+		p += system_len; left -= system_len;
+	}
+	if( journal_flags & JOURNAL_HEADER_A_FLAG ) channel_count = (packed[0] & 0x0f) + 1;
 	for( c = 0; c < channel_count; c++ ) {
+		const unsigned char *channel_start = p;
 		uint16_t h; unsigned char flags, channel; size_t channel_len, consumed = 3;
 		if( left < 3 ) goto invalid;
 		h = ((uint16_t)p[0] << 8) | p[1]; flags = p[2];
 		channel = (h >> 11) & 0x0f; channel_len = h & 0x03ff;
 		if( channel_len < 3 || channel_len > left ) goto invalid;
+		if( h & 0x0400 ) {
+			logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping enhanced channel %u journal\n", channel);
+			p += channel_len; left -= channel_len;
+			continue;
+		}
 		p += 3;
 		if( flags & CHAPTER_P ) {
 			if( consumed + 3 > channel_len ) goto invalid;
@@ -801,6 +817,7 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 			if( consumed + 2 > channel_len ) goto invalid;
 			chapter_size = ((size_t)(p[0] & 0x03) << 8) | p[1];
 			if( chapter_size < 2 || consumed + chapter_size > channel_len ) goto invalid;
+			logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping unsupported Chapter M\n");
 			p += chapter_size; consumed += chapter_size;
 		}
 		if( flags & CHAPTER_W ) {
@@ -826,6 +843,7 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 			if( consumed + 1 > channel_len ) goto invalid;
 			chapter_size = 1 + ((size_t)(p[0] & 0x7f) + 1) * 2;
 			if( consumed + chapter_size > channel_len ) goto invalid;
+			logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping unsupported Chapter E\n");
 			p += chapter_size; consumed += chapter_size;
 		}
 		if( flags & CHAPTER_T ) {
@@ -842,8 +860,10 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 			consumed += logs*2;
 		}
 		if( consumed != channel_len ) goto invalid;
+		p = channel_start + channel_len;
 		left -= channel_len;
 	}
+	if( left ) logging_printf(LOGGING_DEBUG, "midi_journal_recover: ignoring %zu trailing recovery-journal bytes\n", left);
 	return 1;
 invalid:
 	X_FREENULL("recovered_midi", (void **)midi); *midi_size = 0; return 0;
