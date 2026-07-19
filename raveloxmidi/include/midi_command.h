@@ -67,6 +67,7 @@ typedef struct midi_message_t {
 
 typedef struct midi_command_t {
 	uint64_t	delta;
+	uint64_t	due_monotonic_ns;
 	union {
 		channel_message_t	channel_message;
 		system_message_t	system_message;

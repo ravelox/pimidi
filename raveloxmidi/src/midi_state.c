@@ -239,7 +239,7 @@ void midi_state_dump( midi_state_t *state )
 	dbuffer_dump( state->hold );
 }
 
-void midi_state_send( midi_state_t *state , data_context_t *context, char mode, char z_flag)
+void midi_state_send( midi_state_t *state, data_context_t *context, char mode, char z_flag, uint64_t packet_due_ns )
 {
 	uint8_t byte = 0;
 	unsigned char bytes_needed = 0;
@@ -247,6 +247,7 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 	size_t buffer_len = 0;
 	midi_command_t *new_command = NULL;
 	char get_delta = 0;
+	uint64_t cumulative_delta = 0;
 
 	if( ! state ) return;
 
@@ -280,7 +281,7 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 
 		if( state->status == MIDI_STATE_WAIT_DELTA )
 		{
-			state->current_delta <<= 8;
+			state->current_delta <<= 7;
 			state->current_delta += ( byte & 0x7f );
 
 			// RFC6296 sec 3.1
@@ -304,6 +305,8 @@ void midi_state_send( midi_state_t *state , data_context_t *context, char mode, 
 					continue;
 				}
 				midi_command_set( new_command, state->current_delta, byte, NULL, 0);
+				cumulative_delta += state->current_delta;
+				if( packet_due_ns ) new_command->due_monotonic_ns = packet_due_ns + ( cumulative_delta * APPLEMIDI_TICK_NS );
 				midi_sender_add( new_command, context );
 				continue;
 			}
@@ -444,6 +447,8 @@ midi_state_send_end:
 		} else {
 
 			midi_command_set( new_command, state->current_delta, buffer_value[0], buffer_value + 1, buffer_len - 1);
+			cumulative_delta += state->current_delta;
+			if( packet_due_ns ) new_command->due_monotonic_ns = packet_due_ns + ( cumulative_delta * APPLEMIDI_TICK_NS );
 
 			// Add it to the command sender queue
 			midi_sender_add( new_command, context );

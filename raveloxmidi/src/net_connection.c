@@ -100,8 +100,9 @@ void net_ctx_dump( void *data )
 	if( ! data ) return;
 	
 	ctx = ( net_ctx_t *)data;
-	logging_printf( LOGGING_DEBUG, "net_ctx: ctx=%p, ssrc=0x%08x,status=[%s],send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u,start=%u\n",
-		ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+	logging_printf( LOGGING_DEBUG, "net_ctx: ctx=%p, ssrc=0x%08x,status=[%s],send_ssrc=0x%08x,initiator=0x%08x,seq=%u,host=%s,control=%u,data=%u,start=%llu\n",
+		ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port,
+		(unsigned long long)ctx->start );
 	if( ctx->midi_state ) midi_state_dump( ctx->midi_state );
 }
 
@@ -125,7 +126,8 @@ static void net_ctx_set( net_ctx_t *ctx, uint32_t ssrc, uint32_t initiator, uint
 	ctx->initiator = initiator;
 	ctx->control_port = port;
 	ctx->data_port = port+1;
-	ctx->start = time_in_microseconds();
+	ctx->start = applemidi_now_ticks();
+	memset( &ctx->clock, 0, sizeof( ctx->clock ) );
 	ctx->control_address_len = 0;
 	ctx->data_address_len = 0;
 	memset( &ctx->control_address, 0, sizeof( ctx->control_address ) );
@@ -526,8 +528,72 @@ void net_ctx_update_rtp_fields( const net_ctx_t *ctx, rtp_packet_t *rtp_packet)
 	if( ! ctx ) return;
 
 	rtp_packet->header.seq = ctx->seq;
-	rtp_packet->header.timestamp = time_in_microseconds() - ctx->start;
+	rtp_packet->header.timestamp = (uint32_t)( applemidi_now_ticks() - ctx->start );
 	rtp_packet->header.ssrc = ctx->send_ssrc;
+}
+
+static void net_ctx_apply_clock_sample( net_ctx_t *ctx, uint64_t remote_anchor, int64_t sample_offset )
+{
+	if( ! ctx ) return;
+
+	net_ctx_lock( ctx );
+	if( ctx->clock.valid )
+	{
+		/* A light low-pass filter prevents one delayed CK exchange from moving playout abruptly. */
+		ctx->clock.remote_to_local_offset_ticks =
+			( ( ctx->clock.remote_to_local_offset_ticks * 3 ) + sample_offset ) / 4;
+	}
+	else
+	{
+		ctx->clock.remote_to_local_offset_ticks = sample_offset;
+		ctx->clock.valid = 1;
+	}
+	ctx->clock.remote_anchor_ticks = remote_anchor;
+	net_ctx_unlock( ctx );
+}
+
+void net_ctx_update_clock( net_ctx_t *ctx, uint64_t remote_timestamp1, uint64_t local_timestamp2, uint64_t remote_timestamp3 )
+{
+	uint64_t remote_midpoint = ( remote_timestamp1 / 2 ) + ( remote_timestamp3 / 2 ) +
+		( ( remote_timestamp1 & 1 ) && ( remote_timestamp3 & 1 ) );
+	int64_t sample_offset = (int64_t)local_timestamp2 - (int64_t)remote_midpoint;
+
+	net_ctx_apply_clock_sample( ctx, remote_midpoint, sample_offset );
+}
+
+void net_ctx_update_clock_from_initiator( net_ctx_t *ctx, uint64_t local_timestamp1, uint64_t remote_timestamp2, uint64_t local_timestamp3 )
+{
+	uint64_t local_midpoint = ( local_timestamp1 / 2 ) + ( local_timestamp3 / 2 ) +
+		( ( local_timestamp1 & 1 ) && ( local_timestamp3 & 1 ) );
+	int64_t sample_offset = (int64_t)local_midpoint - (int64_t)remote_timestamp2;
+
+	net_ctx_apply_clock_sample( ctx, remote_timestamp2, sample_offset );
+}
+
+uint64_t net_ctx_command_due_ns( net_ctx_t *ctx, uint32_t packet_timestamp, uint64_t cumulative_delta, uint64_t playout_delay_ns )
+{
+	uint64_t due_ns;
+
+	if( ! ctx ) return time_monotonic_ns() + playout_delay_ns;
+
+	net_ctx_lock( ctx );
+	if( ctx->clock.valid )
+	{
+		uint64_t anchor = ctx->clock.remote_anchor_ticks;
+		int64_t relative = (int64_t)(int32_t)( packet_timestamp - (uint32_t)anchor );
+		int64_t local_ticks = (int64_t)anchor + relative +
+			(int64_t)cumulative_delta + ctx->clock.remote_to_local_offset_ticks;
+		int64_t absolute_ticks = (int64_t)ctx->start + local_ticks;
+
+		due_ns = absolute_ticks > 0 ? (uint64_t)absolute_ticks * APPLEMIDI_TICK_NS : 0;
+	}
+	else
+	{
+		due_ns = time_monotonic_ns() + ( cumulative_delta * APPLEMIDI_TICK_NS );
+	}
+	net_ctx_unlock( ctx );
+
+	return due_ns + playout_delay_ns;
 }
 
 void net_ctx_increment_seq( net_ctx_t *ctx )
@@ -649,8 +715,9 @@ char *net_ctx_connections_to_string( void )
 
 		connection_count += 1;
 		memset( ctx_buffer, 0, sizeof(ctx_buffer) );
-		snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%lu}",
-			i, ( ctx->name ? ctx->name : "unknown"), ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port, ctx->start);
+		snprintf( ctx_buffer, sizeof(ctx_buffer), "{\"id\":%d,\"name\":\"%s\",\"ctx\":\"%p\",\"ssrc\":\"0x%08x\",\"status\":\"%s\",\"send_ssrc\":\"0x%08x\",\"initiator\":\"0x%08x\",\"seq\":%u,\"host\":\"%s\",\"control\":%u,\"data\":%u,\"start\":%llu}",
+			i, ( ctx->name ? ctx->name : "unknown"), ctx, ctx->ssrc, net_ctx_status_to_string( ctx->status ), ctx->send_ssrc, ctx->initiator, ctx->seq, ctx->ip_address, ctx->control_port, ctx->data_port,
+			(unsigned long long)ctx->start );
 		dstring_append( dstring, ctx_buffer );
 
 		if( (i+1) < num_connections )

@@ -67,38 +67,150 @@ extern int inbound_midi_fd;
 #include "data_queue.h"
 #include "data_context.h"
 
-data_queue_t *midi_queue = NULL;
+typedef struct midi_scheduled_item_t {
+	midi_command_t *command;
+	data_context_t *context;
+	uint64_t due_monotonic_ns;
+	struct midi_scheduled_item_t *next;
+} midi_scheduled_item_t;
+
+typedef struct midi_scheduled_queue_t {
+	midi_scheduled_item_t *head;
+	pthread_mutex_t lock;
+	pthread_cond_t signal;
+	pthread_t thread;
+	int started;
+	int shutdown;
+} midi_scheduled_queue_t;
+
+static midi_scheduled_queue_t *midi_queue = NULL;
 static unsigned int journal_enabled = 0;
 
 #define RTP_PACKET_HEADER_SIZE 12
+
+void midi_sender_handler( void *data, void *context );
+
+static void *midi_sender_queue_handler( void *data )
+{
+	midi_scheduled_queue_t *queue = (midi_scheduled_queue_t *)data;
+
+	while( 1 )
+	{
+		midi_scheduled_item_t *item = NULL;
+
+		pthread_mutex_lock( &queue->lock );
+		while( ! queue->shutdown )
+		{
+			uint64_t now;
+			struct timespec deadline;
+
+			if( ! queue->head )
+			{
+				pthread_cond_wait( &queue->signal, &queue->lock );
+				continue;
+			}
+
+			now = time_monotonic_ns();
+			if( queue->head->due_monotonic_ns <= now ) break;
+
+			deadline.tv_sec = (time_t)( queue->head->due_monotonic_ns / 1000000000ULL );
+			deadline.tv_nsec = (long)( queue->head->due_monotonic_ns % 1000000000ULL );
+			pthread_cond_timedwait( &queue->signal, &queue->lock, &deadline );
+		}
+
+		if( queue->shutdown )
+		{
+			pthread_mutex_unlock( &queue->lock );
+			break;
+		}
+
+		item = queue->head;
+		queue->head = item->next;
+		pthread_mutex_unlock( &queue->lock );
+
+		midi_sender_handler( item->command, item->context );
+		X_FREE( item );
+	}
+
+	return NULL;
+}
 
 void midi_sender_start( void )
 {
 	if( ! midi_queue )
 	{
-		logging_printf( LOGGING_ERROR, "midi_sender_start: No queue available\n");
+		logging_printf( LOGGING_ERROR, "midi_sender_start: No queue available\n" );
+		return;
 	}
-
-	data_queue_start( midi_queue );
+	if( pthread_create( &midi_queue->thread, NULL, midi_sender_queue_handler, midi_queue ) == 0 )
+	{
+		midi_queue->started = 1;
+	}
 }
 
 void midi_sender_stop( void )
 {
-	if( ! midi_queue )
+	midi_scheduled_item_t *item;
+
+	if( ! midi_queue ) return;
+	pthread_mutex_lock( &midi_queue->lock );
+	midi_queue->shutdown = 1;
+	pthread_cond_broadcast( &midi_queue->signal );
+	pthread_mutex_unlock( &midi_queue->lock );
+
+	if( midi_queue->started ) pthread_join( midi_queue->thread, NULL );
+
+	while( midi_queue->head )
 	{
-		logging_printf( LOGGING_ERROR, "midi_sender_stop: No queue available\n");
+		item = midi_queue->head;
+		midi_queue->head = item->next;
+		if( item->context ) data_context_release( &item->context );
+		midi_command_destroy( (void **)&item->command );
+		X_FREE( item );
 	}
 
-	data_queue_stop( midi_queue );
-	data_queue_join( midi_queue );
-	data_queue_destroy( &midi_queue );
+	pthread_cond_destroy( &midi_queue->signal );
+	pthread_mutex_destroy( &midi_queue->lock );
+	X_FREE( midi_queue );
+	midi_queue = NULL;
 }
 
 void midi_sender_add( void *data, data_context_t *context )
 {
+	midi_scheduled_item_t *item;
+	midi_scheduled_item_t **position;
+	midi_command_t *command = (midi_command_t *)data;
+
 	if( ! data ) return;
+	if( ! midi_queue )
+	{
+		midi_command_destroy( &data );
+		return;
+	}
+
+	item = (midi_scheduled_item_t *)X_MALLOC( sizeof( *item ) );
+	if( ! item )
+	{
+		midi_command_destroy( &data );
+		return;
+	}
+
 	data_context_acquire( context );
-	data_queue_add( midi_queue, data, context );
+	item->command = command;
+	item->context = context;
+	item->due_monotonic_ns = command->due_monotonic_ns ? command->due_monotonic_ns : time_monotonic_ns();
+	item->next = NULL;
+
+	pthread_mutex_lock( &midi_queue->lock );
+	position = &midi_queue->head;
+	while( *position && (*position)->due_monotonic_ns <= item->due_monotonic_ns )
+	{
+		position = &(*position)->next;
+	}
+	item->next = *position;
+	*position = item;
+	pthread_cond_signal( &midi_queue->signal );
+	pthread_mutex_unlock( &midi_queue->lock );
 }
 
 void midi_sender_teardown( void )
@@ -382,11 +494,20 @@ midi_sender_send_single_clean:
 
 void midi_sender_init( void )
 {
-	midi_queue = data_queue_create("MIDI sender", midi_sender_handler );
+	pthread_condattr_t attributes;
+
+	midi_queue = (midi_scheduled_queue_t *)X_MALLOC( sizeof( *midi_queue ) );
 	if( ! midi_queue )
 	{
 		logging_printf( LOGGING_ERROR, "midi_sender_init: Unable to create midi queue\n");
+		return;
 	}
+	memset( midi_queue, 0, sizeof( *midi_queue ) );
+	pthread_mutex_init( &midi_queue->lock, NULL );
+	pthread_condattr_init( &attributes );
+	pthread_condattr_setclock( &attributes, CLOCK_MONOTONIC );
+	pthread_cond_init( &midi_queue->signal, &attributes );
+	pthread_condattr_destroy( &attributes );
 
 	journal_enabled = is_yes( config_string_get("journal.write") ); 
 }

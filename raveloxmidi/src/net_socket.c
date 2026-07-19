@@ -586,7 +586,7 @@ int net_socket_read( int fd )
 			}
 			data_context_acquire( context );
 		}
-		midi_state_send( found_socket->state , context , MIDI_PARSE_MODE_SIMPLE, 0 );
+		midi_state_send( found_socket->state, context, MIDI_PARSE_MODE_SIMPLE, 0, 0 );
 		if( context )
 		{
 			data_context_release( &context );
@@ -672,7 +672,18 @@ int net_socket_read( int fd )
 			}
 			data_context_acquire( context );
 		}
-		midi_state_send( current_ctx->midi_state , context, MIDI_PARSE_MODE_RTP, midi_payload->header->Z );
+		{
+			uint64_t packet_due_ns = 0;
+			if( is_yes( config_string_get( "timing.enabled" ) ) )
+			{
+				long delay_ms = config_long_get( "timing.playout_delay_ms" );
+				if( delay_ms < 0 ) delay_ms = 0;
+				packet_due_ns = net_ctx_command_due_ns( current_ctx, rtp_packet->header.timestamp, 0,
+					(uint64_t)delay_ms * 1000000ULL );
+			}
+			midi_state_send( current_ctx->midi_state, context, MIDI_PARSE_MODE_RTP,
+				midi_payload->header->Z, packet_due_ns );
+		}
 		if( context )
 		{
 			data_context_release( &context );

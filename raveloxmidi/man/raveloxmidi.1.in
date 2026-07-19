@@ -195,6 +195,22 @@ Set to yes to enable MIDI recovery journal.
 .br
 Default is no.
 .TP
+.B
+timing.enabled
+Set to yes to schedule inbound RTP-MIDI commands using AppleMIDI CK synchronization, RTP packet timestamps and cumulative MIDI command deltas.
+.br
+When disabled, inbound commands are processed immediately in arrival order.
+.br
+Default is no.
+.TP
+.B
+timing.playout_delay_ms
+Additional receive-side playout delay, in milliseconds, used to absorb network jitter when Btiming.enabledP is yes.
+.br
+Negative values are treated as zero.
+.br
+Default is 5 milliseconds.
+.TP
 If ALSA is detected, the following options are also available:
 .TP
 .B alsa.output_device

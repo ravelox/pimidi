@@ -270,6 +270,12 @@ sync.interval
 	Interval in seconds between SYNC commands for timing purposes. Default is 10s.
 journal.write
 	Set to yes to enable MIDI recovery journal. Default is no.
+timing.enabled
+	Set to yes to schedule inbound RTP-MIDI commands using AppleMIDI CK
+	synchronization, RTP timestamps and MIDI command deltas. Default is no.
+timing.playout_delay_ms
+	Additional receive-side playout delay used to absorb network jitter when
+	timing.enabled is yes. Default is 5 milliseconds.
 ```
 
 If ALSA is detected, the following options are also available:

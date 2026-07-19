@@ -43,6 +43,11 @@ int get_sock_info( char *ip_address, int port, struct sockaddr *socket, socklen_
 
 int random_number( void );
 long time_in_microseconds( void );
+uint64_t time_monotonic_ns( void );
+uint64_t applemidi_now_ticks( void );
+
+#define APPLEMIDI_CLOCK_HZ 10000ULL
+#define APPLEMIDI_TICK_NS 100000ULL
 
 void utils_lock( void );
 void utils_unlock( void );

@@ -14,6 +14,10 @@ received MIDI events to stdout or a named pipe.
 .TP
 .B -c, --config \fIfilename\fP
 Name of configuration file to use.
+.br
+The timing configuration items documented in \fBraveloxmidi\fP(1), including
+\fBtiming.enabled\fP and \fBtiming.playout_delay_ms\fP, also apply to inbound
+RTP-MIDI events written by this utility.
 .TP
 .B -b, --bind-address \fIaddress\fP
 Set the raveloxmidi \fBnetwork.bind_address\fP configuration item.
@@ -48,3 +52,5 @@ Program Change is encoded as status, program:
 .LP
 See \fBdocs/STREAM_CLI.md\fP in the source tree for the complete stream format
 and named pipe workflow examples.
+.SH SEE ALSO
+\fBraveloxmidi\fP(1)

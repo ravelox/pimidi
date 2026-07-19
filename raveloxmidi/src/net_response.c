@@ -126,7 +126,7 @@ net_response_t *net_response_inv( uint32_t ssrc, uint32_t initiator, const char 
 	return NULL;
 }
 
-net_response_t *net_response_sync( uint32_t send_ssrc , long start_time )
+net_response_t *net_response_sync( uint32_t send_ssrc, uint64_t start_time )
 {
 	net_applemidi_sync *sync = NULL;
 	net_response_t *response = NULL;
@@ -142,7 +142,7 @@ net_response_t *net_response_sync( uint32_t send_ssrc , long start_time )
 
 	sync->ssrc = send_ssrc;
 	sync->count = 0;
-	sync->timestamp1 = time_in_microseconds() - start_time;
+	sync->timestamp1 = applemidi_now_ticks() - start_time;
 	sync->timestamp2 = random_number();
 	sync->timestamp3 = random_number();
 

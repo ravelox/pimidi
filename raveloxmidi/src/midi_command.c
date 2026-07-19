@@ -66,6 +66,7 @@ midi_command_t *midi_command_create(void)
 	if( ! new_command ) return NULL;
 
 	new_command->delta = 0;
+	new_command->due_monotonic_ns = 0;
 	new_command->status = 0;
 	new_command->data = NULL;
 
@@ -90,6 +91,7 @@ void midi_command_reset( midi_command_t *command )
 	if( ! command ) return;
 
 	command->delta = 0;
+	command->due_monotonic_ns = 0;
 	command->status = 0;
 
 	if(command->data) X_FREE( command->data );
@@ -188,5 +190,6 @@ void midi_command_dump( void *data )
 	logging_printf(LOGGING_DEBUG, "MIDI Command: status=0x%02X,description=\"%s\"\n", command->status, description );
 	logging_printf(LOGGING_DEBUG, "\tchannel_message:channel=0x%0x message=0x%0x\n", command->channel_message.channel, command->channel_message.message);
 	logging_printf(LOGGING_DEBUG, "\tsystem_message: message=0x%0x\n", command->system_message.message); 
-	logging_printf(LOGGING_DEBUG, "\tdelta=%zu, data_len=%u\n", command->delta, command->data_len);
+	logging_printf(LOGGING_DEBUG, "\tdelta=%llu, due_monotonic_ns=%llu, data_len=%u\n",
+		(unsigned long long)command->delta, (unsigned long long)command->due_monotonic_ns, command->data_len);
 }

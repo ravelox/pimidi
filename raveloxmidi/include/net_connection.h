@@ -46,6 +46,12 @@ typedef enum net_ctx_status_t {
 	NET_CTX_STATUS_UNUSED,
 } net_ctx_status_t;
 
+typedef struct net_clock_state_t {
+	int valid;
+	int64_t remote_to_local_offset_ticks;
+	uint64_t remote_anchor_ticks;
+} net_clock_state_t;
+
 typedef struct net_ctx_t {
 	net_ctx_status_t	status;
 	uint32_t	ssrc;
@@ -58,7 +64,8 @@ typedef struct net_ctx_t {
 	socklen_t	control_address_len;
 	struct sockaddr_storage data_address;
 	socklen_t	data_address_len;
-	long		start;
+	uint64_t	start;
+	net_clock_state_t clock;
 	char * 		ip_address;
 	char *		name;
 	journal_t	*journal;
@@ -94,6 +101,9 @@ void net_ctx_journal_reset( net_ctx_t *ctx );
 void net_ctx_update_rtp_fields( const net_ctx_t *ctx, rtp_packet_t *rtp_packet);
 void net_ctx_send( net_ctx_t *ctx, unsigned char *buffer, size_t buffer_len , int use_control );
 void net_ctx_increment_seq( net_ctx_t *ctx );
+void net_ctx_update_clock( net_ctx_t *ctx, uint64_t remote_timestamp1, uint64_t local_timestamp2, uint64_t remote_timestamp3 );
+void net_ctx_update_clock_from_initiator( net_ctx_t *ctx, uint64_t local_timestamp1, uint64_t remote_timestamp2, uint64_t local_timestamp3 );
+uint64_t net_ctx_command_due_ns( net_ctx_t *ctx, uint32_t packet_timestamp, uint64_t cumulative_delta, uint64_t playout_delay_ns );
 
 net_ctx_t *net_ctx_find_by_index( int index );
 int net_ctx_is_used( const net_ctx_t *ctx );

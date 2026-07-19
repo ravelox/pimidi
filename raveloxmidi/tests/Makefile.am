@@ -1,11 +1,15 @@
 AM_CPPFLAGS = -I $(top_srcdir)/include
 
-check_PROGRAMS = sdk_lifecycle_test
-TESTS = sdk_lifecycle_test
+check_PROGRAMS = sdk_lifecycle_test timing_test
+TESTS = sdk_lifecycle_test timing_test
 
 sdk_lifecycle_test_SOURCES = sdk_lifecycle_test.c
 sdk_lifecycle_test_CFLAGS = @PTHREAD_CFLAGS@
-sdk_lifecycle_test_LDADD = $(top_builddir)/src/libraveloxmidi.la @PTHREAD_LIBS@
+sdk_lifecycle_test_LDADD = $(top_builddir)/src/.libs/libraveloxmidi.a @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
+
+timing_test_SOURCES = timing_test.c
+timing_test_CFLAGS = @PTHREAD_CFLAGS@
+timing_test_LDADD = $(top_builddir)/src/.libs/libraveloxmidi.a @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 
 VALGRIND = valgrind
 VALGRIND_FLAGS = \

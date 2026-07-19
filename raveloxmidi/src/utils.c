@@ -386,6 +386,19 @@ long time_in_microseconds( void )
 	return ( currentTime.tv_sec * (int)1e6 + currentTime.tv_usec ) / 100 ;
 }
 
+uint64_t time_monotonic_ns( void )
+{
+	struct timespec now;
+
+	if( clock_gettime( CLOCK_MONOTONIC, &now ) != 0 ) return 0;
+	return ( (uint64_t)now.tv_sec * 1000000000ULL ) + (uint64_t)now.tv_nsec;
+}
+
+uint64_t applemidi_now_ticks( void )
+{
+	return time_monotonic_ns() / APPLEMIDI_TICK_NS;
+}
+
 void utils_lock( void )
 {
 	X_MUTEX_LOCK( &utils_thread_lock );

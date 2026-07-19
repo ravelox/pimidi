@@ -40,8 +40,8 @@ net_response_t * applemidi_sync_responder( void *data )
 	net_applemidi_sync *sync_resp = NULL;
 	net_ctx_t *ctx = NULL;
 	net_response_t *response = NULL;
-	unsigned long local_timestamp = 0;
-	unsigned long current_time = 0;
+	uint64_t local_timestamp = 0;
+	uint64_t current_time = 0;
 
 	if( ! data ) return NULL;
 
@@ -57,14 +57,17 @@ net_response_t * applemidi_sync_responder( void *data )
 
 	net_ctx_dump( ctx );
 
-        if ( sync->count == 2 )
+	if( sync->count == 2 )
 	{
-                long long offset_estimate = ((sync->timestamp3 + sync->timestamp1) / 2) - sync->timestamp2;
-                current_time = time_in_microseconds();
-                local_timestamp = current_time - ctx->start;
-                logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: CK2 Received. Sync Done. now=%lu start=%lu local_timestamp=%lu offset_estimate=%lu\n", current_time, ctx->start, local_timestamp, offset_estimate );
-                return NULL;
-        }
+		long long offset_estimate = (long long)sync->timestamp2 - (long long)((sync->timestamp3 + sync->timestamp1) / 2);
+		current_time = applemidi_now_ticks();
+		local_timestamp = current_time - ctx->start;
+		net_ctx_update_clock( ctx, sync->timestamp1, sync->timestamp2, sync->timestamp3 );
+		logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: CK2 Received. Sync Done. now=%llu start=%llu local_timestamp=%llu offset_estimate=%lld\n",
+			(unsigned long long)current_time, (unsigned long long)ctx->start,
+			(unsigned long long)local_timestamp, offset_estimate );
+		return NULL;
+	}
 
 	cmd = net_applemidi_cmd_create( NET_APPLEMIDI_CMD_SYNC );
 
@@ -92,15 +95,19 @@ net_response_t * applemidi_sync_responder( void *data )
 
 	memcpy( sync_resp->padding, sync->padding, 3 );
 
-	current_time = time_in_microseconds();
+	current_time = applemidi_now_ticks();
 	local_timestamp = current_time - ctx->start;
 
-	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%lu start=%lu local_timestamp=%lu\n", current_time, ctx->start, local_timestamp );
+	logging_printf( LOGGING_DEBUG, "applemidi_sync_responder: now=%llu start=%llu local_timestamp=%llu\n",
+		(unsigned long long)current_time, (unsigned long long)ctx->start,
+		(unsigned long long)local_timestamp );
 	
 	switch( sync_resp->count )
 	{
 		case 2:
 			sync_resp->timestamp3 = local_timestamp;
+			net_ctx_update_clock_from_initiator( ctx, sync_resp->timestamp1,
+				sync_resp->timestamp2, sync_resp->timestamp3 );
 			break;
 		case 1:
 			sync_resp->timestamp2 = local_timestamp;

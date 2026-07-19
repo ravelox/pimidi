@@ -62,6 +62,8 @@ static void config_set_defaults( void )
 	config_add_item("sync.interval","10");
 	config_add_item("network.read.blocksize","2048");
 	config_add_item("journal.write","no");
+	config_add_item("timing.enabled", "no");
+	config_add_item("timing.playout_delay_ms", "5");
 #ifdef HAVE_ALSA
 	config_add_item("alsa.input_buffer_size", "4096" );
 	config_add_item("alsa.writeback", "no");
