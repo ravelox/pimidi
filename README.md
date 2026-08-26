@@ -201,7 +201,7 @@ alsa.output_device.0 = first_device
 alsa.output_device.1 = second_device
 ```
 
-A multi-value configuration option must start at index 0 and parsing will stop when there is a break in the sequence. That is, if the values are 0,1,3,4,5 then only 0 and 1 will be detected.
+Indices are discovered by scanning the whole configuration rather than probing sequentially, so gaps are tolerated: values at indices 0,1,3,4,5 are all detected, processed in ascending index order, and the option doesn't need to start at index 0.
 
 ```
 network.bind_address
