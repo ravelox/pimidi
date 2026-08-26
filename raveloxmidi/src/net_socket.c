@@ -376,6 +376,7 @@ int net_socket_read( int fd )
 	int data_fd = 0;
 	int control_fd = 0;
 	int local_fd = 0;
+	int command_fd = 0;
 	unsigned char *packet = NULL;
 	size_t packet_size = 0;
 	raveloxmidi_socket_t *found_socket = NULL;
@@ -389,6 +390,7 @@ int net_socket_read( int fd )
 	data_fd = net_socket_get_data_socket();
 	control_fd = net_socket_get_control_socket();
 	local_fd = net_socket_get_local_socket();
+	command_fd = net_socket_get_command_socket();
 
 	memset( ip_address, 0, INET6_ADDRSTRLEN );
 	from_len = sizeof( from_addr );
@@ -413,6 +415,8 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_DEBUG, "net_socket_read: control_fd\n");
 	} else if (fd == local_fd ) {
 		logging_printf(LOGGING_DEBUG, "net_socket_read: local_fd\n");
+	} else if (fd == command_fd ) {
+		logging_printf(LOGGING_DEBUG, "net_socket_read: command_fd\n");
 	}
 
 #ifdef HAVE_ALSA
@@ -508,7 +512,7 @@ int net_socket_read( int fd )
 /*
 	Heartbeat request
 */
-	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
+	} else if( ( fd == command_fd ) && ( midi_state_compare( found_socket->state, "STAT", 4) == 0) )
 	{
 		const char *buffer="OK";
 		size_t bytes_written = 0;
@@ -520,7 +524,7 @@ int net_socket_read( int fd )
 /*
 	Shutdown request
 */
-	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
+	} else if( ( fd == command_fd ) && ( midi_state_compare( found_socket->state, "QUIT", 4) == 0 ) )
 	{
 		const char *buffer="QT";
 		size_t bytes_written = 0;
@@ -528,7 +532,7 @@ int net_socket_read( int fd )
 		bytes_written = sendto( fd, buffer, strlen(buffer), MSG_DONTWAIT, (void *)&from_addr, from_len);
 
 		logging_printf(LOGGING_DEBUG, "net_socket_read: Shutdown request. Response written: %u\n", bytes_written);
-		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on local socket\n");
+		logging_printf(LOGGING_NORMAL, "net_socket_read: Shutdown request received on command socket\n");
 
 		net_socket_set_shutdown_lock(1);
 
@@ -538,7 +542,7 @@ int net_socket_read( int fd )
 /*
 	Connection list request
 */
-	} else if( ( fd == local_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
+	} else if( ( fd == command_fd ) && ( midi_state_compare( found_socket->state, "LIST", 4) == 0 ) )
 	{
 		char *buffer = NULL;
 		size_t bytes_written = 0;
@@ -556,6 +560,17 @@ int net_socket_read( int fd )
 		logging_printf(LOGGING_DEBUG, "net_socket_read: List request. Response written: %u\n", bytes_written);
 
 		midi_state_advance( found_socket->state, 4);
+/*
+	Unrecognized command on the command socket
+*/
+	} else if( fd == command_fd )
+	{
+		unsigned char *discard = NULL;
+
+		logging_printf(LOGGING_WARN, "net_socket_read: Unrecognized command received on command socket\n");
+
+		discard = midi_state_drain( found_socket->state, &read_buffer_size );
+		if( discard ) X_FREE( discard );
 
 #ifdef HAVE_ALSA
 	} else if( ( fd == local_fd ) || (found_socket->type==RAVELOXMIDI_SOCKET_ALSA_TYPE) )
@@ -888,7 +903,7 @@ int net_socket_init( void )
 	char *inbound_midi_filename = NULL;
 	char *bind_address = NULL;
 	int address_family = 0;
-	int control_port, data_port, local_port;
+	int control_port, data_port, local_port, command_port;
 
 	pthread_mutex_init( &send_lock, NULL );
 
@@ -910,6 +925,7 @@ int net_socket_init( void )
 	control_port = config_int_get("network.control.port");
 	data_port = config_int_get("network.data.port");
 	local_port = config_int_get("network.local.port");
+	command_port = config_int_get("network.command.port");
 
 	bind_address = config_string_get("network.bind_address");
 	get_sock_info( bind_address , control_port , NULL, NULL, &address_family);
@@ -922,7 +938,8 @@ int net_socket_init( void )
 			if(
 				net_socket_listener_create( address_family, bind_address, control_port ) ||
 				net_socket_listener_create( address_family, bind_address, data_port ) ||
-				net_socket_listener_create( address_family, bind_address, local_port ) )
+				net_socket_listener_create( address_family, bind_address, local_port ) ||
+				net_socket_listener_create( address_family, bind_address, command_port ) )
 			{
 				logging_printf(LOGGING_ERROR, "net_socket_init: Cannot create socket: %s\n", strerror( errno ) );
 				return -1;
@@ -1029,6 +1046,23 @@ int net_socket_get_local_socket( void )
 
 	data_table_lock( sockets );
 	socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_LOCAL_PORT);
+	data_table_unlock( sockets );
+
+	if( socket )
+	{
+		fd =  socket->fd;
+	}
+
+	return fd;
+}
+
+int net_socket_get_command_socket( void )
+{
+	int fd = -1;
+	const raveloxmidi_socket_t *socket = NULL;
+
+	data_table_lock( sockets );
+	socket = (const raveloxmidi_socket_t *)data_table_item_get( sockets, NET_SOCKET_COMMAND_PORT);
 	data_table_unlock( sockets );
 
 	if( socket )

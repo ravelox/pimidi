@@ -69,6 +69,7 @@ int net_socket_get_shutdown_status( void) ;
 int net_socket_get_data_socket( void );
 int net_socket_get_control_socket( void );
 int net_socket_get_local_socket( void );
+int net_socket_get_command_socket( void );
 
 void net_socket_set_fds( void );
 int net_socket_get_shutdown_fd( void );
@@ -81,6 +82,7 @@ void net_socket_dump( void * );
 #define NET_SOCKET_CONTROL_PORT 0
 #define NET_SOCKET_DATA_PORT 1
 #define NET_SOCKET_LOCAL_PORT 2
+#define NET_SOCKET_COMMAND_PORT 3
 
 #define DEFAULT_BLOCK_SIZE 2048
 #define NET_SOCKET_DEFAULT_RING_BUFFER	10240

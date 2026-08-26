@@ -122,7 +122,9 @@ Controller Value : 8 bits (0 to 127).
 
 When raveloxmidi receives the command packet, it will send that MIDI command to any  active connections in the connection table. 
 
-The RTP MIDI payload specification also defines a recovery journal (see section 4 of RFC 6295). When `journal.write` is enabled, raveloxmidi records channel state for notes, controls, programs, pitch bend, channel pressure and poly pressure and attaches the journal to outbound RTP-MIDI packets.
+The RTP MIDI payload specification also defines a recovery journal (see section 4 of RFC 6295). When `journal.write` is enabled, raveloxmidi records channel state for notes, controls, programs and bank selection, pitch bend, channel pressure and poly pressure. Finished SysEx commands whose data fits the RFC system-journal length are protected by Chapter X. Larger SysEx messages are still segmented for transport but are not copied into Chapter X.
+
+Commands that are simultaneously ready from the same source are opportunistically combined into one RTP-MIDI command list, with explicit status bytes and a bounded payload size.
 
 ### Stage 3 - Feedback
 The Apple MIDI implementation sends a feedback packet (RS) from the connecting server. This packet contains a RTP sequence number to indicate that the connecting server is acknowledging that it has received packets with a sequence number up to and including that particular value.
@@ -132,12 +134,15 @@ This tells the receiving server that it doesn't need to send journal events for 
 raveloxmidi keeps track of the sequence number in the connection table and, if the value in the feedback packet is greater than or equal to the value in the table, the journal will be reset. 
 
 ## Inbound MIDI commands 
-raveloxmidi also accepts inbound RTP-MIDI from remote hosts and writes MIDI commands to the configured output. When `journal.read` is enabled, RTP sequence gaps trigger recovery from supported channel-journal chapters before the current MIDI command section is processed. Unsupported system, enhanced-control and optional channel chapters are skipped using their enclosing RFC length fields. A Feedback response is sent after inbound MIDI packets are received.
+raveloxmidi also accepts inbound RTP-MIDI from remote hosts and writes MIDI commands to the configured output. When `journal.read` is enabled, RTP sequence gaps trigger recovery only when the journal checkpoint covers the loss interval. Supported channel chapters and bounded finished-SysEx Chapter X logs are applied before the current MIDI command section. Unsupported system, enhanced-control and optional channel chapters are skipped using their enclosing RFC length fields. A Feedback response is sent after inbound MIDI packets are received.
 
 When `timing.enabled` is enabled, synchronized RTP timestamps and MIDI command deltas determine command scheduling. Otherwise, commands are processed immediately in arrival order.
 
 ## Command interface
-raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. The commands can only be received on the local listening port ( default is 5006 ). The commands are:
+
+> **Breaking change:** As of this release, the command interface has moved off the local MIDI port (`network.local.port`, default 5006) onto its own dedicated port, `network.command.port` (default 5007). Previously STAT/QUIT/LIST shared the local listening port with raw local MIDI event packets; every packet received there had to be checked against all three command tags before falling through to MIDI handling. Splitting the two protocols means the local port only ever has to run MIDI parsing, the command port only ever has to run command matching, and each `raveloxmidi-*` command script needs to target the new port. Existing scripts, firewall rules, and any custom tooling that sends STAT/QUIT/LIST to port 5006 must be updated to use port 5007 (or the configured `network.command.port` value) instead.
+
+raveloxmidi provides a simple set of commands for shutdown, heartbeat and connection status. The commands can only be received on the command listening port ( default is 5007 ). The commands are:
 
 *STAT*
 
@@ -213,6 +218,9 @@ network.data.port
 network.local.port
 	Local listening port for accepting MIDI events.
 	Default is 5006.
+network.command.port
+	Local listening port for the command interface ( STAT, QUIT, LIST ). Prior to this release, these commands were received on network.local.port; see the Command interface section for details on this breaking change.
+	Default is 5007.
 service.ipv4
 	Indicate whether Avahi service should use IPv4 addresses. Default is yes.
 service.ipv6

@@ -4,7 +4,7 @@ import socket
 import struct
 import sys
 
-LOCAL_PORT = 5006
+COMMAND_PORT = 5007  # network.command.port (was network.local.port / 5006 prior to the command-port split)
 
 # Request status
 SEND_BYTES = b"STAT"
@@ -13,16 +13,16 @@ print(SEND_BYTES)
 def main():
     if len(sys.argv) == 1:
         family = socket.AF_INET
-        connect_tuple = ("localhost", LOCAL_PORT)
+        connect_tuple = ("localhost", COMMAND_PORT)
     else:
         details = socket.getaddrinfo(
-            sys.argv[1], LOCAL_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
+            sys.argv[1], COMMAND_PORT, socket.AF_UNSPEC, socket.SOCK_DGRAM
         )
         family = details[0][0]
         if family == socket.AF_INET6:
-            connect_tuple = (sys.argv[1], LOCAL_PORT, 0, 0)
+            connect_tuple = (sys.argv[1], COMMAND_PORT, 0, 0)
         else:
-            connect_tuple = (sys.argv[1], LOCAL_PORT)
+            connect_tuple = (sys.argv[1], COMMAND_PORT)
 
     with socket.socket(family, socket.SOCK_DGRAM) as sock:
         sock.settimeout(2.0)

@@ -75,6 +75,11 @@ Local listening port for accepting MIDI events.
 .br
 Default is 5006.
 .TP
+.B network.command.port
+Local listening port for the command interface (STAT, QUIT, LIST). This was previously received on network.local.port; sending these commands to that port no longer works.
+.br
+Default is 5007.
+.TP
 .B service.ipv4
 Indicate whether Avahi service should use IPv4 addresses.
 .br
@@ -191,13 +196,13 @@ for more information
 .TP
 .B
 journal.write
-Set to yes to include an RTP-MIDI recovery journal in outbound packets. The journal covers note, control, program, pitch bend, channel pressure, and poly pressure state.
+Set to yes to include an RTP-MIDI recovery journal in outbound packets. The journal covers note, control, program and bank-select, pitch-bend, channel-pressure, and poly-pressure state. Finished System Exclusive commands containing at most 1020 data bytes are protected by system Chapter X.
 .br
 Default is no.
 .TP
 .B
 journal.read
-Set to yes to detect gaps in inbound RTP sequence numbers and apply supported recovery-journal chapters before processing the current MIDI command section.
+Set to yes to detect gaps in inbound RTP sequence numbers and apply supported recovery-journal chapters before processing the current MIDI command section. Recovery is applied only if the journal checkpoint covers the loss interval.
 .br
 Default is yes.
 .TP
