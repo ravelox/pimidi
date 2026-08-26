@@ -146,7 +146,7 @@ raveloxmidi provides a simple set of commands for shutdown, heartbeat and connec
 
 *STAT*
 
-This is the heartbeat command. The response will always be *OK* if raveloxmidi is running. The script python/send_stat.py is available for this command.
+This is the heartbeat command. The response will always be *OK* if raveloxmidi is running. The script python/send_status.py is available for this command.
 
 *QUIT*
 
