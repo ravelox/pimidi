@@ -1,7 +1,7 @@
 AM_CPPFLAGS = -I $(top_srcdir)/include
 
-check_PROGRAMS = sdk_lifecycle_test timing_test journal_test net_socket_test
-TESTS = sdk_lifecycle_test timing_test journal_test net_socket_test
+check_PROGRAMS = sdk_lifecycle_test timing_test journal_test net_socket_test config_iter_test
+TESTS = sdk_lifecycle_test timing_test journal_test net_socket_test config_iter_test
 
 sdk_lifecycle_test_SOURCES = sdk_lifecycle_test.c
 sdk_lifecycle_test_CFLAGS = @PTHREAD_CFLAGS@
@@ -18,6 +18,10 @@ journal_test_LDADD = $(top_builddir)/src/.libs/libraveloxmidi.a @PTHREAD_LIBS@ @
 net_socket_test_SOURCES = net_socket_test.c
 net_socket_test_CFLAGS = @PTHREAD_CFLAGS@
 net_socket_test_LDADD = $(top_builddir)/src/.libs/libraveloxmidi.a @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
+
+config_iter_test_SOURCES = config_iter_test.c
+config_iter_test_CFLAGS = @PTHREAD_CFLAGS@
+config_iter_test_LDADD = $(top_builddir)/src/.libs/libraveloxmidi.a @PTHREAD_LIBS@ @AVAHI_LIBS@ @ALSA_LIBS@
 
 VALGRIND = valgrind
 VALGRIND_FLAGS = \

@@ -24,6 +24,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include <errno.h>
 extern int errno;
@@ -263,14 +264,96 @@ int config_is_set( char *key )
 	return ( ( item != NULL ) && ( item->value != NULL ) && ( strlen(item->value) > 0 ) );
 }
 
+/* Does key look like "prefix.<digits>"? If so, and its value is set,
+   hand back the parsed index. Rejects keys like "prefix_extra.0" that
+   merely start with prefix, and any suffix that isn't purely digits. */
+static int config_key_matches_prefix( const char *key, const char *value, const char *prefix, size_t prefix_len, int *out_index )
+{
+	const char *suffix = NULL;
+	const char *p = NULL;
+	long parsed = 0;
+
+	if( ! key || ! prefix ) return 0;
+	if( ! value || strlen( value ) == 0 ) return 0;
+	if( strncasecmp( key, prefix, prefix_len ) != 0 ) return 0;
+	if( key[ prefix_len ] != '.' ) return 0;
+
+	suffix = key + prefix_len + 1;
+	if( *suffix == '\0' ) return 0;
+
+	for( p = suffix; *p; p++ )
+	{
+		if( ! isdigit( (unsigned char)*p ) ) return 0;
+	}
+
+	errno = 0;
+	parsed = strtol( suffix, NULL, 10 );
+	if( errno == ERANGE || parsed < 0 || parsed > INT_MAX ) return 0;
+
+	if( out_index ) *out_index = (int)parsed;
+	return 1;
+}
+
+static int config_iter_compare_int( const void *a, const void *b )
+{
+	int ia = *(const int *)a;
+	int ib = *(const int *)b;
+	return ( ia > ib ) - ( ia < ib );
+}
+
+/* Discovers every "prefix.<N>" item already in the config table, rather than
+   probing prefix.0, prefix.1, ... and stopping at the first gap. This means
+   a config with prefix.0, prefix.1, prefix.3 is fully picked up instead of
+   silently losing everything from prefix.3 onward. */
 raveloxmidi_config_iter_t *config_iter_create( const char *prefix )
 {
 	raveloxmidi_config_iter_t *new_iter = NULL;
+	size_t prefix_len = 0;
+	size_t item_count = 0;
+	size_t i = 0;
+	size_t matches = 0;
+
 	if( ! prefix ) return NULL;
+
 	new_iter = ( raveloxmidi_config_iter_t * ) X_MALLOC( sizeof( raveloxmidi_config_iter_t ) );
 	if( ! new_iter ) return NULL;
+
 	new_iter->prefix = ( char * ) X_STRDUP( prefix );
-	new_iter->index = 0;
+	new_iter->indices = NULL;
+	new_iter->index_count = 0;
+	new_iter->position = 0;
+
+	prefix_len = strlen( prefix );
+	item_count = kv_item_count( config_items );
+
+	for( i = 0; i < item_count; i++ )
+	{
+		char *item_key = NULL;
+		char *item_value = NULL;
+
+		kv_get_item_by_index( config_items, i, &item_key, &item_value );
+		if( config_key_matches_prefix( item_key, item_value, prefix, prefix_len, NULL ) ) matches++;
+	}
+
+	if( matches == 0 ) return new_iter;
+
+	new_iter->indices = ( int * ) X_MALLOC( matches * sizeof( int ) );
+	if( ! new_iter->indices ) return new_iter;
+
+	for( i = 0; i < item_count; i++ )
+	{
+		char *item_key = NULL;
+		char *item_value = NULL;
+		int parsed_index = 0;
+
+		kv_get_item_by_index( config_items, i, &item_key, &item_value );
+		if( ! config_key_matches_prefix( item_key, item_value, prefix, prefix_len, &parsed_index ) ) continue;
+
+		new_iter->indices[ new_iter->index_count ] = parsed_index;
+		new_iter->index_count += 1;
+	}
+
+	qsort( new_iter->indices, new_iter->index_count, sizeof( int ), config_iter_compare_int );
 
 	return new_iter;
 }
@@ -286,6 +369,12 @@ void config_iter_destroy( raveloxmidi_config_iter_t **iter )
 		(*iter)->prefix = NULL;
 	}
 
+	if( (*iter)->indices )
+	{
+		X_FREE( (*iter)->indices );
+		(*iter)->indices = NULL;
+	}
+
 	X_FREE( *iter );
 	*iter = NULL;
 }
@@ -293,24 +382,25 @@ void config_iter_destroy( raveloxmidi_config_iter_t **iter )
 void config_iter_reset( raveloxmidi_config_iter_t *iter )
 {
 	if( ! iter ) return;
-	iter->index = 0;
+	iter->position = 0;
 }
 
 void config_iter_next( raveloxmidi_config_iter_t *iter )
 {
 	if( ! iter ) return;
-	if( iter->index < MAX_ITER_INDEX ) iter->index += 1;
+	if( iter->position < iter->index_count ) iter->position += 1;
 }
 
 static char *config_make_key( const char *prefix , int index )
 {
-	size_t key_len = 0;
+	int needed = 0;
 	char *key = NULL;
 	if( ! prefix ) return NULL;
-	key_len = strlen( prefix ) + 7;
-	key = ( char * ) X_MALLOC( key_len );
+	needed = snprintf( NULL, 0, "%s.%d", prefix, index );
+	if( needed < 0 ) return NULL;
+	key = ( char * ) X_MALLOC( (size_t)needed + 1 );
 	if( ! key ) return NULL;
-	sprintf( key, "%s.%d", prefix, index );
+	snprintf( key, (size_t)needed + 1, "%s.%d", prefix, index );
 	return key;
 }
 
@@ -320,7 +410,8 @@ char *config_iter_string_get( const raveloxmidi_config_iter_t *iter )
 	char *result = NULL;
 	if( ! iter ) return NULL;
 	if( ! iter->prefix ) return NULL;
-	key = config_make_key( iter->prefix, iter->index );
+	if( iter->position >= iter->index_count ) return NULL;
+	key = config_make_key( iter->prefix, iter->indices[ iter->position ] );
 	if( ! key ) return NULL;
 	result = config_string_get( key );
 	X_FREE( key );
@@ -333,7 +424,8 @@ int config_iter_int_get( const raveloxmidi_config_iter_t *iter )
 	int result = 0;
 	if( ! iter ) return 0;
 	if( ! iter->prefix ) return 0;
-	key = config_make_key( iter->prefix, iter->index );
+	if( iter->position >= iter->index_count ) return 0;
+	key = config_make_key( iter->prefix, iter->indices[ iter->position ] );
 	if( ! key ) return 0;
 	result = config_int_get( key );
 	X_FREE( key );
@@ -346,7 +438,8 @@ long config_iter_long_get( const raveloxmidi_config_iter_t *iter )
 	long result = 0;
 	if( ! iter ) return 0;
 	if( ! iter->prefix ) return 0;
-	key = config_make_key( iter->prefix, iter->index );
+	if( iter->position >= iter->index_count ) return 0;
+	key = config_make_key( iter->prefix, iter->indices[ iter->position ] );
 	if( ! key ) return 0;
 	result = config_long_get( key );
 	X_FREE( key );
@@ -355,15 +448,8 @@ long config_iter_long_get( const raveloxmidi_config_iter_t *iter )
 
 int config_iter_is_set( const raveloxmidi_config_iter_t *iter )
 {
-	char *key = NULL;
-	int result = 0;
 	if( ! iter ) return 0;
-	if( ! iter->prefix ) return 0;
-	key = config_make_key( iter->prefix , iter->index);
-	if( ! key ) return 0;
-	result = config_is_set( key );
-	X_FREE( key );
-	return result;
+	return ( iter->position < iter->index_count );
 }
 
 void config_add_item(char *key, const char *value )

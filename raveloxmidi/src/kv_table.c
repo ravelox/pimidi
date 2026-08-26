@@ -234,7 +234,7 @@ void kv_get_item_by_index( kv_table_t *table, size_t index, char **key, char **v
 
 	kv_table_lock( table );
 
-	if( index > table->count ) goto kv_get_item_by_index_end;
+	if( index >= table->count ) goto kv_get_item_by_index_end;
 
 	*key = table->items[ index ]->key;
 	*value = table->items[ index ]->value;

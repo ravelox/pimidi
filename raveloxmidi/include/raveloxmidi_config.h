@@ -39,7 +39,9 @@ void config_usage( void );
 
 typedef struct raveloxmidi_config_iter_t {
 	char *prefix;
-	int index;
+	int *indices;
+	size_t index_count;
+	size_t position;
 } raveloxmidi_config_iter_t;
 
 raveloxmidi_config_iter_t *config_iter_create( const char *prefix );
@@ -52,8 +54,6 @@ long config_iter_long_get( const raveloxmidi_config_iter_t *iter );
 int config_iter_is_set( const raveloxmidi_config_iter_t *iter );
 
 #define MAX_CONFIG_LINE	1024
-
-#define MAX_ITER_INDEX	10000
 
 #define CONFIG_DUMP		1
 #define CONFIG_DUMP_EXIT	2
