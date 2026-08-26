@@ -87,8 +87,95 @@ static midi_scheduled_queue_t *midi_queue = NULL;
 static unsigned int journal_enabled = 0;
 
 #define RTP_PACKET_HEADER_SIZE 12
+#define MIDI_BATCH_MAX_COMMANDS 64
+#define MIDI_BATCH_MAX_BYTES 1024
 
 void midi_sender_handler( void *data, void *context );
+static int midi_sender_network_only = 0;
+static void midi_sender_publish_local( midi_command_t *command, uint32_t originator_ssrc, int alsa_originator_card );
+
+int midi_sender_pack_commands( midi_command_t *const *commands, size_t count, unsigned char **packed, size_t *packed_size )
+{
+	size_t i, offset=0, total=0;
+	*packed=NULL; *packed_size=0;
+	if(!commands || !count) return 0;
+	for(i=0;i<count;i++) {
+		if(!commands[i] || commands[i]->data_len > 4094 || total > 4094-commands[i]->data_len) return 0;
+		total += 1+commands[i]->data_len;
+	}
+	*packed=(unsigned char *)X_MALLOC(total);
+	if(!*packed) return 0;
+	for(i=0;i<count;i++) {
+		(*packed)[offset++]=commands[i]->status;
+		if(commands[i]->data_len) { memcpy(*packed+offset,commands[i]->data,commands[i]->data_len); offset+=commands[i]->data_len; }
+	}
+	*packed_size=total;
+	return 1;
+}
+
+static void midi_sender_add_journal_command( net_ctx_t *ctx, midi_command_t *command )
+{
+	enum midi_message_type_t type = MIDI_NULL;
+	midi_note_t *note = NULL; midi_control_t *control = NULL; midi_program_t *program = NULL;
+	midi_command_map(command,NULL,&type);
+	switch(type) {
+		case MIDI_NOTE_OFF: case MIDI_NOTE_ON:
+			midi_note_from_command(command,&note); net_ctx_add_journal_note(ctx,note); midi_note_destroy(&note); break;
+		case MIDI_CONTROL_CHANGE:
+			midi_control_from_command(command,&control); net_ctx_add_journal_control(ctx,control); midi_control_destroy(&control); break;
+		case MIDI_PROGRAM_CHANGE:
+			midi_program_from_command(command,&program); net_ctx_add_journal_program(ctx,program); midi_program_destroy(&program); break;
+		case MIDI_POLY_PRESSURE: case MIDI_CHANNEL_PRESSURE: case MIDI_PITCH_BEND:
+		case MIDI_SYSEX: case MIDI_END_SYSEX:
+			net_ctx_add_journal_command(ctx,command); break;
+		default: break;
+	}
+}
+
+static void midi_sender_batch_handler( midi_scheduled_item_t **items, size_t count )
+{
+	midi_command_t *merged;
+	unsigned char *bytes;
+	midi_command_t *commands[MIDI_BATCH_MAX_COMMANDS];
+	size_t total = 0, i;
+	data_context_t *context = items[0]->context;
+	const midi_sender_context_t *batch_sender = context && context->data ? (const midi_sender_context_t *)context->data : NULL;
+	uint32_t batch_ssrc = batch_sender ? batch_sender->ssrc : 0;
+	int batch_card = batch_sender ? batch_sender->alsa_card_hash : 0;
+	for(i=0;i<count;i++) commands[i]=items[i]->command;
+	bytes = NULL;
+	merged = midi_command_create();
+	if( !merged || !midi_sender_pack_commands(commands,count,&bytes,&total) ) goto fallback;
+	midi_command_set(merged, 0, bytes[0], bytes+1, total-1);
+	if( total > 1 && !merged->data ) goto fallback;
+	midi_sender_network_only = 1;
+	midi_sender_handler(merged, context);
+	midi_sender_network_only = 0;
+	items[0]->context = NULL; /* handler released the first reference */
+	if(journal_enabled) {
+		int connection_count=net_ctx_get_num_connections(), connection_index;
+		net_connections_lock();
+		for(connection_index=0;connection_index<connection_count;connection_index++) {
+			net_ctx_t *ctx=net_ctx_find_by_index(connection_index);
+			if(!ctx || ctx->ssrc==batch_ssrc) continue;
+			for(i=1;i<count;i++) midi_sender_add_journal_command(ctx,items[i]->command);
+		}
+		net_connections_unlock();
+	}
+	for(i=0;i<count;i++) {
+		midi_sender_publish_local(items[i]->command,batch_ssrc,batch_card);
+		if(items[i]->context) data_context_release(&items[i]->context);
+		midi_command_destroy((void **)&items[i]->command);
+		X_FREE(items[i]);
+	}
+	X_FREE(bytes);
+	return;
+fallback:
+	midi_sender_network_only = 0;
+	X_FREENULL("batch_bytes",(void **)&bytes);
+	if(merged) midi_command_destroy((void **)&merged);
+	for(i=0;i<count;i++) { midi_sender_handler(items[i]->command,items[i]->context); X_FREE(items[i]); }
+}
 
 static void *midi_sender_queue_handler( void *data )
 {
@@ -96,7 +183,8 @@ static void *midi_sender_queue_handler( void *data )
 
 	while( 1 )
 	{
-		midi_scheduled_item_t *item = NULL;
+		midi_scheduled_item_t *items[MIDI_BATCH_MAX_COMMANDS];
+		size_t count = 0, bytes = 0;
 
 		pthread_mutex_lock( &queue->lock );
 		while( ! queue->shutdown )
@@ -124,12 +212,20 @@ static void *midi_sender_queue_handler( void *data )
 			break;
 		}
 
-		item = queue->head;
-		queue->head = item->next;
+		do {
+			midi_scheduled_item_t *item = queue->head;
+			size_t item_bytes = 1 + item->command->data_len;
+			if(count && (item->context != items[0]->context || bytes + item_bytes > MIDI_BATCH_MAX_BYTES ||
+				item->command->status == 0xf0 || item->command->status == 0xf7)) break;
+			queue->head = item->next; item->next = NULL;
+			items[count++] = item; bytes += item_bytes;
+			if(item->command->status == 0xf0 || item->command->status == 0xf7) break;
+		} while(queue->head && count < MIDI_BATCH_MAX_COMMANDS &&
+			queue->head->due_monotonic_ns <= time_monotonic_ns());
 		pthread_mutex_unlock( &queue->lock );
 
-		midi_sender_handler( item->command, item->context );
-		X_FREE( item );
+		if(count == 1) { midi_sender_handler(items[0]->command,items[0]->context); X_FREE(items[0]); }
+		else midi_sender_batch_handler(items,count);
 	}
 
 	return NULL;
@@ -256,8 +352,6 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 	midi_program_t *midi_program = NULL;
 	int i = 0;
 	int total_connections = 0;
-	char output_available = 0;
-	unsigned char *raw_buffer = NULL;
 	unsigned char *packed_rtp_buffer = NULL;
 	size_t packed_rtp_buffer_capacity = 0;
 
@@ -407,7 +501,6 @@ void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc 
 		net_ctx_send( current_ctx, packed_rtp_buffer, packed_rtp_buffer_len , USE_DATA_PORT );
 		packet_ready = 1;
 
-midi_sender_send_single_clean:
 		X_FREENULL( "packed_journal", (void **)&packed_journal );
 
 		if( ! packet_ready || ! journal_enabled )
@@ -430,6 +523,8 @@ midi_sender_send_single_clean:
 			case MIDI_POLY_PRESSURE:
 			case MIDI_CHANNEL_PRESSURE:
 			case MIDI_PITCH_BEND:
+			case MIDI_SYSEX:
+			case MIDI_END_SYSEX:
 				net_ctx_add_journal_command( current_ctx, command );
 				break;
 			default:
@@ -457,6 +552,15 @@ midi_sender_send_single_clean:
 			break;
 	}
 
+	if( midi_sender_network_only ) return;
+	midi_sender_publish_local(command,originator_ssrc,alsa_originator_card);
+}
+
+static void midi_sender_publish_local( midi_command_t *command, uint32_t originator_ssrc, int alsa_originator_card )
+{
+	char output_available;
+	unsigned char *raw_buffer;
+	if(!command) return;
 	raveloxmidi_events_publish_midi_command( command, originator_ssrc, alsa_originator_card );
 
 	// Determine if the MIDI commands need to be written out to ALSA or the local MIDI file descriptor

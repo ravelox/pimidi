@@ -22,6 +22,8 @@
 #define MIDI_SENDER_H
 
 #include "data_context.h"
+#include "midi_command.h"
+#include "midi_state.h"
 
 typedef struct midi_sender_context_t {
 	uint32_t ssrc;
@@ -37,5 +39,6 @@ void midi_sender_send_from_state( midi_state_t *state, void *context);
 void midi_sender_send_single( midi_command_t *command, uint32_t originator_ssrc , int originator_device_hash );
 
 void midi_sender_add( void *data, data_context_t *context );
+int midi_sender_pack_commands( midi_command_t *const *commands, size_t count, unsigned char **packed, size_t *packed_size );
 
 #endif

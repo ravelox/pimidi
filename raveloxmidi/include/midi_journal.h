@@ -68,6 +68,11 @@ typedef struct channel_t {
 	unsigned char channel_pressure;
 	unsigned char poly_pressure_active[128];
 	unsigned char poly_pressure[128];
+	unsigned char bank_msb_active;
+	unsigned char bank_msb;
+	unsigned char bank_lsb_active;
+	unsigned char bank_lsb;
+	unsigned char bank_reset;
 } channel_t;
 
 #define MAX_MIDI_CHANNELS	16
@@ -75,6 +80,10 @@ typedef struct channel_t {
 typedef struct journal_t {
 	journal_header_t *header;
 	channel_t *channels[MAX_MIDI_CHANNELS];
+	unsigned char *sysex;
+	size_t sysex_len;
+	size_t sysex_capacity;
+	unsigned char sysex_active;
 } journal_t;
 
 #define JOURNAL_HEADER_S_FLAG	0x08
@@ -110,5 +119,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_cont
 void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_program_t *midi_program );
 void midi_journal_add_command( journal_t *journal, uint32_t seq, const midi_command_t *command );
 int midi_journal_recover( const unsigned char *packed, size_t size, unsigned char **midi, size_t *midi_size );
+int midi_journal_checkpoint_covers( const unsigned char *packed, size_t size, uint16_t highest_previous_seq );
+int midi_journal_should_recover( uint16_t highest_previous_seq, uint16_t current_seq, const unsigned char *packed, size_t size );
 
 #endif

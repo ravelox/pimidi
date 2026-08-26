@@ -643,8 +643,7 @@ int net_socket_read( int fd )
 		// Transfer the MIDI payload into the MIDI state for the connection context
 		if( current_ctx->receive_seq_valid )
 		{
-			uint16_t distance = (uint16_t)(rtp_packet->header.seq - current_ctx->receive_seq);
-			if( distance > 1 && distance < 0x8000 && midi_payload->header->J &&
+			if( midi_payload->header->J &&
 				is_yes( config_string_get("journal.read") ) )
 			{
 				size_t payload_header_size = midi_payload->header->B ? 2 : 1;
@@ -652,6 +651,8 @@ int net_socket_read( int fd )
 				unsigned char *recovered = NULL;
 				size_t recovered_size = 0;
 				if( journal_offset < rtp_packet->payload_len &&
+					midi_journal_should_recover(current_ctx->receive_seq, rtp_packet->header.seq,
+						(unsigned char *)rtp_packet->payload + journal_offset, rtp_packet->payload_len - journal_offset) &&
 					midi_journal_recover((unsigned char *)rtp_packet->payload + journal_offset,
 						rtp_packet->payload_len - journal_offset, &recovered, &recovered_size) )
 				{

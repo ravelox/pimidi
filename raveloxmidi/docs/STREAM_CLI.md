@@ -73,6 +73,11 @@ and large frames are segmented into RFC 6295 SysEx command segments for
 transport. The output path removes those transport boundaries and writes
 the original complete byte stream.
 
+When outbound recovery journals are enabled, completed SysEx commands with
+at most 1020 data bytes are protected by Chapter X. Larger commands exceed
+the recovery system journal's 10-bit length and are transported without a
+Chapter X copy.
+
 `stream.max_sysex_size` limits a complete frame, including both framing
 bytes, and defaults to 1048576 bytes. Unterminated and oversized frames
 are reported and discarded.

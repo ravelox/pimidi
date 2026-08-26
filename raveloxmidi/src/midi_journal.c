@@ -30,6 +30,11 @@
 
 #include "logging.h"
 
+static void midi_journal_mark_checkpoint( journal_t *journal, uint32_t seq )
+{
+	if( journal && !journal_has_data(journal) ) journal->header->seq = (uint16_t)seq;
+}
+
 void journal_header_pack( const journal_header_t *header , char **packed , size_t *size )
 {
 	char *p = NULL;
@@ -301,6 +306,11 @@ channel_t * channel_create( void )
 	new_channel->has_t = 0;
 	memset( new_channel->poly_pressure_active, 0, sizeof(new_channel->poly_pressure_active) );
 	memset( new_channel->poly_pressure, 0, sizeof(new_channel->poly_pressure) );
+	new_channel->bank_msb_active = 0;
+	new_channel->bank_lsb_active = 0;
+	new_channel->bank_msb = 0;
+	new_channel->bank_lsb = 0;
+	new_channel->bank_reset = 0;
 		
 	return new_channel;
 }
@@ -314,6 +324,8 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 	char *packed_channel_buffer = NULL;	
 	size_t packed_channel_buffer_size = 0;
 	char *p = NULL;
+	unsigned char *system_journal = NULL;
+	size_t system_journal_size = 0;
 	int i = 0;
 
 	*packed = NULL;
@@ -323,6 +335,20 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	logging_printf( LOGGING_DEBUG, "journal_pack: journal_has_data = %s header->totchan=%u\n", ( journal_has_data( journal )  ? "YES" : "NO" ) , journal->header->totchan);
 	if(  ! journal_has_data( journal ) ) return;
+	journal->header->bitfield &= ~JOURNAL_HEADER_Y_FLAG;
+	if( !journal->sysex_active && journal->sysex_len > 0 && journal->sysex_len <= 1020 )
+	{
+		size_t i;
+		system_journal_size = 3 + journal->sysex_len;
+		system_journal = (unsigned char *)X_MALLOC(system_journal_size);
+		if( !system_journal ) return;
+		system_journal[0] = 0x80 | 0x04 | ((system_journal_size >> 8) & 0x03);
+		system_journal[1] = system_journal_size & 0xff;
+		system_journal[2] = 0x80 | 0x08 | 0x03; /* S, DATA, finished */
+		for( i=0; i<journal->sysex_len; i++ ) system_journal[3+i] = journal->sysex[i] & 0x7f;
+		system_journal[system_journal_size-1] |= 0x80;
+		journal->header->bitfield |= JOURNAL_HEADER_Y_FLAG;
+	}
 
 	journal_header_pack( journal->header, &packed_journal_header, &packed_journal_header_size );
 
@@ -346,19 +372,26 @@ void journal_pack( journal_t *journal, char **packed, size_t *size )
 
 	// Join it all together
 
-	*packed = ( char * )X_MALLOC( packed_journal_header_size + packed_channel_buffer_size );
+	*packed = ( char * )X_MALLOC( packed_journal_header_size + system_journal_size + packed_channel_buffer_size );
+	if( !*packed ) goto journal_pack_cleanup;
 	p = *packed;
 	memcpy( p, packed_journal_header, packed_journal_header_size );
 	*size += packed_journal_header_size;
 	p += packed_journal_header_size;
+	if( system_journal_size ) {
+		memcpy(p, system_journal, system_journal_size);
+		p += system_journal_size;
+		*size += system_journal_size;
+	}
 
-	memcpy( p, packed_channel_buffer, packed_channel_buffer_size );
+	if( packed_channel_buffer_size ) memcpy( p, packed_channel_buffer, packed_channel_buffer_size );
 	*size += packed_channel_buffer_size;
 	
 journal_pack_cleanup:
 	X_FREENULL( "packed_channel", (void **)&packed_channel );
 	X_FREENULL( "packed_channel_buffer", (void **)&packed_channel_buffer );
 	X_FREENULL( "packed_journal_header", (void **)&packed_journal_header );
+	X_FREENULL( "system_journal", (void **)&system_journal );
 }
 
 int journal_init( journal_t **journal )
@@ -383,6 +416,10 @@ int journal_init( journal_t **journal )
 	}
 
 	(*journal)->header = header;
+	(*journal)->sysex = NULL;
+	(*journal)->sysex_len = 0;
+	(*journal)->sysex_capacity = 0;
+	(*journal)->sysex_active = 0;
 
 	for( i = 0 ; i < MAX_MIDI_CHANNELS ; i++ )
 	{
@@ -407,6 +444,7 @@ void journal_destroy( journal_t **journal )
 		}
 	}
 
+	X_FREENULL( "journal_sysex", (void **)&((*journal)->sysex) );
 	if( (*journal)->header )
 	{
 		journal_header_destroy( &( (*journal)->header ) );
@@ -428,6 +466,7 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t 
 
 	channel = midi_note->channel;
 	if( channel >= MAX_MIDI_CHANNELS ) return;
+	midi_journal_mark_checkpoint(journal, seq);
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
@@ -454,8 +493,6 @@ void midi_journal_add_note( journal_t *journal, uint32_t seq, const midi_note_t 
 		journal->channels[ channel ]->header->chan = ( channel + 1 );
 		journal->header->totchan +=1;
 	}
-
-	journal->header->seq = seq;
 
 	// Need to update NOTE OFF bits if the command is NOTE OFF
 	if( midi_note->command == MIDI_COMMAND_NOTE_OFF )
@@ -525,6 +562,7 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_cont
 
 	controller = midi_control->controller_number;
 	if( controller > (MAX_CHAPTER_C_CONTROLLERS - 1) ) return;
+	midi_journal_mark_checkpoint(journal, seq);
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
@@ -552,12 +590,20 @@ void midi_journal_add_control( journal_t *journal, uint32_t seq, const midi_cont
 		journal->header->totchan +=1;
 	}
 
-	journal->header->seq = seq;
-
-
 	journal->channels[ channel ]->chapter_c->controller_log[ controller ].S = 1;
 	journal->channels[ channel ]->chapter_c->controller_log[ controller ].number = controller;
 	journal->channels[ channel ]->chapter_c->controller_log[ controller ].value = midi_control->controller_value;
+	if( controller == 0 ) {
+		journal->channels[channel]->bank_msb_active = 1;
+		journal->channels[channel]->bank_msb = midi_control->controller_value;
+		journal->channels[channel]->bank_lsb_active = 0;
+		journal->channels[channel]->bank_reset = 0;
+	} else if( controller == 32 && journal->channels[channel]->bank_msb_active ) {
+		journal->channels[channel]->bank_lsb_active = 1;
+		journal->channels[channel]->bank_lsb = midi_control->controller_value;
+	} else if( controller == 121 && journal->channels[channel]->bank_msb_active ) {
+		journal->channels[channel]->bank_reset = 1;
+	}
 }
 
 void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_program_t *midi_program)
@@ -569,6 +615,7 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_prog
 
 	channel = midi_program->channel;
 	if( channel >= MAX_MIDI_CHANNELS ) return;
+	midi_journal_mark_checkpoint(journal, seq);
 
 	// Set Journal Header A and S flags
 	journal->header->bitfield |= ( JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG );
@@ -596,19 +643,18 @@ void midi_journal_add_program( journal_t *journal, uint32_t seq, const midi_prog
 		journal->header->totchan +=1;
 	}
 
-	journal->header->seq = seq;
-
 	journal->channels[ channel]->chapter_p->S = 1;
-	journal->channels[ channel]->chapter_p->B = 0;
+	journal->channels[ channel]->chapter_p->B = journal->channels[channel]->bank_msb_active;
 	journal->channels[ channel]->chapter_p->program = midi_program->program;
-	journal->channels[ channel]->chapter_p->X =0;
-	journal->channels[ channel]->chapter_p->bank_msb = 0;
-	journal->channels[ channel]->chapter_p->bank_lsb = 0;
+	journal->channels[ channel]->chapter_p->X = journal->channels[channel]->bank_reset;
+	journal->channels[ channel]->chapter_p->bank_msb = journal->channels[channel]->bank_msb;
+	journal->channels[ channel]->chapter_p->bank_lsb = journal->channels[channel]->bank_lsb_active ? journal->channels[channel]->bank_lsb : 0;
 }
 
 static channel_t *midi_journal_channel( journal_t *journal, unsigned char channel, uint32_t seq )
 {
 	if( !journal || channel >= MAX_MIDI_CHANNELS ) return NULL;
+	midi_journal_mark_checkpoint(journal, seq);
 	journal->header->bitfield |= JOURNAL_HEADER_A_FLAG | JOURNAL_HEADER_S_FLAG;
 	if( !journal->channels[channel] ) journal->channels[channel] = channel_create();
 	if( !journal->channels[channel] ) return NULL;
@@ -616,7 +662,6 @@ static channel_t *midi_journal_channel( journal_t *journal, unsigned char channe
 		journal->channels[channel]->header->chan = channel + 1;
 		journal->header->totchan++;
 	}
-	journal->header->seq = seq;
 	return journal->channels[channel];
 }
 
@@ -624,7 +669,34 @@ void midi_journal_add_command( journal_t *journal, uint32_t seq, const midi_comm
 {
 	channel_t *channel;
 	unsigned char type;
-	if( !command || command->status < 0x80 || command->status >= 0xf0 ) return;
+	if( !journal || !command ) return;
+	if( command->status == 0xf0 || (command->status == 0xf7 && journal->sysex_active) ) {
+		size_t data_len = command->data_len;
+		unsigned char terminator = data_len ? command->data[data_len-1] : 0;
+		unsigned char *next;
+		if( command->status == 0xf0 ) {
+			midi_journal_mark_checkpoint(journal, seq);
+			journal->sysex_len = 0;
+			journal->sysex_active = 1;
+		}
+		if( data_len && (terminator == 0xf0 || terminator == 0xf7) ) data_len--;
+		if( data_len > SIZE_MAX - journal->sysex_len ) {
+			journal->sysex_len = 0;
+			journal->sysex_active = 0;
+			return;
+		}
+		if( journal->sysex_len + data_len > journal->sysex_capacity ) {
+			size_t capacity = journal->sysex_len + data_len;
+			next = (unsigned char *)X_REALLOC(journal->sysex, capacity);
+			if( !next ) { journal->sysex_len = 0; journal->sysex_active = 0; return; }
+			journal->sysex = next; journal->sysex_capacity = capacity;
+		}
+		if( data_len ) memcpy(journal->sysex + journal->sysex_len, command->data, data_len);
+		journal->sysex_len += data_len;
+		if( terminator == 0xf7 ) journal->sysex_active = 0;
+		return;
+	}
+	if( command->status < 0x80 || command->status >= 0xf0 ) return;
 	type = command->status & 0xf0;
 	channel = midi_journal_channel( journal, command->status & 0x0f, seq );
 	if( !channel ) return;
@@ -704,7 +776,7 @@ int journal_has_data( journal_t *journal )
 	if( ! journal ) return 0;
 	if( ! journal->header ) return 0;
 
-	return (journal->header->totchan > 0);
+	return (journal->header->totchan > 0 || (!journal->sysex_active && journal->sysex_len > 0 && journal->sysex_len <= 1020));
 }
 
 void journal_header_dump( journal_header_t *header )
@@ -752,6 +824,8 @@ void journal_reset( journal_t *journal )
 	}
 
 	journal_header_reset( journal->header );
+	journal->sysex_len = 0;
+	journal->sysex_active = 0;
 
 }
 
@@ -767,6 +841,53 @@ static int recovery_append( unsigned char **midi, size_t *size, unsigned char st
 	return 1;
 }
 
+static int recovery_append_bytes( unsigned char **midi, size_t *size, const unsigned char *data, size_t data_size )
+{
+	unsigned char *next;
+	if( !data_size ) return 1;
+	next = (unsigned char *)X_REALLOC(*midi, *size + data_size);
+	if( !next ) return 0;
+	*midi = next;
+	memcpy(next + *size, data, data_size);
+	*size += data_size;
+	return 1;
+}
+
+static int recover_chapter_x( const unsigned char *packed, size_t size,
+	unsigned char **midi, size_t *midi_size )
+{
+	const unsigned char *p = packed;
+	size_t left = size;
+	while( left ) {
+		unsigned char header = *p++;
+		unsigned char log_header = header;
+		unsigned char sta = log_header & 0x03;
+		unsigned char start = 0xf0, end = 0xf7;
+		left--;
+		if( log_header & 0x40 ) { if(!left) return 0; p++; left--; }
+		if( log_header & 0x20 ) { if(!left) return 0; p++; left--; }
+		if( log_header & 0x10 ) {
+			do { if(!left) return 0; header = *p++; left--; } while(header & 0x80);
+		}
+		if( log_header & 0x08 ) {
+			const unsigned char *data = p;
+			size_t data_len = 0;
+			while( data_len < left && !(data[data_len] & 0x80) ) data_len++;
+			if( data_len >= left ) return 0;
+			data_len++;
+			/* Only a complete, untrimmed, untimed log can stand alone. */
+			if( sta == 3 && !(log_header & 0x70) ) {
+				size_t i;
+				if(!recovery_append_bytes(midi,midi_size,&start,1)) return 0;
+				for(i=0;i<data_len;i++) { unsigned char value=data[i]&0x7f; if(!recovery_append_bytes(midi,midi_size,&value,1)) return 0; }
+				if(!recovery_append_bytes(midi,midi_size,&end,1)) return 0;
+			}
+			p += data_len; left -= data_len;
+		}
+	}
+	return 1;
+}
+
 int midi_journal_recover( const unsigned char *packed, size_t size, unsigned char **midi, size_t *midi_size )
 {
 	const unsigned char *p = packed;
@@ -779,10 +900,16 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 	p += JOURNAL_HEADER_PACKED_SIZE; left -= JOURNAL_HEADER_PACKED_SIZE;
 	if( journal_flags & JOURNAL_HEADER_Y_FLAG ) {
 		size_t system_len;
+		unsigned char system_flags;
 		if( left < 2 ) goto invalid;
 		system_len = ((size_t)(p[0] & 0x03) << 8) | p[1];
 		if( system_len < 2 || system_len > left ) goto invalid;
-		logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping %zu-byte unsupported system journal\n", system_len);
+		system_flags = p[0] & 0x7c;
+		if( system_flags == 0x04 ) {
+			if( !recover_chapter_x(p+2, system_len-2, midi, midi_size) ) goto invalid;
+		} else {
+			logging_printf(LOGGING_DEBUG, "midi_journal_recover: skipping %zu-byte unsupported system journal\n", system_len);
+		}
 		p += system_len; left -= system_len;
 	}
 	if( journal_flags & JOURNAL_HEADER_A_FLAG ) channel_count = (packed[0] & 0x0f) + 1;
@@ -801,6 +928,10 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 		p += 3;
 		if( flags & CHAPTER_P ) {
 			if( consumed + 3 > channel_len ) goto invalid;
+			if( p[1] & 0x80 ) {
+				if( !recovery_append(midi,midi_size,0xb0|channel,0,p[1],2) ) goto invalid;
+				if( !recovery_append(midi,midi_size,0xb0|channel,32,p[2],2) ) goto invalid;
+			}
 			if( !recovery_append(midi,midi_size,0xc0|channel,p[0],0,1) ) goto invalid;
 			p += 3; consumed += 3;
 		}
@@ -867,4 +998,18 @@ int midi_journal_recover( const unsigned char *packed, size_t size, unsigned cha
 	return 1;
 invalid:
 	X_FREENULL("recovered_midi", (void **)midi); *midi_size = 0; return 0;
+}
+
+int midi_journal_checkpoint_covers( const unsigned char *packed, size_t size, uint16_t highest_previous_seq )
+{
+	uint16_t checkpoint;
+	if( !packed || size < JOURNAL_HEADER_PACKED_SIZE ) return 0;
+	checkpoint = ((uint16_t)packed[1] << 8) | packed[2];
+	return (int16_t)(checkpoint - (uint16_t)(highest_previous_seq + 1)) <= 0;
+}
+
+int midi_journal_should_recover( uint16_t highest_previous_seq, uint16_t current_seq, const unsigned char *packed, size_t size )
+{
+	uint16_t distance = (uint16_t)(current_seq - highest_previous_seq);
+	return distance > 1 && distance < 0x8000 && midi_journal_checkpoint_covers(packed,size,highest_previous_seq);
 }
